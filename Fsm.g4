@@ -8,7 +8,7 @@ line : state
 
 state   :  id (':' action)* ';'   ;         	//state (with  action(s))
 
-action :  (action_type ',')? id ('=' expression)? ;
+action :  (action_type ',')? action_id ('=' action_expression)? ;
  
 action_type : 'R' | 'S' | 'I' | 'F';
 
@@ -18,6 +18,10 @@ reset_transition  :   '->' id ('?' condition)? (':' action)* ';'   ;         	//
 condition :  id ( id)*  ;
 expression :  id ( id)*  ;
 
+action_id: ID  | NUMBER
+   ;
+
+action_expression:  id ( id)*  ;
 
 id : ID  | NUMBER
    ;

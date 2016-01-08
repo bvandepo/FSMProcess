@@ -10,4 +10,4 @@ java FsmProcess fsm2.fsm > out.dot
 echo ----------------------DISPLAY THE DOT CODE----------------------
 cat out.dot
 #echo ----------------------DISPLAY THE DOT GRAPH----------------------
-#dot -Tpng out.dot   | display  
+dot -Tpng out.dot   | display  
