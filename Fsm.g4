@@ -15,13 +15,21 @@ action_type : 'R' | 'S' | 'I' | 'F';
 transition   	  :  id '->' id ('?' condition)? (':' action)* ';'   ;         	//transition (with  action(s)) 
 reset_transition  :   '->' id ('?' condition)? (':' action)* ';'   ;         	//transition (with  action(s)) 
 
-condition :  id ( id)*  ;
+
+condition :  element ( element)*  ;
 expression :  id ( id)*  ;
 
 action_id: ID  | NUMBER
    ;
 
-action_expression:  id ( id)*  ;
+action_expression:  element ( element)*  ;
+
+operators : 'AND' | 'OR' | 'XOR' | 'NOT' | 'XNOR' | '+' | '-' | '*' | '/' | '==' | '!=' ; //to complete with all needed operators 
+
+element: operators | input;
+
+input: id;
+
 
 fsm_name: id;
 

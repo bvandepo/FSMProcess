@@ -7,4 +7,4 @@ javac  Fsm*.java
 echo ----------------------RUNNING THE PARSER----------------------
 java org.antlr.v4.gui.TestRig Fsm file -gui
 
-mc
+
