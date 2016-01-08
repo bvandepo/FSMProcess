@@ -23,11 +23,14 @@ public class FsmProcess {
 
 	static StringBuilder bufDot;
 	static StringBuilder bufVhdl;	
-	static ArrayList<String> inputList =new ArrayList<String>() ;
-	static ArrayList<String> outputList =new ArrayList<String>() ;
-	static ArrayList<String> stateList =new ArrayList<String>() ;
-	static int nbTransitions=0;
-	static ArrayList<Transition> transitionList =new ArrayList<Transition>() ;
+	
+	static FiniteStateMachine fsm=new FiniteStateMachine();
+	
+//	static ArrayList<String> inputList =new ArrayList<String>() ;
+//	static ArrayList<String> outputList =new ArrayList<String>() ;
+//	static ArrayList<String> stateList =new ArrayList<String>() ;
+//	static int nbTransitions=0;
+//	static ArrayList<Transition> transitionList =new ArrayList<Transition>() ;
 	
 	
 	static int cptStates = 0;
@@ -52,18 +55,18 @@ public class FsmProcess {
 	bufVhdl.append(fsmName);
 	bufVhdl.append(" is\n	port (\n");
 	bufVhdl.append("		ck,arazb								: in  std_logic;\n");
-	for (int n=0;n<inputList.size();n++)
+	for (int n=0;n<fsm.inputsNames.size();n++)
 		{
 		bufVhdl.append("		");
-		bufVhdl.append(inputList.get(n));
+		bufVhdl.append(fsm.inputsNames.get(n));
 		bufVhdl.append(": in  std_logic;\n");
 		}
-	for (int n=0;n<outputList.size();n++)
+	for (int n=0;n<fsm.outputsNames.size();n++)
 	{
 	bufVhdl.append("		");
-	bufVhdl.append(outputList.get(n));
+	bufVhdl.append(fsm.outputsNames.get(n));
 	bufVhdl.append(": out  std_logic");
-	if (n!=outputList.size()-1)
+	if (n!=fsm.outputsNames.size()-1)
 		bufVhdl.append(";\n");
 	else	
 		bufVhdl.append(");\n");		
@@ -76,93 +79,96 @@ public class FsmProcess {
 	bufVhdl.append(fsmName);
 	bufVhdl.append(" is \n");
 	bufVhdl.append("type fsm_state is (");
-	for (int n=0;n<stateList.size();n++)
+	for (int n=0;n<fsm.statesNames.size();n++)
 	{
 		//prefix state name with state_
 		bufVhdl.append("state_");
-		bufVhdl.append(stateList.get(n));
-		if (n!=stateList.size()-1)
+		bufVhdl.append(fsm.statesNames.get(n));
+		if (n!=fsm.statesNames.size()-1)
 			bufVhdl.append(", ");
 	}
 	bufVhdl.append(");\n");
-	bufVhdl.append("signal etat_present, etat_suivant : etat_mae;\n begin");
+	bufVhdl.append("signal etat_present, etat_suivant : etat_mae;\n");
 	
 	bufVhdl.append("begin\n");
-	bufVhdl.append("process (ck, arazb)\nbegin\n if (arazb='0') then etat_present <=");
+	bufVhdl.append("process (ck, arazb)\nbegin\n    if (arazb='0') then etat_present <=");
 	bufVhdl.append("state_");
-	bufVhdl.append(stateList.get(0));
+	bufVhdl.append(fsm.statesNames.get(0));
 	bufVhdl.append(";\n");
-	bufVhdl.append("elsif ck'event and ck='1' then etat_present<=etat_suivant;\n");
-	bufVhdl.append("end if;\n");
+	bufVhdl.append("    elsif ck'event and ck='1' then etat_present<=etat_suivant;\n");
+	bufVhdl.append("    end if;\n");
 	bufVhdl.append("end process;\n\n");
 	
 	bufVhdl.append("process (etat_present");
-	for (int n=0;n<inputList.size();n++)
+	for (int n=0;n<fsm.inputsNames.size();n++)
 	{
 		bufVhdl.append(", ");
-		bufVhdl.append(inputList.get(n));
+		bufVhdl.append(fsm.inputsNames.get(n));
 	}
-	bufVhdl.append(")\n begin\n");
-	bufVhdl.append("case etat_present is\n");
+	bufVhdl.append(")\nbegin\n");
+	bufVhdl.append("    case etat_present is\n");
 	//pour chaque état, il peut y avoir plusieurs transitions, la première if, les suivantes elsif et finalement en plus le maintien dans l'état courant
-	for (int n=0;n<stateList.size();n++)
-	{
-		bufVhdl.append("when state_");	//prefix state name with state_
-		bufVhdl.append(stateList.get(n));
+	for (int n=0;n<fsm.statesNames.size();n++)
+ 	{
+		bufVhdl.append("      when state_");	//prefix state name with state_
+		bufVhdl.append(fsm.statesNames.get(n));
 
-		if (n==0)
-			bufVhdl.append(" => if ( ");
-		else
-			bufVhdl.append(" elsif ( ");
-				//TODO condition
-		bufVhdl.append(" CONDITION ");
-		bufVhdl.append(" ) then etat_suivant <= state_");
-		bufVhdl.append(" ETAT_SUIVANT ");
-		bufVhdl.append("else			etat_suivant <= state_");
-		bufVhdl.append(stateList.get(n));
-		bufVhdl.append(";\n end if;\n);\n" );
-	}
-
-
-/*
-	when ")et0 => if (c(12)='0') then etat_suivant <=et1;
-				else etat_suivant <=et0;
-				end if;
-	when et1 => if (c(11)='0')  then etat_suivant <=et2;
-				else etat_suivant <=et1;
-				end if;
-	when et2 => if (c(13)='0') then etat_suivant <=et3;
-				else etat_suivant <=et2;
-				end if;
-	when et3 => if (c(9)='0')  then etat_suivant <=et4;
-				else etat_suivant <=et3;
-				end if;
-	when et4 => if (c(10)='0')  then etat_suivant <=et5;
-				else etat_suivant <=et4;
-				end if;		
-	when et5 => if (c(8)='0')  then etat_suivant <=et0;
-				else etat_suivant <=et5;
-				end if;
-				*/
-	bufVhdl.append("when others => etat_suivant <= state_");
-	bufVhdl.append(stateList.get(0));
-	bufVhdl.append(";\nend case;\n end process;\n");
-
-
-
-/*
-	for (int n=0;n<nbTransitions;n++)
+		int transitionFromThisStateNumber=0;
+		for (int m=0;m<fsm.transitions.size();m++)
 		{
-		bufVhdl.append("		");
-		bufVhdl.append(transitionList.get(n).origin);
-		bufVhdl.append("		");
-		bufVhdl.append(transitionList.get(n).condition);
-		bufVhdl.append("		");
-		bufVhdl.append(transitionList.get(n).destination);
-		bufVhdl.append("		\n");
+			if (fsm.transitions.get(m).origin.equals(fsm.statesNames.get(n))) //is it a transition from this state
+			{
+				transitionFromThisStateNumber++;
+				if (transitionFromThisStateNumber==1)
+					bufVhdl.append(" => if ( ");
+				else
+					bufVhdl.append("                   elsif ( ");
+				bufVhdl.append(fsm.transitions.get(m).condition);
+				bufVhdl.append(" ) then etat_suivant <= state_");
+				bufVhdl.append(fsm.transitions.get(m).destination);
+				bufVhdl.append(";\n");
+			}
 		}
-*/
+		if (transitionFromThisStateNumber!=0)
+			bufVhdl.append("                     else	");
+		bufVhdl.append("etat_suivant <= state_");
+		bufVhdl.append(fsm.statesNames.get(n));
+		bufVhdl.append(";\n           end if;\n" );
+	}
+	bufVhdl.append("      when others => etat_suivant <= state_");
+	bufVhdl.append(fsm.statesNames.get(0));
+	bufVhdl.append(";\n    end case;\nend process;\n");
+	bufVhdl.append("------------------ NON MEMORIZED OUTPUTS ------------\n"); 
+	 
+	for (int n=0;n<fsm.outputsNames.size();n++)
+	{
+		String currentOutputName=fsm.outputsNames.get(n);
+		//look for actions in the fsm that deals with this output
+		for (int m=0;m<fsm.statesNames.size();m++)
+		{
+			//action on state
+			for (int l=0;l< fsm.states.get(m).attachedActions.size();l++)
+					
+			{
+			}
+			//action on transition
+		}
+//	bufVhdl.append("  <= \'1\' when ");
+//	fsm.outputs 
+	
 
+	bufVhdl.append("else ");
+
+	
+		bufVhdl.append("0; \n");		
+	}
+	
+	/*
+	 ts <= (others => '1') when present = et0 or present = et2 or present = et4 else
+		(others => '0');
+	*/
+		
+	bufVhdl.append("------------------ MEMORIZED OUTPUTS ------------\n"); 
 	
 	System.out.println(bufVhdl);
 	}
@@ -196,11 +202,15 @@ public class FsmProcess {
 	static class FiniteStateMachine{
 		String name;
 		static ArrayList<State> states=new ArrayList<State>() ;		
+		static ArrayList<String> statesNames=new ArrayList<String>() ;		
 		static ArrayList<Input> inputs=new ArrayList<Input>() ;		
-		static ArrayList<Output> outputs=new ArrayList<Output>() ;		
+		static ArrayList<String> inputsNames=new ArrayList<String>() ;		
+		static ArrayList<Output> outputs=new ArrayList<Output>() ;	
+		static ArrayList<String> outputsNames=new ArrayList<String>() ;	
+		static ArrayList<Transition> transitions=new ArrayList<Transition>() ;	
 	}
 	/////////////////////////////////////////////////////////////////
-
+//	Il suffit de redéfinir la méthode equals de tes objets pour contrôler comment fonctionne le contains (c'est lui qui est appelé pour faire la comparaison). 
 	
 	/////////////////////////////////////////////////////////////////
 	static class Graph {
@@ -225,8 +235,8 @@ public class FsmProcess {
 		////////////////////////////////////////////////////////////////
 		public void enterInput(FsmParser.InputContext ctx){
 			inputName = ctx.children.get(0).getText();
-			if (! inputList.contains(inputName))
-				inputList.add(inputName);			
+		 	if (! fsm.inputsNames.contains(inputName))
+				fsm.inputsNames.add(inputName);			
 		}
 		////////////////////////////////////////////////////////////////
 		public void exitInput(FsmParser.InputContext ctx){
@@ -288,7 +298,7 @@ public class FsmProcess {
 		    		conditionName+=" ";
 		    }
 		    
-		    transitionList.get(nbTransitions).condition=conditionName;
+		    fsm.transitions.get(fsm.transitions.size()-1).condition=conditionName;
 		    
 		}
 		////////////////////////////////////////////////////////////////
@@ -302,10 +312,9 @@ public class FsmProcess {
 			conditionName="1"; //default
 			nbActionsInTransition=0;
 			
-			Transition t= new Transition();
-			t.origin=ctx.children.get(0).getText();
-			t.destination=ctx.children.get(2).getText();
-			transitionList.add(t);
+			fsm.transitions.add(new Transition());
+			fsm.transitions.get(fsm.transitions.size()-1).origin=ctx.children.get(0).getText();
+			fsm.transitions.get(fsm.transitions.size()-1).destination=ctx.children.get(2).getText();
 			
 			bufDot.append("    	");
 			bufDot.append(ctx.children.get(0).getText());
@@ -323,7 +332,7 @@ public class FsmProcess {
 			}
 			bufDot.append("  </TABLE>>  ];\n");
 		 		
-			nbTransitions++;
+			//fsm.nbTransitions++;
 		}
 		////////////////////////////////////////////////////////////////
 		public void enterAction_expression(FsmParser.Action_expressionContext ctx) {
@@ -340,8 +349,8 @@ public class FsmProcess {
 			if (inState || inTransition )
 			{
 				actionName = ctx.children.get(0).getText();
-				if (! outputList.contains(actionName))
-					outputList.add(actionName);
+				if (! fsm.outputsNames.contains(actionName))
+					fsm.outputsNames.add(actionName);
 			}
  		}
 		////////////////////////////////////////////////////////////////
@@ -413,9 +422,17 @@ public class FsmProcess {
 				bufDot.append(" [shape=circle];\n");
 			nbActionsInState = 0;
 			
-			if (! stateList.contains(currentStateName))
-				stateList.add(currentStateName);	
-			
+			if (! fsm.statesNames.contains(currentStateName))
+			{
+				fsm.statesNames.add(currentStateName);	
+				State s=new State();
+				s.name=currentStateName;
+				if (cptStates==1)
+					s.isInit=true;
+				else
+					s.isInit=false;
+				fsm.states.add(s);
+			}
 			// is there some action on this states
 			/*
 			 * int nbChildren= ctx.getChildCount();
