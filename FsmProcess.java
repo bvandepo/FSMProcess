@@ -22,9 +22,187 @@ import java.util.Set;
 public class FsmProcess {
 
 	static StringBuilder bufDot;
+	static StringBuilder bufVhdl;	
 	static ArrayList<String> inputList =new ArrayList<String>() ;
 	static ArrayList<String> outputList =new ArrayList<String>() ;
+	static ArrayList<String> stateList =new ArrayList<String>() ;
+	static int nbTransitions=0;
+	static ArrayList<Transition> transitionList =new ArrayList<Transition>() ;
 	
+	
+	static int cptStates = 0;
+	static int nbActionsInState;
+	static int nbActionsInTransition;
+	static Boolean inState = false; // set to true when inside a state, false  elsewhere
+	static Boolean inTransition = false; // set to true when inside a transistion,false elsewhere
+	static Boolean transitionIsReset=false;
+	static Boolean inAction = false; // set to true when inside an action, false elsewhere
+	static Boolean conditionDefined;
+	static String currentStateName = null;
+	static String actionType;
+	static String actionName;
+	static String actionExpression;
+	static String conditionName;
+	static String inputName;
+	static String fsmName="default";
+	//////////////////////////////////////////////////
+	static public void generateVhdl()
+	{
+	bufVhdl.append("library	ieee;\nuse		ieee.std_logic_1164.all;\nuse		ieee.std_logic_unsigned.all;\nuse		ieee.std_logic_arith.all;\nentity ");
+	bufVhdl.append(fsmName);
+	bufVhdl.append(" is\n	port (\n");
+	bufVhdl.append("		ck,arazb								: in  std_logic;\n");
+	for (int n=0;n<inputList.size();n++)
+		{
+		bufVhdl.append("		");
+		bufVhdl.append(inputList.get(n));
+		bufVhdl.append(": in  std_logic;\n");
+		}
+	for (int n=0;n<outputList.size();n++)
+	{
+	bufVhdl.append("		");
+	bufVhdl.append(outputList.get(n));
+	bufVhdl.append(": out  std_logic");
+	if (n!=outputList.size()-1)
+		bufVhdl.append(";\n");
+	else	
+		bufVhdl.append(");\n");		
+	}
+	
+	bufVhdl.append("end ");	
+	bufVhdl.append(fsmName);
+	bufVhdl.append(";\n\n");
+	bufVhdl.append("architecture a of ");
+	bufVhdl.append(fsmName);
+	bufVhdl.append(" is \n");
+	bufVhdl.append("type fsm_state is (");
+	for (int n=0;n<stateList.size();n++)
+	{
+		//prefix state name with state_
+		bufVhdl.append("state_");
+		bufVhdl.append(stateList.get(n));
+		if (n!=stateList.size()-1)
+			bufVhdl.append(", ");
+	}
+	bufVhdl.append(");\n");
+	bufVhdl.append("signal etat_present, etat_suivant : etat_mae;\n begin");
+	
+	bufVhdl.append("begin\n");
+	bufVhdl.append("process (ck, arazb)\nbegin\n if (arazb='0') then etat_present <=");
+	bufVhdl.append("state_");
+	bufVhdl.append(stateList.get(0));
+	bufVhdl.append(";\n");
+	bufVhdl.append("elsif ck'event and ck='1' then etat_present<=etat_suivant;\n");
+	bufVhdl.append("end if;\n");
+	bufVhdl.append("end process;\n\n");
+	
+	bufVhdl.append("process (etat_present");
+	for (int n=0;n<inputList.size();n++)
+	{
+		bufVhdl.append(", ");
+		bufVhdl.append(inputList.get(n));
+	}
+	bufVhdl.append(")\n begin\n");
+	bufVhdl.append("case etat_present is\n");
+	//pour chaque état, il peut y avoir plusieurs transitions, la première if, les suivantes elsif et finalement en plus le maintien dans l'état courant
+	for (int n=0;n<stateList.size();n++)
+	{
+		bufVhdl.append("when state_");	//prefix state name with state_
+		bufVhdl.append(stateList.get(n));
+
+		if (n==0)
+			bufVhdl.append(" => if ( ");
+		else
+			bufVhdl.append(" elsif ( ");
+				//TODO condition
+		bufVhdl.append(" CONDITION ");
+		bufVhdl.append(" ) then etat_suivant <= state_");
+		bufVhdl.append(" ETAT_SUIVANT ");
+		bufVhdl.append("else			etat_suivant <= state_");
+		bufVhdl.append(stateList.get(n));
+		bufVhdl.append(";\n end if;\n);\n" );
+	}
+
+
+/*
+	when ")et0 => if (c(12)='0') then etat_suivant <=et1;
+				else etat_suivant <=et0;
+				end if;
+	when et1 => if (c(11)='0')  then etat_suivant <=et2;
+				else etat_suivant <=et1;
+				end if;
+	when et2 => if (c(13)='0') then etat_suivant <=et3;
+				else etat_suivant <=et2;
+				end if;
+	when et3 => if (c(9)='0')  then etat_suivant <=et4;
+				else etat_suivant <=et3;
+				end if;
+	when et4 => if (c(10)='0')  then etat_suivant <=et5;
+				else etat_suivant <=et4;
+				end if;		
+	when et5 => if (c(8)='0')  then etat_suivant <=et0;
+				else etat_suivant <=et5;
+				end if;
+				*/
+	bufVhdl.append("when others => etat_suivant <= state_");
+	bufVhdl.append(stateList.get(0));
+	bufVhdl.append(";\nend case;\n end process;\n");
+
+
+
+/*
+	for (int n=0;n<nbTransitions;n++)
+		{
+		bufVhdl.append("		");
+		bufVhdl.append(transitionList.get(n).origin);
+		bufVhdl.append("		");
+		bufVhdl.append(transitionList.get(n).condition);
+		bufVhdl.append("		");
+		bufVhdl.append(transitionList.get(n).destination);
+		bufVhdl.append("		\n");
+		}
+*/
+
+	
+	System.out.println(bufVhdl);
+	}
+/////////////////////////////////////////////////////////////////
+	static class Transition {
+		String origin;
+		String destination;
+		String condition;
+		static ArrayList<Action> attachedActions=new ArrayList<Action>() ;		
+	}
+	static class Action {
+		String type;
+		String name;
+		String expression;
+	}
+	static class Input{
+		String type;
+		String name;
+	}
+	static class Output{
+		String type;
+		String name;
+		Boolean memorized;
+	}
+	static class State{
+		Boolean isInit; //initial state or not
+		String name;
+		static ArrayList<Action> attachedActions=new ArrayList<Action>() ;		
+		static ArrayList<Transition> transitionFromThisState=new ArrayList<Transition>() ;		
+	}
+	static class FiniteStateMachine{
+		String name;
+		static ArrayList<State> states=new ArrayList<State>() ;		
+		static ArrayList<Input> inputs=new ArrayList<Input>() ;		
+		static ArrayList<Output> outputs=new ArrayList<Output>() ;		
+	}
+	/////////////////////////////////////////////////////////////////
+
+	
+	/////////////////////////////////////////////////////////////////
 	static class Graph {
 		// I'm using org.antlr.v4.runtime.misc: OrderedHashSet, MultiMap
 		Set<String> nodes = new OrderedHashSet<String>(); // list of functions
@@ -43,21 +221,7 @@ public class FsmProcess {
 	static class FunctionListener extends FsmBaseListener {
 		Graph graph = new Graph();
 		// String currentFunctionName = null;
-		int cptStates = 0;
-		int nbActionsInState;
-		int nbActionsInTransition;
-		Boolean inState = false; // set to true when inside a state, false  elsewhere
-		Boolean inTransition = false; // set to true when inside a transistion,false elsewhere
-		Boolean transitionIsReset=false;
-		Boolean inAction = false; // set to true when inside an action, false elsewhere
-		Boolean conditionDefined;
-		String currentStateName = null;
-		String actionType;
-		String actionName;
-		String actionExpression;
-		String conditionName;
-		String inputName;
-		String fsmName="default";
+		
 		////////////////////////////////////////////////////////////////
 		public void enterInput(FsmParser.InputContext ctx){
 			inputName = ctx.children.get(0).getText();
@@ -106,6 +270,7 @@ public class FsmProcess {
 				bufDot.append("</TD> </TR>");
 			}
 			bufDot.append("  </TABLE>>  ];\n");	
+			//TODO ajouter une transition à la liste avec org=NULL
 		}
 		////////////////////////////////////////////////////////////////
 		public void  enterCondition(FsmParser.ConditionContext ctx){
@@ -122,6 +287,9 @@ public class FsmProcess {
 		    	if (n!=nbChildren-1)
 		    		conditionName+=" ";
 		    }
+		    
+		    transitionList.get(nbTransitions).condition=conditionName;
+		    
 		}
 		////////////////////////////////////////////////////////////////
 		public 	void exitCondition(FsmParser.ConditionContext ctx){
@@ -133,6 +301,12 @@ public class FsmProcess {
 			conditionDefined=false;
 			conditionName="1"; //default
 			nbActionsInTransition=0;
+			
+			Transition t= new Transition();
+			t.origin=ctx.children.get(0).getText();
+			t.destination=ctx.children.get(2).getText();
+			transitionList.add(t);
+			
 			bufDot.append("    	");
 			bufDot.append(ctx.children.get(0).getText());
 			bufDot.append(" -> ");
@@ -148,6 +322,8 @@ public class FsmProcess {
 				bufDot.append("</TD> </TR>");
 			}
 			bufDot.append("  </TABLE>>  ];\n");
+		 		
+			nbTransitions++;
 		}
 		////////////////////////////////////////////////////////////////
 		public void enterAction_expression(FsmParser.Action_expressionContext ctx) {
@@ -236,6 +412,10 @@ public class FsmProcess {
 			else
 				bufDot.append(" [shape=circle];\n");
 			nbActionsInState = 0;
+			
+			if (! stateList.contains(currentStateName))
+				stateList.add(currentStateName);	
+			
 			// is there some action on this states
 			/*
 			 * int nbChildren= ctx.getChildCount();
@@ -283,7 +463,8 @@ public class FsmProcess {
 
 		ParseTreeWalker walker = new ParseTreeWalker();
 		FunctionListener collector = new FunctionListener();
-
+		bufVhdl = new StringBuilder();
+		
 		bufDot = new StringBuilder();
 		bufDot.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
 		bufDot.append("// Finite State Machine .dot diagram autogenerated by FsmProcess B. VANDEPORTAELE LAAS/CNRS 2016\n");
@@ -301,9 +482,14 @@ public class FsmProcess {
 		// Here's another example that uses StringTemplate to generate output
 		// System.out.println(collector.graph.toST().render());
 
+
+		
 		bufDot.append("}\n");
 		System.out.println(bufDot.toString());
-		
+	
+		generateVhdl();
+		System.out.println(bufVhdl);
+			
 /*
 		System.out.println("Liste des actions");
 		for (int n=0;n<outputList.size();n++)
