@@ -1,5 +1,5 @@
 grammar Fsm;
-file  : line+ ;          //a state machine is many lines
+file  : fsm_name (line)+ ;          //a state machine is many lines, the fsm name is mandatory as the first entry
 
 line : state 
      | transition
@@ -22,6 +22,8 @@ action_id: ID  | NUMBER
    ;
 
 action_expression:  id ( id)*  ;
+
+fsm_name: id;
 
 id : ID  | NUMBER
    ;

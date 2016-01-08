@@ -51,6 +51,15 @@ public class FsmProcess {
 		String actionName;
 		String actionExpression;
 		String conditionName;
+		String fsmName="default";
+		////////////////////////////////////////////////////////////////
+		public void  enterFsm_name(FsmParser.Fsm_nameContext ctx){
+			fsmName=ctx.getText();
+			buf.append("// Finite State Machine Name: ");
+			buf.append(fsmName);
+			buf.append("\n");
+			buf.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
+		}
 		////////////////////////////////////////////////////////////////
 		public void enterReset_transition(FsmParser.Reset_transitionContext ctx)
 		{			
