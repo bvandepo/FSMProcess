@@ -1,0 +1,25 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//Les différents états avec actions sur état
+	0 : R,marche;
+	1 : S,marche:pousse_piece:sens_pousse;
+	2 : pousse_piece;
+	3 ;
+	4 ;
+	5 ;
+	6 : eject_milieu;
+	7 : eject_fin;
+////////////////////////////////////////////////////////////////////////////////////////////////////// 
+//Transitions et actions sur transitions
+	0 -> 1 ?NOT presenceb;
+	1 -> 2 ?NOT p_pieceb;
+	2 -> 3 ?pos_min;
+	3 -> 4 ?NOT p_basse_b;
+	4 -> 5 ?NOT p_haute_b:lance_tempo;
+	5 -> 6 ?NOT fin_tempob;
+	6 -> 0 ?fin_tempob;
+	4 -> 7 ?NOT fin_bdeb;
+	7 -> 0 ? fin_bdeb;
+	  
+//////////////////////////////////////////////////////////////////////////////////////////////////////  
+//Transitions avec état d'origine vide pour reset synchrone, actions sur reset
+

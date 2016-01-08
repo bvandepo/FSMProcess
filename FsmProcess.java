@@ -169,7 +169,7 @@ public class FsmProcess {
 				if (nbActionsInTransition == 1) 
 				{ 
 					buf.append("[");
-					if (transitionIsReset=true)
+					if (transitionIsReset==true)
 						buf.append(" style=\"dashed\", ");
 					buf.append("shape=box, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\"> <TR>   <TD COLSPAN=\"2\">");
 					buf.append(conditionName);
