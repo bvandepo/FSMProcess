@@ -24,7 +24,11 @@ import java.util.Iterator;
 
 
 //TODO: comprendre pourquoi antlr ne genere par le fichier FsmParser.java  mais uniquement le class...
-
+/**
+ * 
+ * @author bvandepo
+ *
+ */
 public class FsmProcess {
 
 	static StringBuilder bufDot;
@@ -208,9 +212,6 @@ if (!fsm.addState("etat3",s0))
 	bufVhdl.append("second essai raté\n ");
 fsm.addState("etat4",s0);
 		 */
-
-
-
 		for (int n=0;n<fsm.hmapInput.size();n++)
 		{
 			bufVhdl.append("		");
@@ -228,7 +229,6 @@ fsm.addState("etat4",s0);
 	else	
 		bufVhdl.append(");\n");		
 	}
-
 	bufVhdl.append("end ");	
 	bufVhdl.append(fsm.name);
 	bufVhdl.append(";\n\n");
@@ -236,7 +236,6 @@ fsm.addState("etat4",s0);
 	bufVhdl.append(fsm.name);
 	bufVhdl.append(" is \n");
 	bufVhdl.append("type fsm_state is (");
-	
 	for (int n=0;n<fsm.states.size();n++)
 	{
 		//prefix state name with state_
@@ -247,7 +246,6 @@ fsm.addState("etat4",s0);
 	}
 	bufVhdl.append(");\n");
 	bufVhdl.append("signal etat_present, etat_suivant : etat_mae;\n");
-
 	bufVhdl.append("begin\n");
 	bufVhdl.append("process (ck, arazb)\nbegin\n    if (arazb='0') then etat_present <=");
 	bufVhdl.append("state_");
@@ -256,7 +254,6 @@ fsm.addState("etat4",s0);
 	bufVhdl.append("    elsif ck'event and ck='1' then etat_present<=etat_suivant;\n");
 	bufVhdl.append("    end if;\n");
 	bufVhdl.append("end process;\n\n");
-
 	bufVhdl.append("process (etat_present");
 	for (int n=0;n<fsm.inputs.size();n++)
 	{
@@ -289,77 +286,181 @@ fsm.addState("etat4",s0);
 			bufVhdl.append("                         else	");
 		bufVhdl.append("etat_suivant <= state_");
 		bufVhdl.append(fsm.states.get(n).name);
-		bufVhdl.append(";\n           end if;\n" );
+		bufVhdl.append(";\n                        end if;\n" );
  	}
 	bufVhdl.append("      when others => etat_suivant <= state_");
 	bufVhdl.append(fsm.states.get(0).name);
 	bufVhdl.append(";\n    end case;\nend process;\n");
-	bufVhdl.append("------------------ NON MEMORIZED OUTPUTS ------------\n"); 
-/*
-	for (int n=0;n<fsm.outputs.size();n++)
+	
+	
+////////////////////////////////////////////////////////////////////:
+//check actions coherence. actions of a given name have to be compatible
+//	either,  I or (R or S) -> then inform output .memorized fiels
+//	         F             -> just store the action, no output
+////////////////////////////////////////////////////////////////////:
+	
+	
+	//TODO: do checking!!!!!
+	int nbActionTotal=fsm.actions.size();
+	for (int k=0;k<nbActionTotal;k++)
 	{
-		String currentOutputName=fsm.outputs.get(n).name;
-		bufVhdl.append("looking for ");	
-		bufVhdl.append(currentOutputName);
-		bufVhdl.append("\n");	
-
-		//look for actions in the fsm that deals with this output
-
-		for (int m=0;m<fsm.states.size();m++)
+		Action a=fsm.actions.get(k);
+		if (!a.type.equals("F")) //don't care about function call, that are not relevant here
 		{
-			bufVhdl.append("in ");	
-			bufVhdl.append(fsm.states.get(m).name);
-			bufVhdl.append("\n");	
-
-
-			//action on state
-//		 	if  ( fsm.states.get(m).attachedActions.actions.size()!=0)
-//			{
-//				// Action a=fsm.states.get(m).attachedActions.getActionFromOutputName(currentOutputName);
-//				 //Action a=fsm.states.get(m).attachedActions.actions.get(0);
-//				Action a=fsm.states.get(m).attachedActions.getActionFromOutputName("toto");
-//				 
-//				 // fsm.states.get(fsm.cptStates-1).attachedActions.actions.add(a);
-//				//						System.out.print("adding :   ");
-//				//	System.out.print(a.name);
-//				//	System.out.print(" action to state :   ");
-//				//	System.out.print(fsm.states.get(fsm.cptStates-1).name);
-//				//	System.out.print(" \n"); 
-//				 
-//				if (a!=null)
-//				{
-//					bufVhdl.append("TROUVE\n");	
-//				}
-//				 else
-//					{
-//						bufVhdl.append("PAS TROUVE\n");	
-//					}		 
-//			}
-//			else
-//			{
-//				bufVhdl.append("PAS d'action sur cet état\n");	
-//			}
-//			 
-			//action on transition
+			Output out=fsm.getOutputFromName(a.name);
+			//is it the first time this  output is encountered?
+			if (out.type==null)
+			{
+				out.type=a.type;
+				if (a.type.equals("I"))
+						out.memorized=false;
+				else if ( (a.type.equals("R")) || (a.type.equals("S")) )
+						out.memorized=true;
+			}
+			else //check that the action is compatible with the output
+			{
+				if (        ( (a.type.equals("R") || (a.type.equals("S")) && !out.memorized)
+						||	( (a.type.equals("I"))   && out.memorized) ) )
+						{
+					//TODO: display an explicit error
+					bufVhdl.append(" INCOMPATIBLE!!!!!   ");	
+					bufVhdl.append(a.name);
+					bufVhdl.append(" \n");
+						}
+			}
 		}
-//	bufVhdl.append("  <= \'1\' when ");
-//	fsm.outputs 
-
-
-	bufVhdl.append("else ");
-
-
-		bufVhdl.append("0; \n");		
-	}
-
-	/*
-	 ts <= (others => '1') when present = et0 or present = et2 or present = et4 else
-		(others => '0');
+		/*bufVhdl.append(" action:   ");	
+		bufVhdl.append(a.name);
+		bufVhdl.append("   type: ");	
+		bufVhdl.append(a.type);
+		bufVhdl.append("   expression: ");	
+		bufVhdl.append(a.expression);
+		bufVhdl.append("   \n");	
 		 */
+	}
+	
+	
+	
+	
+	bufVhdl.append("------------------ NON MEMORIZED OUTPUTS ------------\n"); 
 
-		bufVhdl.append("------------------ MEMORIZED OUTPUTS ------------\n"); 
+	for (int n=0;n<fsm.outputs.size();n++)
+		if (!fsm.outputs.get(n).memorized)
+		{
+			String currentOutputName=fsm.outputs.get(n).name;
+			bufVhdl.append("    ");	
+			bufVhdl.append(currentOutputName);
+			bufVhdl.append("  <=  ");
+			//look for actions in the fsm that deals with this output
+			for (int m=0;m<fsm.states.size();m++)
+			{
+				//////////////////////action on state//////////////////////
+				int nbActionInThatState=fsm.states.get(m).attachedActions.size();
+				if  ( nbActionInThatState!=0)
+				{
+					for(int l=0;l<nbActionInThatState;l++)
+					{
+						Action a=fsm.states.get(m).attachedActions.get(l);
+						if (a!=null)
+						{
+							if (a.name.equals(currentOutputName))
+							{
+							 	bufVhdl.append(" '1' when ( (etat_present = ");
+								bufVhdl.append("state_");
+								bufVhdl.append(fsm.states.get(m).name); 
+								bufVhdl.append(") ");
+								if (!a.expression.equals("")) 
+									{  //if there is an expression
+									bufVhdl.append(" and ( ( ");
+									bufVhdl.append(a.expression);
+									bufVhdl.append(" ) = '1' )");
+									}
+								bufVhdl.append(")   else \n            ");
+							}
+						}
+					}
+				}
+				//////////////////////action on transition from this state//////////////////////
+				int nbTransitionInThatState=fsm.states.get(m).transitionsFromThisState.size();
+				for (int j=0;j<nbTransitionInThatState;j++)
+				{
+					Transition t=fsm.states.get(m).transitionsFromThisState.get(j);
+					int nbActionInThatTransition=t.attachedActions.size();
+					if  ( nbActionInThatTransition!=0)
+					{
+						for(int l=0;l<nbActionInThatTransition;l++)
+						{
+							Action a=t.attachedActions.get(l);
+							if (a!=null)
+							{
+								if (a.name.equals(currentOutputName))
+								{
+								 	bufVhdl.append(" '1' when ( (etat_present = ");
+									bufVhdl.append("state_");
+									bufVhdl.append(fsm.states.get(m).name);
+									bufVhdl.append(") ");
+									bufVhdl.append(" and  ( ");
+									bufVhdl.append(t.condition);
+									bufVhdl.append(") = \'1\' )");
 
-		System.out.println(bufVhdl);
+									if (!a.expression.equals("")) 
+										{  //if there is an expression
+										bufVhdl.append(" and ( ( ");
+										bufVhdl.append(a.expression);
+										bufVhdl.append(" ) = '1' )");
+										}
+									bufVhdl.append(")  else \n            ");
+								}
+							}
+						}
+					}
+				}
+			}
+			//////////////////////action on reset transition from any state//////////////////////
+			int nbResetTransition=fsm.resetTransitions.size();
+			for (int j=0;j<nbResetTransition;j++)
+			{
+				ResetTransition rt=fsm.resetTransitions.get(j);
+				int nbActionInThatResetTransition=rt.attachedActions.size();
+				if  ( nbActionInThatResetTransition!=0)
+				{
+					for(int l=0;l<nbActionInThatResetTransition;l++)
+					{
+						Action a=rt.attachedActions.get(l);
+						if (a!=null)
+						{
+							if (a.name.equals(currentOutputName))
+							{
+								bufVhdl.append(" '1' when ( ( ");
+								bufVhdl.append(rt.condition);
+								bufVhdl.append(") = \'1\' )");
+								if (!a.expression.equals("")) 
+								{  //if there is an expression
+									bufVhdl.append(" and ( ( ");
+									bufVhdl.append(a.expression);
+									bufVhdl.append(" ) = '1' )");
+								}
+								bufVhdl.append(")   else  \n            ");
+							}
+						}
+					}
+				}
+			}
+			bufVhdl.append("\'0\'; \n");		
+		}
+	bufVhdl.append("------------------ MEMORIZED OUTPUTS ------------\n"); 
+/*
+	process (ck, arazb)
+	begin
+	    if (arazb='0') then etat_present <=state_0;
+	    elsif ck'event and ck='1' then etat_present<=etat_suivant;
+	    end if;
+	end process;
+*/
+	
+	
+	
+	System.out.println(bufVhdl);
 	}
 	/////////////////////////////////////////////////////////////////
 	static class ResetTransition {
@@ -375,7 +476,7 @@ fsm.addState("etat4",s0);
 	}
 	////////////////////////////////////////////////////////////////////
 	static class Action {
-		String type;
+		String type;  // I, R, S, F
 		String name;
 		String expression;
 	}
@@ -400,47 +501,6 @@ fsm.addState("etat4",s0);
 		//static ArrayList<Transition> transitionFromThisState=new ArrayList<Transition>() ;		
 		ArrayList<Transition>  transitionsFromThisState=new ArrayList<Transition>() ;	
 	}
-	////////////////////////////////////////////////////////////////////
-	/*static class TransitionList{
-		ArrayList<Transition> transitions=new ArrayList<Transition>() ;		
-	}
-	////////////////////////////////////////////////////////////////////
-	static class ActionList{
-		ArrayList<Action> actions=new ArrayList<Action>() ;		
-		Action getActionFromOutputName(String outputNameToFind)
-		{
-			//for (int n=0;n<actions.size();n++)
-			//	if (actions.get(n).name.equals(outputNameToFind))
-			//		return actions.get(n);
-
-			return null;
-		}
-	}*/
-	////////////////////////////////////////////////////////////////////
-	/*	static class StatesList{
-		ArrayList<State> states=new ArrayList<State>() ;	
-	}
-////////////////////////////////////////////////////////////////////
-	static class InputsList{
-		ArrayList<Input> inputs=new ArrayList<Input>() ;	
-		Boolean containsName(String name)
-		{
-			for (int n=0;n<inputs.size();n++)
-				if (inputs.get(n).name.equals(name))
-					return true;
-			return false;
-		}
-
-	}
-////////////////////////////////////////////////////////////////////
-	static class OutputsList{
-		ArrayList<Output> outputs=new ArrayList<Output>() ;	
-	}
-////////////////////////////////////////////////////////////////////
-	static class TransitionsList{
-		ArrayList<Transition> transitions=new ArrayList<Transition>() ;	
-	}
-	 */
 	////////////////////////////////////////////////////////////////////	
 	//	doc de ArrayList : 	http://imss-www.upmf-grenoble.fr/prevert/Prog/Java/Conteneurs/ArrayList.html
 	//  et 	https://openclassrooms.com/courses/apprenez-a-programmer-en-java/les-collections-d-objets
@@ -470,6 +530,13 @@ fsm.addState("etat4",s0);
 		ArrayList<Transition> transitions=new ArrayList<Transition>() ;
 		HashMap<String,Transition > hmapTransition = new HashMap<String,Transition>();
 
+		
+		ArrayList<Action> actions=new ArrayList<Action>() ; //global actions list
+		//on stocke juste la liste pour pouvoir balayer et verifier les compatibilités, pas besoin de hashtable
+		//	HashMap<String,Transition > hmapTransition = new HashMap<String,Transition>();
+
+		
+		
 		//member variables for parsing
 		public static State currentState = null;
 		public static Action currentAction= null;
@@ -584,11 +651,6 @@ fsm.addState("etat4",s0);
 			Input i=new Input();
 			i.name=ctx.children.get(0).getText() ;
 			fsm.addInput(ctx.children.get(0).getText(), i);
-			//TODO:	
-			/*
-		 	if (! fsm.inputs.containsName(fsm.inputName))
-				fsm.inputs.add(fsm.inputName);			
-			 */
 		}
 		////////////////////////////////////////////////////////////////
 		public void  enterFsm_name(FsmParser.Fsm_nameContext ctx){
@@ -619,8 +681,6 @@ fsm.addState("etat4",s0);
 				fsm.currentResetTransition.condition=reconstructedCondition;
 			else
 				fsm.currentTransition.condition=reconstructedCondition;
-			//TODO:
-			//fsm.transitions.get(fsm.transitions.size()-1).condition=fsm.conditionName;
 		} 
 		////////////////////////////////////////////////////////////////
 		public void enterTransition(FsmParser.TransitionContext ctx) {
@@ -640,22 +700,29 @@ fsm.addState("etat4",s0);
 		}
 		////////////////////////////////////////////////////////////////
 		public void enterAction_expression(FsmParser.Action_expressionContext ctx) {
-			fsm.currentAction.expression = ctx.children.get(0).getText();
-			//TODO: IL FAUT COMPLETER CAR ICI JE NE GERE QUE LE 1° TERME...
+			String reconstructedExpression=new String("");
+			int nbChildren= ctx.getChildCount();
+			for (int n=0;n<nbChildren;n++) //reconstruct the condition, adding space characters between terms.
+			{
+				reconstructedExpression+=ctx.children.get(n).getText();
+				if (n!=nbChildren-1)
+					reconstructedExpression+=" ";
+			}
+			fsm.currentAction.expression =  reconstructedExpression;			
+			//TODO: IL FAUT COMPLETER CAR ICI JE NE GERE QUE LE 1° TERME... done?
 		}	
 		////////////////////////////////////////////////////////////////
 		public void enterAction_id(FsmParser.Action_idContext ctx) { 
 			fsm.currentAction.name = ctx.children.get(0).getText();
-			
 			Output o=new Output();
+			//TODO: deal with memorized outputs if R or S
+			
+		    o.memorized=null; //default, will be defined later in the analysis
 			o.name=ctx.children.get(0).getText() ;
 			//TODO: mettre les autres champs de o, peut être le faire ailleurs
+			//TODO; gérer i l'action existe déjà, et/ou si le type d'action est incompatible 
+			// ex: I puis R ou S
 			fsm.addOutput(ctx.children.get(0).getText(), o);
-			
-			//TODO:
-			/*				if (! fsm.outputs.containsName(fsm.actionName))
-					fsm.outputs.add(fsm.actionName);
-			 */
 		}
 		////////////////////////////////////////////////////////////////
 		public void enterAction_type(FsmParser.Action_typeContext ctx) {
@@ -672,6 +739,7 @@ fsm.addState("etat4",s0);
 				fsm.currentTransition.attachedActions.add(a);
 			else
 				fsm.currentResetTransition.attachedActions.add(a);
+			fsm.actions.add(a); //add to the global action list
 		}
 		////////////////////////////////////////////////////////////////
 		public void enterState_action(FsmParser.State_actionContext ctx) {
@@ -681,6 +749,7 @@ fsm.addState("etat4",s0);
 			a.name=""; // default value if not specified 
 			a.expression=""; // default value if not specified 
 			fsm.currentState.attachedActions.add(a); 
+			fsm.actions.add(a);//add to the global action list
 		}
 		////////////////////////////////////////////////////////////////
 		public void enterState(FsmParser.StateContext ctx) {
@@ -690,11 +759,11 @@ fsm.addState("etat4",s0);
 				s.isInit=true;
 			else
 				s.isInit=false;
-			fsm.addState(s.name,s);
-			//fsm.states.add(s); 
+			if (!fsm.addState(s.name,s))
+			{
+				//TODO: error: state already exists
+			} 
 			fsm.currentState=s;
-			//TODO:	
-			//	if (! fsm.states.containsName(fsm.currentState.name))
 		}
 		/////////////////////////////////////////////////////////////////
 	}
