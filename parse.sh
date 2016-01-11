@@ -30,3 +30,5 @@ fi
 echo ----------------------DISPLAY THE VHDL FILE----------------------
 cat $vhdfile
 
+cp $vhdfile testghdl/src/
+
