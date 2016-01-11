@@ -6,14 +6,16 @@ line : state
      | reset_transition
      ;
 
-state   :  id (':' action)* ';'   ;         	//state (with  action(s))
+state   :  id (':' state_action)* ';'   ;         	//state (with  action(s))
 
-action :  (action_type ',')? action_id ('=' action_expression)? ;
+
+state_action :  (action_type ',')? action_id ('=' action_expression)? ;
+transition_action :  (action_type ',')? action_id ('=' action_expression)? ;
  
 action_type : 'R' | 'S' | 'I' | 'F';
 
-transition   	  :  id '->' id ('?' condition)? (':' action)* ';'   ;         	//transition (with  action(s)) 
-reset_transition  :   '->' id ('?' condition)? (':' action)* ';'   ;         	//transition (with  action(s)) 
+transition   	  :  id '->' id ('?' condition)? (':' transition_action)* ';'   ;         	//transition (with  action(s)) 
+reset_transition  :   '->' id ('?' condition)? (':' transition_action)* ';'   ;         	//transition (with  action(s)) 
 
 
 condition :  element ( element)*  ;
