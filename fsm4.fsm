@@ -1,28 +1,29 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //Nom de la machine à état= nom du fichier sans l'extension
 //Les différents états avec actions sur état
-	1 :R,sortie4=IN2 and IN1;
- 	2 : I,sortie2=IN1:
-            sortie3:
-            S,sortie4=IN2;
-	3 :I,sortie3:
-            R,sortie4=IN1;
+	0;
+	1 : b0;
+	2 : b1;
+        3 : b0:b1;
+        4 : b2;
+        5 : b2:b0;
+        6 : b2:b1;
+        7 : b2:b1:b0;
+        8 : b3;
 ////////////////////////////////////////////////////////////////////////////////////////////////////// 
 //Transitions et actions sur transitions
-	1 -> 2 ?NOT IN3: R, sortie5=entree3;
-	2 -> 1 ?IN2; 
-	3 -> 2 ?NOT IN4: S, sortie5=entree4;
-	2 -> 3 ?IN5;
- 	3 -> 1 ?IN2:I,sortie1:
-  	            I,sortie2=IN2 and not IN4:
-		    S,sortie4=IN3;
+	0 -> 1 ?EN;
+	1 -> 2 ?EN;
+	2 -> 3 ?EN;
+	3 -> 4 ?EN;
+	4 -> 5 ?EN;
+	5 -> 6 ?EN;
+	6 -> 7 ?EN;
+	7 -> 8 ?EN;
+	8 -> 0 ?EN:S,FINI;
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Transitions avec état d'origine vide pour reset synchrone, actions sur reset
- 	->2 ?SRESET AND IN4: S,sortie4=IN1:
-                             I, sortie2=IN2;
- 	->3 ?SRESET AND NOT IN2: I,sortie2:
-                                R,sortie5=entree2;
-
+ 	->0 ?SRESET: R,FINI;
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Transitions avec état d'origine vide pour reset synchrone, actions sur reset
 

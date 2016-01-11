@@ -192,7 +192,11 @@ public class FsmProcess {
 	{
 		//TODO: check if all states have a transition to them, only the initial state can have no transition to it
 		//check if inputs/outputs names are allowed, "in" and "out" are forbidden as they are reserved keyword of vhdl
+		//check doublons of actions, or states etc...
 		
+		//TODO: add variable bus size to inputs and outputs in the grammar... hard...
+		
+		//TODO: add to the model some always true action (no state or transition dependency, can be useful for reseting an AMAZE at any time for instance 
 		Boolean modelOk=true;
 		////////////////////////////////////////////////////////////////////:
 		//check actions coherence. actions of a given name have to be compatible
@@ -431,17 +435,20 @@ public class FsmProcess {
 								{
 									if (a.name.equals(currentOutputName) && a.type.equals(typeFilter))
 									{
-										bufVhdl.append(" '1' when ( (etat_present = ");
+										 if (!a.expression.equals("")) 
+										{  //if there is an expression
+											bufVhdl.append(" ( ");
+											bufVhdl.append(a.expression);
+											bufVhdl.append(" ) ");
+										}
+										else
+										{
+											bufVhdl.append(" '1' ");	
+										}
+										bufVhdl.append("when ( (etat_present = ");
 										bufVhdl.append("state_");
 										bufVhdl.append(fsm.states.get(m).name); 
 										bufVhdl.append(") ");
-										//TODO:  use the expression to affect a value to the output instead of '1', and remove it from the condition
-										if (!a.expression.equals("")) 
-										{  //if there is an expression
-											bufVhdl.append(" and ( ( ");
-											bufVhdl.append(a.expression);
-											bufVhdl.append(" ) = '1' )");
-										}
 										bufVhdl.append(")   else \n            ");
 									}
 								}
@@ -462,20 +469,23 @@ public class FsmProcess {
 									{
 										if (a.name.equals(currentOutputName))
 										{
-											bufVhdl.append(" '1' when ( (etat_present = ");
+											if (!a.expression.equals("")) 
+											{  //if there is an expression
+												bufVhdl.append(" ( ");
+												bufVhdl.append(a.expression);
+												bufVhdl.append(" ) ");
+											}
+											else
+											{
+												bufVhdl.append(" '1' ");	
+											}
+											bufVhdl.append("when ( (etat_present = ");
 											bufVhdl.append("state_");
 											bufVhdl.append(fsm.states.get(m).name);
 											bufVhdl.append(") ");
-											bufVhdl.append(" and  ( ");
+											bufVhdl.append(" and  ( ( ");
 											bufVhdl.append(t.condition);
 											bufVhdl.append(") = \'1\' )");
-
-											if (!a.expression.equals("")) 
-											{  //if there is an expression
-												bufVhdl.append(" and ( ( ");
-												bufVhdl.append(a.expression);
-												bufVhdl.append(" ) = '1' )");
-											}
 											bufVhdl.append(")  else \n            ");
 										}
 									}
@@ -498,16 +508,20 @@ public class FsmProcess {
 								{
 									if (a.name.equals(currentOutputName))
 									{
-										bufVhdl.append(" '1' when ( ( ");
-										bufVhdl.append(rt.condition);
-										bufVhdl.append(") = \'1\' )");
 										if (!a.expression.equals("")) 
 										{  //if there is an expression
-											bufVhdl.append(" and ( ( ");
+											bufVhdl.append(" ( ");
 											bufVhdl.append(a.expression);
-											bufVhdl.append(" ) = '1' )");
+											bufVhdl.append(" ) ");
 										}
-										bufVhdl.append(")   else  \n            ");
+										else
+										{
+											bufVhdl.append(" '1' ");	
+										}
+										bufVhdl.append("when ( ( ");
+										bufVhdl.append(rt.condition);
+										bufVhdl.append(") = \'1\' )");
+										bufVhdl.append("   else  \n            ");
 									}
 								}
 							}
