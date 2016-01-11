@@ -190,6 +190,9 @@ public class FsmProcess {
 	//////////////////////////////////////////////////
 	static public Boolean checkModel()
 	{
+		//TODO: check if all states have a transition to them, only the initial state can have no transition to it
+		//check if inputs/outputs names are allowed, "in" and "out" are forbidden as they are reserved keyword of vhdl
+		
 		Boolean modelOk=true;
 		////////////////////////////////////////////////////////////////////:
 		//check actions coherence. actions of a given name have to be compatible
@@ -235,6 +238,12 @@ public class FsmProcess {
 		}	
 		return modelOk;
 	}
+	//////////////////////////////////////////////////////////////////////////////////////
+	static public void generateVhdlTestBench()
+	{
+		//TODO:generateVhdlTestBench()
+	}
+	//////////////////////////////////////////////////////////////////////////////////////
 	static public void generateVhdl()
 	{
 		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
@@ -278,7 +287,7 @@ public class FsmProcess {
 				bufVhdl.append(", ");
 		}
 		bufVhdl.append(");\n");
-		bufVhdl.append("signal etat_present, etat_suivant : etat_mae;\n");
+		bufVhdl.append("signal etat_present, etat_suivant : fsm_state;\n");
 		//////////////////listing of internal signals for memorized outputs////////////////// 
 		for (int n=0;n<fsm.outputs.size();n++)
 		{
@@ -327,7 +336,7 @@ public class FsmProcess {
 				else
 					bufVhdl.append("                         elsif ( ");
 				bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
-				bufVhdl.append(" ) then etat_suivant <= state_");
+				bufVhdl.append(" ='1' ) then etat_suivant <= state_");
 				bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
 				bufVhdl.append(";\n");
 			}
@@ -335,7 +344,9 @@ public class FsmProcess {
 				bufVhdl.append("                         else	");
 			bufVhdl.append("etat_suivant <= state_");
 			bufVhdl.append(fsm.states.get(n).name);
-			bufVhdl.append(";\n                        end if;\n" );
+			bufVhdl.append(";\n" );
+			if (transitionFromThisStateNumber!=0)
+				bufVhdl.append("                        end if;\n" );
 		}
 		bufVhdl.append("      when others => etat_suivant <= state_");
 		bufVhdl.append(fsm.states.get(0).name);
@@ -424,6 +435,7 @@ public class FsmProcess {
 										bufVhdl.append("state_");
 										bufVhdl.append(fsm.states.get(m).name); 
 										bufVhdl.append(") ");
+										//TODO:  use the expression to affect a value to the output instead of '1', and remove it from the condition
 										if (!a.expression.equals("")) 
 										{  //if there is an expression
 											bufVhdl.append(" and ( ( ");
