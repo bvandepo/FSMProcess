@@ -1,9 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-//Nom de la machine à état
-	test1
+//Nom de la machine à état= nom du fichier sans l'extension
 //Les différents états avec actions sur état
-	1 :sortie4;
- 	2 :I,sortie3:S,sortie4=IN2;
+	1 :R,sortie4=IN2 and IN;
+ 	2 :sortie3:S,sortie4=IN2;
 	3 :I,sortie3:R,sortie4=IN;
 ////////////////////////////////////////////////////////////////////////////////////////////////////// 
 //Transitions et actions sur transitions
@@ -11,7 +10,7 @@
 	1 -> 3 ?IN; 
 	3 -> 2 ?NOT IN;
 	2 -> 3 ?IN;
-	3 -> 1 ?IN:I,sortie1:S,sortie2;
+	3 -> 1 ?IN:I,sortie1:I,sortie2=IN2 and not IN:S,sortie4=IN3;
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Transitions avec état d'origine vide pour reset synchrone, actions sur reset
 	->2 ?SRESET AND IN;
