@@ -189,17 +189,12 @@ s2.isInit=false;
 s0.name="0";
 s1.name="1";
 s2.name="2";
-
 fsm.hmapState.put("etat0",s0);
 fsm.hmapState.put("etat2",s2);
 fsm.hmapState.put("etat1",s1);
-
-
 bufVhdl.append("nb elements: ");
 bufVhdl.append(fsm.hmapState.size());
-
 bufVhdl.append("\n");
-
 State s=fsm.getStateFromName("etat0");
 if (s!=null)
 	{
@@ -207,13 +202,10 @@ if (s!=null)
 	bufVhdl.append(s.isInit);
 	bufVhdl.append("\n");
 	}
-
 if (!fsm.addState("etat3",s0))
 	bufVhdl.append("premier essai raté\n ");
-
 if (!fsm.addState("etat3",s0))
 	bufVhdl.append("second essai raté\n ");
-
 fsm.addState("etat4",s0);
 		 */
 
@@ -225,13 +217,13 @@ fsm.addState("etat4",s0);
 			bufVhdl.append(fsm.inputs.get(n).name);
 			bufVhdl.append(": in  std_logic;\n");
 		}
-		/*
-	for (int n=0;n<fsm.outputsNames.size();n++)
+	 
+	for (int n=0;n<fsm.hmapOutput.size();n++)
 	{
 	bufVhdl.append("		");
-	bufVhdl.append(fsm.outputsNames.get(n));
+	bufVhdl.append(fsm.outputs.get(n).name);
 	bufVhdl.append(": out  std_logic");
-	if (n!=fsm.outputsNames.size()-1)
+	if (n!=fsm.hmapOutput.size()-1)
 		bufVhdl.append(";\n");
 	else	
 		bufVhdl.append(");\n");		
@@ -244,12 +236,13 @@ fsm.addState("etat4",s0);
 	bufVhdl.append(fsm.name);
 	bufVhdl.append(" is \n");
 	bufVhdl.append("type fsm_state is (");
-	for (int n=0;n<fsm.statesNames.size();n++)
+	
+	for (int n=0;n<fsm.states.size();n++)
 	{
 		//prefix state name with state_
 		bufVhdl.append("state_");
-		bufVhdl.append(fsm.statesNames.get(n));
-		if (n!=fsm.statesNames.size()-1)
+		bufVhdl.append(fsm.states.get(n).name);
+		if (n!=fsm.states.size()-1)
 			bufVhdl.append(", ");
 	}
 	bufVhdl.append(");\n");
@@ -258,66 +251,64 @@ fsm.addState("etat4",s0);
 	bufVhdl.append("begin\n");
 	bufVhdl.append("process (ck, arazb)\nbegin\n    if (arazb='0') then etat_present <=");
 	bufVhdl.append("state_");
-	bufVhdl.append(fsm.statesNames.get(0));
+	bufVhdl.append(fsm.states.get(0).name);
 	bufVhdl.append(";\n");
 	bufVhdl.append("    elsif ck'event and ck='1' then etat_present<=etat_suivant;\n");
 	bufVhdl.append("    end if;\n");
 	bufVhdl.append("end process;\n\n");
 
 	bufVhdl.append("process (etat_present");
-	for (int n=0;n<fsm.inputsNames.size();n++)
+	for (int n=0;n<fsm.inputs.size();n++)
 	{
 		bufVhdl.append(", ");
-		bufVhdl.append(fsm.inputsNames.get(n));
+		bufVhdl.append(fsm.inputs.get(n).name);
 	}
 	bufVhdl.append(")\nbegin\n");
 	bufVhdl.append("    case etat_present is\n");
 	//pour chaque état, il peut y avoir plusieurs transitions, la première if, les suivantes elsif et finalement en plus le maintien dans l'état courant
-	for (int n=0;n<fsm.statesNames.size();n++)
+	int numberOfStates=fsm.states.size();
+	for (int n=0;n<numberOfStates;n++)
  	{
 		bufVhdl.append("      when state_");	//prefix state name with state_
-		bufVhdl.append(fsm.statesNames.get(n));
-
-		int transitionFromThisStateNumber=0;
-		for (int m=0;m<fsm.transitions.size();m++)
+		bufVhdl.append(fsm.states.get(n).name);
+		int transitionFromThisStateNumber=fsm.states.get(n).transitionsFromThisState.size();
+		bufVhdl.append(" => ");
+		//if (transitionFromThisStateNumber==0) //stay always in that state
+		for (int m=0;m<transitionFromThisStateNumber;m++)
 		{
-			if (fsm.transitions.get(m).origin.equals(fsm.statesNames.get(n))) //is it a transition from this state
-			{
-				transitionFromThisStateNumber++;
-				if (transitionFromThisStateNumber==1)
-					bufVhdl.append(" => if ( ");
-				else
-					bufVhdl.append("                   elsif ( ");
-				bufVhdl.append(fsm.transitions.get(m).condition);
-				bufVhdl.append(" ) then etat_suivant <= state_");
-				bufVhdl.append(fsm.transitions.get(m).destination);
-				bufVhdl.append(";\n");
-			}
+			if (m==0)
+				bufVhdl.append("   if ( ");
+			else
+				bufVhdl.append("                         elsif ( ");
+			bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
+			bufVhdl.append(" ) then etat_suivant <= state_");
+			bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
+			bufVhdl.append(";\n");
 		}
 		if (transitionFromThisStateNumber!=0)
-			bufVhdl.append("                     else	");
+			bufVhdl.append("                         else	");
 		bufVhdl.append("etat_suivant <= state_");
-		bufVhdl.append(fsm.statesNames.get(n));
+		bufVhdl.append(fsm.states.get(n).name);
 		bufVhdl.append(";\n           end if;\n" );
-	}
+ 	}
 	bufVhdl.append("      when others => etat_suivant <= state_");
-	bufVhdl.append(fsm.statesNames.get(0));
+	bufVhdl.append(fsm.states.get(0).name);
 	bufVhdl.append(";\n    end case;\nend process;\n");
 	bufVhdl.append("------------------ NON MEMORIZED OUTPUTS ------------\n"); 
-
-	for (int n=0;n<fsm.outputsNames.size();n++)
+/*
+	for (int n=0;n<fsm.outputs.size();n++)
 	{
-		String currentOutputName=fsm.outputsNames.get(n);
+		String currentOutputName=fsm.outputs.get(n).name;
 		bufVhdl.append("looking for ");	
 		bufVhdl.append(currentOutputName);
 		bufVhdl.append("\n");	
 
 		//look for actions in the fsm that deals with this output
 
-		for (int m=0;m<fsm.statesNames.size();m++)
+		for (int m=0;m<fsm.states.size();m++)
 		{
 			bufVhdl.append("in ");	
-			bufVhdl.append(fsm.statesNames.get(m));
+			bufVhdl.append(fsm.states.get(m).name);
 			bufVhdl.append("\n");	
 
 
@@ -639,7 +630,13 @@ fsm.addState("etat4",s0);
 			fsm.currentTransition=t;
 			t.origin=ctx.children.get(0).getText();
 			t.destination=ctx.children.get(2).getText(); 
-			fsm.currentState.transitionsFromThisState.add(t);
+			//add the transition in its origin state, first get the state from its name
+			if (fsm.hmapState.get(t.origin)!=null) //the state exists
+				fsm.hmapState.get(t.origin).transitionsFromThisState.add(t);
+			else
+			{
+				//TODO: deal with this error
+			}
 		}
 		////////////////////////////////////////////////////////////////
 		public void enterAction_expression(FsmParser.Action_expressionContext ctx) {
@@ -649,6 +646,12 @@ fsm.addState("etat4",s0);
 		////////////////////////////////////////////////////////////////
 		public void enterAction_id(FsmParser.Action_idContext ctx) { 
 			fsm.currentAction.name = ctx.children.get(0).getText();
+			
+			Output o=new Output();
+			o.name=ctx.children.get(0).getText() ;
+			//TODO: mettre les autres champs de o, peut être le faire ailleurs
+			fsm.addOutput(ctx.children.get(0).getText(), o);
+			
 			//TODO:
 			/*				if (! fsm.outputs.containsName(fsm.actionName))
 					fsm.outputs.add(fsm.actionName);
@@ -687,7 +690,8 @@ fsm.addState("etat4",s0);
 				s.isInit=true;
 			else
 				s.isInit=false;
-			fsm.states.add(s); 
+			fsm.addState(s.name,s);
+			//fsm.states.add(s); 
 			fsm.currentState=s;
 			//TODO:	
 			//	if (! fsm.states.containsName(fsm.currentState.name))
@@ -729,11 +733,11 @@ fsm.addState("etat4",s0);
 		// System.out.println(collector.graph.toST().render());
 
 
-		generateDot();
-		System.out.println(bufDot.toString());
+ 		generateDot();
+ 		System.out.println(bufDot.toString());
 
-		//generateVhdl();
-		//System.out.println(bufVhdl);
+		 generateVhdl();
+		 System.out.println(bufVhdl);
 
 		/*
 		System.out.println("Liste des actions");
