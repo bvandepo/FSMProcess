@@ -50,6 +50,29 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////
+	static public void GenerateDotForAction(Action a) {
+		bufDot.append("    	    	<TR><TD>");
+		bufDot.append(a.type);
+		if (!a.expression.equals("")) {
+			if (!(a.type.equals("S") || a.type.equals("R"))) {
+				bufDot.append("</TD><TD COLSPAN=\"2\">");
+				bufDot.append(a.name);
+				bufDot.append("=");
+				bufDot.append(a.expression);
+			} else {
+				bufDot.append("</TD><TD >");
+				bufDot.append(a.name);
+				bufDot.append("</TD><TD >");
+				bufDot.append(a.expression);
+			}
+		} else {
+			bufDot.append("</TD><TD COLSPAN=\"2\">");
+			bufDot.append(a.name);
+		}
+		bufDot.append("</TD> </TR>\n");
+	}
+
+	// ////////////////////////////////////////////////
 	static public void generateDot() {
 		// TODO: pour les actions R et S, faire 3 colones plutot que d'afficher
 		// le = entre le nom de la sortie et la condition !!!!!!!!!!!!!!
@@ -83,31 +106,10 @@ public class FsmProcess {
 				bufDot.append("    	//Action on state:\n");
 				bufDot.append("    	stateaction");
 				bufDot.append(fsm.states.get(n).name);
-			
 				bufDot.append("  [shape=box,label=  ");
 				bufDot.append(" <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
-				for (int m = 0; m < nbAttachedActions; m++) {
-					bufDot.append("    	    	<TR><TD>");
-					Action a = fsm.states.get(n).attachedActions.get(m);
-					bufDot.append(a.type);
-						if (!a.expression.equals("")) {
-						if (!(a.type.equals("S") || a.type.equals("R"))) {
-							bufDot.append("</TD><TD COLSPAN=\"2\">");
-							bufDot.append(a.name);
-							bufDot.append("=");
-							bufDot.append(a.expression);
-						} else {
-							bufDot.append("</TD><TD >");
-							bufDot.append(a.name);
-							bufDot.append("</TD><TD >");
-							bufDot.append(a.expression);
-						}
-					} else {
-						bufDot.append("</TD><TD COLSPAN=\"2\">");
-						bufDot.append(a.name);
-					}
-					bufDot.append("</TD> </TR>\n");
-				}
+				for (int m = 0; m < nbAttachedActions; m++)
+					GenerateDotForAction(fsm.states.get(n).attachedActions.get(m));
 				bufDot.append("    	    	</TABLE>>  ];\n");
 				bufDot.append("    	//attach the action on the state\n    	");
 				bufDot.append(fsm.states.get(n).name);
@@ -115,7 +117,6 @@ public class FsmProcess {
 				bufDot.append("stateaction");
 				bufDot.append(fsm.states.get(n).name);
 				bufDot.append("  [arrowhead=none, len=0.01,weight=100 ]     ;\n"); // weight:
-																					// http://www.graphviz.org/content/attrs#dweight
 			}
 		}
 		bufDot.append("//////////////////display  transitions//////////////////\n");
@@ -132,29 +133,17 @@ public class FsmProcess {
 					bufDot.append("    	    	<TR><TD COLSPAN=\"");
 					int nbActionsInTransitions = t.attachedActions.size();
 					if (nbActionsInTransitions == 0)
-						bufDot.append("1");
-					else
 						bufDot.append("2");
+					else
+						bufDot.append("3");
 					bufDot.append("\">");
 					bufDot.append(t.condition);
 					bufDot.append("</TD> </TR>\n");
-					for (int l = 0; l < nbActionsInTransitions; l++) {
-						bufDot.append("    	    	<TR><TD>");
-						bufDot.append(t.attachedActions.get(l).type);
-						bufDot.append("</TD><TD>");
-						bufDot.append(t.attachedActions.get(l).name);
-						if (t.attachedActions.size() != 0)
-							if (!t.attachedActions.get(l).expression.equals("")) {
-								bufDot.append("=");
-								bufDot.append(t.attachedActions.get(l).expression);
-							}
-						bufDot.append("</TD> </TR>\n");
-					}
+					for (int l = 0; l < nbActionsInTransitions; l++)
+						GenerateDotForAction(t.attachedActions.get(l));
 					bufDot.append("    	    	</TABLE>>  ];\n");
-
 				}
 		}
-
 		int nbResetTransitions = fsm.resetTransitions.size();
 		if (nbResetTransitions != 0) {
 			bufDot.append("//////////////////display reset transitions//////////////////\n");
@@ -194,7 +183,6 @@ public class FsmProcess {
 				bufDot.append("    	    	</TABLE>>  ];\n");
 			}
 		}
-
 		if (fsm.resetAsynchronousIsDefined) {
 			bufDot.append("//////////////////display asynchronous reset transition//////////////////\n");
 			bufDot.append("    	node [shape=box] ");
@@ -225,7 +213,6 @@ public class FsmProcess {
 			}
 			bufDot.append("    	    	</TABLE>>  ];\n");
 		}
-
 		int nbRepeatedlyActions = fsm.repeatedlyActions.size();
 		if (nbRepeatedlyActions != 0) {
 			bufDot.append("//////////////////display repeatedly actions//////////////////\n");
