@@ -27,7 +27,7 @@ echo ----------------------DISPLAY THE DOT GRAPH IN PNG----------------------
 else
 echo ----------------------DISPLAY THE DOT GRAPH IN PDF----------------------
 dot -Tpdf $dotfile   -o  $pdffile
-evince   $pdffile  ?
+evince   $pdffile  &
 fi
 echo ----------------------DISPLAY THE VHDL FILE----------------------
 cat $vhdfile
