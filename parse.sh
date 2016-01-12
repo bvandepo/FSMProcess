@@ -7,6 +7,8 @@ dotfile=`echo "${1/.fsm/.dot}"`
 echo $dotfile
 vhdfile=`echo "${1/.fsm/.vhd}"`
 echo $vhdfile
+pdffile=`echo "${1/.fsm/.pdf}"`
+echo $pdffile
 echo ----------------------DELETING OLD FILES----------------------
 rm FsmProcess.class $dotfile $vhdfile
 echo ----------------------PARSING THE GRAMMAR----------------------
@@ -24,8 +26,8 @@ echo ----------------------DISPLAY THE DOT GRAPH IN PNG----------------------
  dot -Tpng $dotfile   | display  &
 else
 echo ----------------------DISPLAY THE DOT GRAPH IN PDF----------------------
-dot -Tpdf $dotfile   -o out.pdf
-evince  $dotfile  ?
+dot -Tpdf $dotfile   -o  $pdffile
+evince   $pdffile  ?
 fi
 echo ----------------------DISPLAY THE VHDL FILE----------------------
 cat $vhdfile
