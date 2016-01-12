@@ -8,7 +8,8 @@ digraph finite_state_machine {
 // Finite State Machine Name: fsm7
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////display  states//////////////////
-    	//State:
+ splines=line;    	
+//State:
     	etat0 [shape=doublecircle, pos = "0,0!"];
     	//Action on state:
     	stateactionetat0  [shape=box,label=   <<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
