@@ -146,45 +146,81 @@ public class FsmProcess {
 
 				}
 		}
-		bufDot.append("//////////////////display reset transitions//////////////////\n");
-		for (int k=0;k<fsm.resetTransitions.size();k++)
+
+		int nbResetTransitions=fsm.resetTransitions.size();
+		if (nbResetTransitions!=0)
 		{
-			ResetTransition rt=fsm.resetTransitions.get(k);
-			//bufDot.append("    	node [shape=box] ");
-			bufDot.append("    	emptystateforreset");
-			bufDot.append(k); //generate a name from the k value
-			bufDot.append(" [shape=box, style=\"invis\" ];\n");
-			bufDot.append("    	emptystateforreset");
-			bufDot.append(k);
-			bufDot.append(" -> ");
-			bufDot.append(rt.destination);
-			bufDot.append("  ");
-			bufDot.append("[style=\"dashed\", shape=box, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
-			bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
-			int nbActionsInResetTransitions=rt.attachedActions.size();
-			if (nbActionsInResetTransitions==0)
-				bufDot.append("1");
-			else
-				bufDot.append("2");
-			bufDot.append("\">");
-			bufDot.append(rt.condition);
-			bufDot.append("</TD> </TR>\n");
-			for (int l=0;l<nbActionsInResetTransitions;l++)
+			bufDot.append("//////////////////display reset transitions//////////////////\n");
+			for (int k=0;k<nbResetTransitions;k++)
 			{
+				ResetTransition rt=fsm.resetTransitions.get(k);
+				//bufDot.append("    	node [shape=box] ");
+				bufDot.append("    	emptystateforreset");
+				bufDot.append(k); //generate a name from the k value
+				bufDot.append(" [shape=box, style=\"invis\" ];\n");
+				bufDot.append("    	emptystateforreset");
+				bufDot.append(k);
+				bufDot.append(" -> ");
+				bufDot.append(rt.destination);
+				bufDot.append("  ");
+				bufDot.append("[style=\"dashed\", shape=box, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
+				bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
+				int nbActionsInResetTransitions=rt.attachedActions.size();
+				if (nbActionsInResetTransitions==0)
+					bufDot.append("1");
+				else
+					bufDot.append("2");
+				bufDot.append("\">");
+				bufDot.append(rt.condition);
+				bufDot.append("</TD> </TR>\n");
+				for (int l=0;l<nbActionsInResetTransitions;l++)
+				{
+					bufDot.append("    	    	<TR><TD>");
+					bufDot.append(rt.attachedActions.get(l).type);
+					bufDot.append("</TD><TD>");
+					bufDot.append(rt.attachedActions.get(l).name);
+					if (rt.attachedActions.size()!=0)
+						if (! rt.attachedActions.get(l).expression.equals(""))
+						{
+							bufDot.append("=");
+							bufDot.append(rt.attachedActions.get(l).expression);
+						}
+					bufDot.append("</TD> </TR>\n");
+				} 
+				bufDot.append("    	    	</TABLE>>  ];\n");	
+			}
+		}
+
+		int nbRepeatedlyActions=fsm.repeatedlyActions.size();
+		if (nbRepeatedlyActions!=0)
+		{
+			bufDot.append("//////////////////display repeatedly actions//////////////////\n");
+			bufDot.append("    	emptyrepeatedly");
+			bufDot.append("  ");
+			bufDot.append("[  shape= 	octagon, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
+			bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
+			bufDot.append("2");
+			bufDot.append("\">");
+			bufDot.append(" Always "); //rt.condition);
+			bufDot.append("</TD> </TR>\n");
+			for (int l=0;l<nbRepeatedlyActions;l++)
+			{
+				Action a=fsm.repeatedlyActions.get(l);
+
 				bufDot.append("    	    	<TR><TD>");
-				bufDot.append(rt.attachedActions.get(l).type);
+				bufDot.append(a.type);
 				bufDot.append("</TD><TD>");
-				bufDot.append(rt.attachedActions.get(l).name);
-				if (rt.attachedActions.size()!=0)
-					if (! rt.attachedActions.get(l).expression.equals(""))
-					{
-						bufDot.append("=");
-						bufDot.append(rt.attachedActions.get(l).expression);
-					}
+				bufDot.append(a.name);
+				if (! a.expression.equals(""))
+				{
+					bufDot.append("=");
+					bufDot.append(a.expression);
+				}
 				bufDot.append("</TD> </TR>\n");
 			} 
 			bufDot.append("    	    	</TABLE>>  ];\n");	
 		}
+
 		bufDot.append("}\n");
 	}
 	//////////////////////////////////////////////////
@@ -197,6 +233,7 @@ public class FsmProcess {
 		//TODO: add variable bus size to inputs and outputs in the grammar... hard...
 		
 		//TODO: add to the model some always true action (no state or transition dependency, can be useful for reseting an AMAZE at any time for instance 
+		//TODO: check repeatedly action are compatible with state and transition actions (they are exclusive, except for R and S)
 		Boolean modelOk=true;
 		////////////////////////////////////////////////////////////////////:
 		//check actions coherence. actions of a given name have to be compatible
@@ -467,7 +504,7 @@ public class FsmProcess {
 									Action a=t.attachedActions.get(l);
 									if (a!=null)
 									{
-										if (a.name.equals(currentOutputName))
+										if (a.name.equals(currentOutputName) && a.type.equals(typeFilter))
 										{
 											if (!a.expression.equals("")) 
 											{  //if there is an expression
@@ -506,7 +543,7 @@ public class FsmProcess {
 								Action a=rt.attachedActions.get(l);
 								if (a!=null)
 								{
-									if (a.name.equals(currentOutputName))
+									if (a.name.equals(currentOutputName) && a.type.equals(typeFilter))
 									{
 										if (!a.expression.equals("")) 
 										{  //if there is an expression
@@ -527,9 +564,33 @@ public class FsmProcess {
 							}
 						}
 					}
+					//////////////////////repeatedly action from any state//////////////////////
+					int nbRepeatedlyAction=fsm.repeatedlyActions.size();
+					for (int j=0;j<nbRepeatedlyAction;j++)
+					{
+						Action a=fsm.repeatedlyActions.get(j);
+						if (a!=null)
+						{
+							if (a.name.equals(currentOutputName) && a.type.equals(typeFilter))
+							{
+								if (!a.expression.equals("")) 
+								{  //if there is an expression
+									bufVhdl.append(" ( ");
+									bufVhdl.append(a.expression);
+									bufVhdl.append(" ) ");
+								}
+								else
+								{
+									bufVhdl.append(" '1' ");	
+								}
+								bufVhdl.append("when ( true)   else  \n            ");  //this action is always true
+							}
+						}
+					}
+					//this is the default value for all outputs.
+					//A  S action is automatically added when there is no corresponding R action and vice versa
 					bufVhdl.append("\'0\'; \n");		
 				}
-			//TODO: check generated vhdl code for non memorized before copy paste modify here!!!!
 			//TODO utiliser String.format(longest..) pour avoir un affichage aligné
 		}
 		bufVhdl.append("end ar;\n");	
@@ -602,7 +663,8 @@ public class FsmProcess {
 		ArrayList<Transition> transitions=new ArrayList<Transition>() ;
 		HashMap<String,Transition > hmapTransition = new HashMap<String,Transition>();
 
-
+		ArrayList<Action> repeatedlyActions=new ArrayList<Action>() ; //global actions list
+		
 		ArrayList<Action> actions=new ArrayList<Action>() ; //global actions list
 		//on stocke juste la liste pour pouvoir balayer et verifier les compatibilités, pas besoin de hashtable
 		//	HashMap<String,Transition > hmapTransition = new HashMap<String,Transition>();
@@ -820,6 +882,15 @@ public class FsmProcess {
 			fsm.actions.add(a);//add to the global action list
 		}
 		////////////////////////////////////////////////////////////////
+		public void enterRepeatedly_action(FsmParser.Repeatedly_actionContext ctx){
+			Action a=new Action();
+			fsm.currentAction=a;
+			a.type= "I"; // default value if not specified 
+			a.name=""; // default value if not specified 
+			a.expression=""; // default value if not specified 
+			fsm.repeatedlyActions.add(a); 
+			fsm.actions.add(a);//add to the global action list
+		}////////////////////////////////////////////////////////////////
 		public void enterState(FsmParser.StateContext ctx) {
 			State s=new State();
 			s.name=ctx.children.get(0).getText();

@@ -4,10 +4,15 @@ file  : (line)+ ;          //a state machine is many lines, the fsm name is mand
 line : state 
      | transition
      | reset_transition
+     | repeatedly_action
      ;
 
 state   :  id (':' state_action)* ';'   ;         	//state (with  action(s))
 
+
+
+
+repeatedly_action : '%' (action_type ',')? action_id ('=' action_expression)? ';' ;
 
 state_action :  (action_type ',')? action_id ('=' action_expression)? ;
 transition_action :  (action_type ',')? action_id ('=' action_expression)? ;
