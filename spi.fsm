@@ -41,10 +41,10 @@
 //Actions toujours vraies
 
 //Reset Asynchrone
-	=> 0 ?resetn:
-		SSB=1:
-		SCLK=CPOL;
-	/ clock;
+	=> 0 ?resetn , 0 : SSB=1:		SCLK=CPOL;
+//Definition d'un nom de signal d'horloge
+	/ horloge;
 
-
+//junk for test:
+ ->3? SRESET:S,toto=tata;
 

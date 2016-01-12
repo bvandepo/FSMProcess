@@ -15,12 +15,19 @@ clock_definition: '/' input_clock ';' ;
 
 input_clock:  id;
 
-reset_asynchronous:   '=>' id ('?' condition_reset_asynchronous)? (':' action_reset_asynchronous)* ';'   ;        
+reset_asynchronous:   '=>' id ('?' condition_reset_asynchronous)? (',' level_reset_asynchronous)?  (':' action_reset_asynchronous)* ';'   ;        
 
-condition_reset_asynchronous: input;
+level_reset_asynchronous : NUMBER ;
 
-action_reset_asynchronous : action_id ('=' action_expression)? ;
+condition_reset_asynchronous: input_async_reset;
 
+input_async_reset: id;
+
+
+action_reset_asynchronous : action_id  ('=' action_expression_reset_asynchronous)? ;
+
+action_expression_reset_asynchronous : element ( element)*  ;
+ 
 
 repeatedly_action : '%' (action_type ',')? action_id ('=' action_expression)? ';' ;
 
@@ -43,7 +50,9 @@ action_expression:  element ( element)*  ;
 
 operators :  'and' | 'or' | 'xor' | 'not' | 'xnor' |  'AND' | 'OR' | 'XOR' | 'NOT' | 'XNOR' | '+' | '-' | '*' | '/' | '==' | '!=' ; //to complete with all needed operators 
 
-element: operators | input;
+element: operators  | constant | input;
+
+constant: NUMBER ;
 
 input: id;
 
