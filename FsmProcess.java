@@ -234,6 +234,7 @@ public class FsmProcess {
 		
 		//TODO: add to the model some always true action (no state or transition dependency, can be useful for reseting an AMAZE at any time for instance 
 		//TODO: check repeatedly action are compatible with state and transition actions (they are exclusive, except for R and S)
+		//TODO: check that all transitions have origin and destination states existing
 		Boolean modelOk=true;
 		////////////////////////////////////////////////////////////////////:
 		//check actions coherence. actions of a given name have to be compatible
@@ -389,7 +390,7 @@ public class FsmProcess {
 			if (transitionFromThisStateNumber!=0)
 				bufVhdl.append("                        end if;\n" );
 		}
-		bufVhdl.append("      when others => etat_suivant <= state_");
+		bufVhdl.append("--    when others => etat_suivant <= state_");
 		bufVhdl.append(fsm.states.get(0).name);
 		bufVhdl.append(";\n    end case;\nend process;\n");
 		bufVhdl.append("------------------FLIP FLOPS FOR MEMORIZED OUTPUTS ------------\n"); 
