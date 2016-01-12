@@ -14,22 +14,22 @@
 		sload_tx=E:
 		R,SSB;
 	1 -> 2 ?cpt_duree_egal2:
-		S,SCLK=CPOLB:
-		R,SCLK=NOT CPOLB: 
+		S,SCLK=CPOL:
+		R,SCLK=NOT CPOL: 
 		sraz_cpt_duree: 
 		en_rx=not CPHA: 
 		en_cpt_bit=not CPHA;
 	2 -> 3 ?cpt_duree_egal2:
-		S,SCLK=CPOLB:
-		R,SCLK=NOT CPOLB: 
+		S,SCLK=CPOL:
+		R,SCLK=NOT CPOL: 
 		sraz_cpt_duree: 
 		en_tx=not CPHA: 
 		en_rx= CPHA: 
 		en_cpt_bit=CPHA;
 	3 -> 2 ?cpt_duree_egal2 AND cpt_bit_inf_x:  
 		sraz_cpt_duree: 
-		S,SCLK=CPOLB:
-			R,SCLK=NOT CPOLB: 
+		S,SCLK=CPOL:
+		R,SCLK=NOT CPOL: 
 		en_tx= CPHA: 
 		en_rx= not CPHA: 
 		en_cpt_bit=not CPHA;
@@ -39,4 +39,12 @@
 //Transitions avec état d'origine vide pour reset synchrone, actions sur reset
  /////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Actions toujours vraies
+
+//Reset Asynchrone
+	=> 0 ?resetn:
+		SSB=1:
+		SCLK=CPOL;
+	/ clock;
+
+
 

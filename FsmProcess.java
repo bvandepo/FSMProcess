@@ -228,6 +228,8 @@ public class FsmProcess {
 		// TODO: have multi bits outputs (size could be automatically determined
 		// or given in code
 		// TODO: check that there is at least one output
+		// TODO: add a default value for memorized outputs -> set R/S in a
+		// asynchronous reset transition
 		Boolean modelOk = true;
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
@@ -291,7 +293,10 @@ public class FsmProcess {
 		bufVhdl.append("library	ieee;\nuse		ieee.std_logic_1164.all;\nuse		ieee.std_logic_unsigned.all;\nuse		ieee.std_logic_arith.all;\nentity ");
 		bufVhdl.append(fsm.name);
 		bufVhdl.append(" is\n	port (\n");
-		bufVhdl.append("		ck,arazb								: in  std_logic;\n");
+		bufVhdl.append("		");
+		bufVhdl.append(fsm.clkSignalName);
+		bufVhdl.append(fsm.aResetSignalName);
+		bufVhdl.append("		 : in  std_logic;\n");
 		// ////////////////listing of inputs/outputs//////////////////
 		for (int n = 0; n < fsm.hmapInput.size(); n++) {
 			bufVhdl.append("		");
@@ -345,11 +350,21 @@ public class FsmProcess {
 		// ////////////////let's animate all that stuff...//////////////////
 		bufVhdl.append("------------------------Process for the memorization of the state----------------------\n");
 		bufVhdl.append("begin\n");
-		bufVhdl.append("process (ck, arazb)\nbegin\n    if (arazb='0') then etat_present <=");
+		bufVhdl.append("process (");
+		bufVhdl.append(fsm.clkSignalName);
+		bufVhdl.append(", ");
+		bufVhdl.append(fsm.aResetSignalName);
+		bufVhdl.append(")\nbegin\n    if (");
+		bufVhdl.append(fsm.aResetSignalName);
+		bufVhdl.append("='0') then etat_present <=");
 		bufVhdl.append("state_");
 		bufVhdl.append(fsm.states.get(0).name);
 		bufVhdl.append(";\n");
-		bufVhdl.append("    elsif ck'event and ck='1' then etat_present<=etat_suivant;\n");
+		bufVhdl.append("    elsif ");
+		bufVhdl.append(fsm.clkSignalName);
+		bufVhdl.append("'event and ");
+		bufVhdl.append(fsm.clkSignalName);
+		bufVhdl.append("='1' then etat_present<=etat_suivant;\n");
 		bufVhdl.append("    end if;\n");
 		bufVhdl.append("end process;\n\n");
 		bufVhdl.append("-------------------Combinatorial process for the evolution of the state------------------\n");
@@ -404,12 +419,22 @@ public class FsmProcess {
 				bufVhdl.append("------ FLIP FLOPS FOR ");
 				bufVhdl.append(out.name);
 				bufVhdl.append(" ------\n");
-				bufVhdl.append("process (ck, arazb)\n");
+				bufVhdl.append("process (");
+				bufVhdl.append(fsm.clkSignalName);
+				bufVhdl.append(", ");
+				bufVhdl.append(fsm.aResetSignalName);
+				bufVhdl.append(")\n");
 				bufVhdl.append("begin\n");
-				bufVhdl.append("   if (arazb='0') then ");
+				bufVhdl.append("   if (");
+				bufVhdl.append(fsm.aResetSignalName);
+				bufVhdl.append("='0') then ");
 				bufVhdl.append(out.name);
 				bufVhdl.append("<='0';\n");
-				bufVhdl.append("   elsif ck'event and ck='1' then  \n");
+				bufVhdl.append("    elsif ");
+				bufVhdl.append(fsm.clkSignalName);
+				bufVhdl.append("'event and ");
+				bufVhdl.append(fsm.clkSignalName);
+				bufVhdl.append("='1' then  \n");
 				bufVhdl.append("      if ");
 				bufVhdl.append(out.name);
 				bufVhdl.append("_set ='1' then ");
@@ -680,6 +705,9 @@ public class FsmProcess {
 	static class FiniteStateMachine {
 		// member variables for storing the fsm model
 		public String name;
+		public String clkSignalName="ck";
+		public String aResetSignalName="arazb";
+		
 		ArrayList<ResetTransition> resetTransitions = new ArrayList<ResetTransition>();
 		ArrayList<State> states = new ArrayList<State>();
 		HashMap<String, State> hmapState = new HashMap<String, State>();
@@ -689,11 +717,9 @@ public class FsmProcess {
 		HashMap<String, Output> hmapOutput = new HashMap<String, Output>();
 		ArrayList<Transition> transitions = new ArrayList<Transition>();
 		HashMap<String, Transition> hmapTransition = new HashMap<String, Transition>();
-
-		ArrayList<Action> repeatedlyActions = new ArrayList<Action>(); // global
-																		// actions
-																		// list
-
+		// global actions list
+		ArrayList<Action> repeatedlyActions = new ArrayList<Action>(); 
+		
 		ArrayList<Action> actions = new ArrayList<Action>(); // global actions
 																// list
 		// on stocke juste la liste pour pouvoir balayer et verifier les
@@ -815,14 +841,21 @@ public class FsmProcess {
 	 */
 	// ///////////////////////////////////////////////////////////////
 	static class FunctionListener extends FsmBaseListener {
-		// //////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////
+		public 	void enterCondition_reset_asynchronous(FsmParser.Condition_reset_asynchronousContext ctx) {
+			fsm.aResetSignalName=ctx.children.get(0).getText();
+			}	
+		/////////////////////////////////////////////////////////////////
+		public  void enterClock_definition(FsmParser.Clock_definitionContext ctx) {
+			fsm.clkSignalName=ctx.children.get(1).getText(); //to skip the /
+			}	
+		/////////////////////////////////////////////////////////////////
 		public void enterInput(FsmParser.InputContext ctx) {
 			Input i = new Input();
 			i.name = ctx.children.get(0).getText();
 			fsm.addInput(ctx.children.get(0).getText(), i);
 		}
-
-		// //////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////
 		public void enterReset_transition(FsmParser.Reset_transitionContext ctx) {
 			fsm.currentTransitionIsReset = true;
 			ResetTransition rt = new ResetTransition();
@@ -832,7 +865,7 @@ public class FsmProcess {
 			fsm.resetTransitions.add(rt);
 		}
 
-		// //////////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////
 		public void enterCondition(FsmParser.ConditionContext ctx) {
 			String reconstructedCondition = new String("");
 			int nbChildren = ctx.getChildCount();

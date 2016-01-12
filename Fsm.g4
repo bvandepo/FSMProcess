@@ -5,11 +5,21 @@ line : state
      | transition
      | reset_transition
      | repeatedly_action
+     | reset_asynchronous
+     | clock_definition
      ;
 
 state   :  id (':' state_action)* ';'   ;         	//state (with  action(s))
 
+clock_definition: '/' input_clock ';' ;
 
+input_clock:  id;
+
+reset_asynchronous:   '=>' id ('?' condition_reset_asynchronous)? (':' action_reset_asynchronous)* ';'   ;        
+
+condition_reset_asynchronous: input;
+
+action_reset_asynchronous : action_id ('=' action_expression)? ;
 
 
 repeatedly_action : '%' (action_type ',')? action_id ('=' action_expression)? ';' ;
