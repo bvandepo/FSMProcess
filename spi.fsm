@@ -6,11 +6,9 @@
 	2 : s3;
 ////////////////////////////////////////////////////////////////////////////////////////////////////// 
 //Transitions et actions sur transitions
-/*	0 -> 1 ?send:
-		S,SCLK=CPOL:
-		R,SCLK=NOT CPOL; 
-	1 -> 0 ?entree1:M,sortiememo=entreememo;		
-*/		
+ 	0 -> 1 ?send:
+		M,SSB=entree :S,sortiememo2=hoho;
+	1 -> 0 ?rec:M,sortiememo= not entreememo: R,sortiememo2=haha;
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Transitions avec état d'origine vide pour reset synchrone, actions sur reset
  /////////////////////////////////////////////////////////////////////////////////////////////////////  
@@ -19,12 +17,13 @@
 //Reset Asynchrone:
 //indique la condition de reset: nom du signal , niveau actif du signal
 //  puis les éventuelles sorties qui sont à une valeur différente de 0 lors du reset, suivi éventuellement d'une expression uniquement  si valeur different de 1
- 	=> 0 ?resetn , 0  :  SSB=1;
+ 	=> 0 ?resetn , 0  :  SSB=0;
 // SCLK=1;
 //:		sortiememo=not CPOL;
 //Definition d'un nom de signal d'horloge
 //	/ horloge;
 
 //junk for test:
-// ->0? SRESET:M,sortiememo2=entreememo2;
+ ->0? SRESET:M,sortiememo2=entreememo2;
 
+%M,tata=tutu;

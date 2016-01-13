@@ -283,6 +283,7 @@ public class FsmProcess {
 		// add M action that pilots S and R inconditionnaly
 		// TODO enforce that a M action have to have an expression (it memorizes
 		// an input!!!!)
+		// TODO check that no input has the same name as an output
 		Boolean modelOk = true;
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
@@ -1023,16 +1024,7 @@ public class FsmProcess {
 					reconstructedExpression += " ";
 			}
 			fsm.currentOutput.asyncResetExpression = reconstructedExpression;
-			//fsm.outputsWithAsynchronousResetValue.add(fsm.currentOutput); //already done
-			//fsm.currentOutput.memorized=true;	//  check that the output is memorized
 		}
-
-		// //////////////////////////////////////////////////////////////
- 		/*public void exitAction_reset_asynchronous(FsmParser.Action_reset_asynchronousContext ctx) {
-			if (fsm.currentOutput.asyncResetExpression == null) {
-				
-			}
-		}*/
  		// //////////////////////////////////////////////////////////////
 		public void enterAction_id_reset_asynchronous(FsmParser.Action_id_reset_asynchronousContext ctx){
 			String  outputName= ctx.children.get(0).getText();
