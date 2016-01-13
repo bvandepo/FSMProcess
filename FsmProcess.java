@@ -60,6 +60,7 @@ public class FsmProcess {
 				bufDot.append("=");
 				bufDot.append(a.expression);
 			} else {
+				// here we need 3 columns
 				bufDot.append("</TD><TD >");
 				bufDot.append(a.name);
 				bufDot.append("</TD><TD >");
@@ -280,6 +281,8 @@ public class FsmProcess {
 		// or given in code
 		// TODO: check that there is at least one output
 		// add M action that pilots S and R inconditionnaly
+		// TODO enforce that a M action have to have an expression (it memorizes
+		// an input!!!!)
 		Boolean modelOk = true;
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
@@ -299,12 +302,12 @@ public class FsmProcess {
 					out.type = a.type;
 					if (a.type.equals("I"))
 						out.memorized = false;
-					else if ((a.type.equals("R")) || (a.type.equals("S")))
+					else if ((a.type.equals("R")) || (a.type.equals("S")) || (a.type.equals("M")))
 						out.memorized = true;
 				} else // check that the action is compatible with the output
 				{
 					if ((a.type.equals("I") && out.memorized) || (a.type.equals("R") && !out.memorized)
-							|| (a.type.equals("S") && !out.memorized)) {
+							|| (a.type.equals("S") && !out.memorized) || (a.type.equals("M") && !out.memorized)) {
 						System.out.print("Error: Incompatible actions on ");
 						System.out.print(a.name);
 						System.out.print("   type: ");
@@ -479,12 +482,16 @@ public class FsmProcess {
 				bufVhdl.append(fsm.aResetSignalLevel);
 				bufVhdl.append("') then ");
 				bufVhdl.append(out.name);
-				bufVhdl.append("<='");
+				bufVhdl.append("<=");
 				if (out.asyncResetExpression == null)
-					bufVhdl.append("0");
+					bufVhdl.append("'0'");
+				else if (out.asyncResetExpression.equals("0"))
+					bufVhdl.append("'0'");
+				else if (out.asyncResetExpression.equals("1"))
+					bufVhdl.append("'1'");
 				else
 					bufVhdl.append(out.asyncResetExpression);
-				bufVhdl.append("';\n");
+				bufVhdl.append(";\n");
 				bufVhdl.append("    elsif ");
 				bufVhdl.append(fsm.clkSignalName);
 				bufVhdl.append("'event and ");
@@ -505,27 +512,32 @@ public class FsmProcess {
 				bufVhdl.append("end process;\n");
 			}
 		}
-		for (int cpt = 0; cpt < 3; cpt++) {
+		for (int cptActionType = 0; cptActionType < 3; cptActionType++) {
 			Boolean processMemorizedOutput;
 			String typeFilter;
+			String typeFilter2; // a second filter to detect R&M or S&M
+
 			String signalSuffix;
-			switch (cpt) {
+			switch (cptActionType) {
 			case 0:
 				processMemorizedOutput = false;
-				typeFilter = "I";
+				typeFilter = "I"; // only I
+				typeFilter2 = "I";
 				signalSuffix = "";
 				bufVhdl.append("------------------ NON MEMORIZED OUTPUTS ------------\n");
 				break;
 			case 1:
 				processMemorizedOutput = true;
-				typeFilter = "R";
+				typeFilter = "R"; // Reset or memorized copy
+				typeFilter2 = "M";
 				signalSuffix = "_reset";
 				bufVhdl.append("------------------  FLIP FLOPS MEMORIZED RESET OUTPUT CONTROL------------\n");
 				break;
 			case 2:
 			default:
 				processMemorizedOutput = true;
-				typeFilter = "S";
+				typeFilter = "S"; // Set or memorized copy
+				typeFilter2 = "M";
 				signalSuffix = "_set";
 				bufVhdl.append("------------------  FLIP FLOPS MEMORIZED SET OUTPUT CONTROL------------\n");
 				break;
@@ -547,11 +559,13 @@ public class FsmProcess {
 							for (int l = 0; l < nbActionInThatState; l++) {
 								Action a = fsm.states.get(m).attachedActions.get(l);
 								if (a != null) {
-									if (a.name.equals(currentOutputName) && a.type.equals(typeFilter)) {
-										if (!a.expression.equals("")) { // if
-																		// there
-																		// is an
-																		// expression
+									if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter) || a.type.equals(typeFilter2))) {
+										// is used to add a not for M action
+										// condition to generate the R condition
+										if (cptActionType == 1 && a.type.equals("M"))
+											bufVhdl.append(" not ");
+										// if there is an expression
+										if (!a.expression.equals("")) {
 											bufVhdl.append(" ( ");
 											bufVhdl.append(a.expression);
 											bufVhdl.append(" ) ");
@@ -577,7 +591,12 @@ public class FsmProcess {
 								for (int l = 0; l < nbActionInThatTransition; l++) {
 									Action a = t.attachedActions.get(l);
 									if (a != null) {
-										if (a.name.equals(currentOutputName) && a.type.equals(typeFilter)) {
+										if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter) || a.type.equals(typeFilter2))) {
+											// is used to add a not for M action
+											// condition to generate the R
+											// condition
+											if (cptActionType == 1 && a.type.equals("M"))
+												bufVhdl.append(" not ");
 											if (!a.expression.equals("")) {
 												// if there is an expression
 												bufVhdl.append(" ( ");
@@ -610,7 +629,11 @@ public class FsmProcess {
 							for (int l = 0; l < nbActionInThatResetTransition; l++) {
 								Action a = rt.attachedActions.get(l);
 								if (a != null) {
-									if (a.name.equals(currentOutputName) && a.type.equals(typeFilter)) {
+									if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter) || a.type.equals(typeFilter2))) {
+										// is used to add a not for M action
+										// condition to generate the R condition
+										if (cptActionType == 1 && a.type.equals("M"))
+											bufVhdl.append(" not ");
 										if (!a.expression.equals("")) {
 											// if there is an expression
 											bufVhdl.append(" ( ");
@@ -634,7 +657,11 @@ public class FsmProcess {
 					for (int j = 0; j < nbRepeatedlyAction; j++) {
 						Action a = fsm.repeatedlyActions.get(j);
 						if (a != null) {
-							if (a.name.equals(currentOutputName) && a.type.equals(typeFilter)) {
+							if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter) || a.type.equals(typeFilter2))) {
+								// is used to add a not for M action
+								// condition to generate the R condition
+								if (cptActionType == 1 && a.type.equals("M"))
+									bufVhdl.append(" not ");
 								if (!a.expression.equals("")) { // if there is
 																// an expression
 									bufVhdl.append(" ( ");
@@ -996,28 +1023,43 @@ public class FsmProcess {
 					reconstructedExpression += " ";
 			}
 			fsm.currentOutput.asyncResetExpression = reconstructedExpression;
-			fsm.outputsWithAsynchronousResetValue.add(fsm.currentOutput);
-			// TODO: check that the output is memorized
+			//fsm.outputsWithAsynchronousResetValue.add(fsm.currentOutput); //already done
+			//fsm.currentOutput.memorized=true;	//  check that the output is memorized
 		}
 
 		// //////////////////////////////////////////////////////////////
-		public void enterAction_id(FsmParser.Action_idContext ctx) {
-			fsm.currentAction.name = ctx.children.get(0).getText();
-			String outputName = ctx.children.get(0).getText();
+ 		/*public void exitAction_reset_asynchronous(FsmParser.Action_reset_asynchronousContext ctx) {
+			if (fsm.currentOutput.asyncResetExpression == null) {
+				
+			}
+		}*/
+ 		// //////////////////////////////////////////////////////////////
+		public void enterAction_id_reset_asynchronous(FsmParser.Action_id_reset_asynchronousContext ctx){
+			String  outputName= ctx.children.get(0).getText();
 			fsm.currentOutput = fsm.getOutputFromName(outputName);
 			if (fsm.currentOutput == null) {
 				Output o = new Output();
-				// TODO: deal with memorized outputs if R or S
+				o.name = outputName;
+		 		fsm.addOutput(outputName, o);
+				fsm.currentOutput = o;
+			}
+			// there is no  yet Action_expression_reset_asynchronous, only its
+			// name, so lets give a defaut "1" expression, that can be updated later
+			fsm.currentOutput.asyncResetExpression = "1"; // default
+			fsm.outputsWithAsynchronousResetValue.add(fsm.currentOutput);
+			fsm.currentOutput.memorized=true;	//  check that the output is memorized
+		}
+		// //////////////////////////////////////////////////////////////
+		public void enterAction_id(FsmParser.Action_idContext ctx) {
+			String  outputName= ctx.children.get(0).getText();
+			fsm.currentAction.name = outputName;
+			fsm.currentOutput = fsm.getOutputFromName(outputName);
+			if (fsm.currentOutput == null) {
+				Output o = new Output();
 				o.memorized = null; // default, will be defined later in the
 				// analysis
 				o.name = outputName;
-				// TODO: mettre les autres champs de o, peut être le faire
-				// ailleurs
-				// TODO; gérer i l'action existe déjà, et/ou si le type d'action
-				// est
-				// incompatible
-				// ex: I puis R ou S
-				fsm.addOutput(outputName, o);
+		 		fsm.addOutput(outputName, o);
 				fsm.currentOutput = o;
 			}
 		}

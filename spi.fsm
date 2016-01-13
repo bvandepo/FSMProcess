@@ -1,50 +1,30 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //Nom de la machine à état= nom du fichier sans l'extension
 //Les différents états avec actions sur état
-	0 ;
-	1 : en_cpt_duree;
-	2 : en_cpt_duree;
-        3 : en_cpt_duree;
+	0 : s1;
+	1 : s2; 
+	2 : s3;
 ////////////////////////////////////////////////////////////////////////////////////////////////////// 
 //Transitions et actions sur transitions
-	0 -> 1 ?send:
-		sraz_cpt_duree:
-		sraz_cpt_bit:
-		sraz_rx:
-		sload_tx=E:
-		R,SSB;
-	1 -> 2 ?cpt_duree_egal2:
+/*	0 -> 1 ?send:
 		S,SCLK=CPOL:
-		R,SCLK=NOT CPOL: 
-		sraz_cpt_duree: 
-		en_rx=not CPHA: 
-		en_cpt_bit=not CPHA;
-	2 -> 3 ?cpt_duree_egal2:
-		S,SCLK=CPOL:
-		R,SCLK=NOT CPOL: 
-		sraz_cpt_duree: 
-		en_tx=not CPHA: 
-		en_rx= CPHA: 
-		en_cpt_bit=CPHA;
-	3 -> 2 ?cpt_duree_egal2 AND cpt_bit_inf_x:  
-		sraz_cpt_duree: 
-		S,SCLK=CPOL:
-		R,SCLK=NOT CPOL: 
-		en_tx= CPHA: 
-		en_rx= not CPHA: 
-		en_cpt_bit=not CPHA;
-	3 -> 0 ?cpt_duree_egal2 AND cpt_bit_inf_y:
-		S,SSB;
+		R,SCLK=NOT CPOL; 
+	1 -> 0 ?entree1:M,sortiememo=entreememo;		
+*/		
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Transitions avec état d'origine vide pour reset synchrone, actions sur reset
  /////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Actions toujours vraies
 
-//Reset Asynchrone
-	=> 0 ?resetn , 0 : SSB=1:		SCLK=CPOL;
+//Reset Asynchrone:
+//indique la condition de reset: nom du signal , niveau actif du signal
+//  puis les éventuelles sorties qui sont à une valeur différente de 0 lors du reset, suivi éventuellement d'une expression uniquement  si valeur different de 1
+ 	=> 0 ?resetn , 0  :  SSB=1;
+// SCLK=1;
+//:		sortiememo=not CPOL;
 //Definition d'un nom de signal d'horloge
-	/ horloge;
+//	/ horloge;
 
 //junk for test:
- ->3? SRESET:S,toto=tata;
+// ->0? SRESET:M,sortiememo2=entreememo2;
 

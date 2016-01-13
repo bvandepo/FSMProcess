@@ -24,7 +24,7 @@ condition_reset_asynchronous: input_async_reset;
 input_async_reset: id;
 
 
-action_reset_asynchronous : action_id  ('=' action_expression_reset_asynchronous)? ;
+action_reset_asynchronous : action_id_reset_asynchronous  ('=' action_expression_reset_asynchronous)? ;
 
 action_expression_reset_asynchronous : element ( element)*  ;
  
@@ -34,7 +34,7 @@ repeatedly_action : '%' (action_type ',')? action_id ('=' action_expression)? ';
 state_action :  (action_type ',')? action_id ('=' action_expression)? ;
 transition_action :  (action_type ',')? action_id ('=' action_expression)? ;
  
-action_type : 'R' | 'S' | 'I' | 'F';
+action_type : 'R' | 'S' | 'M' | 'I' | 'F';
 
 transition   	  :  id '->' id ('?' condition)? (':' transition_action)* ';'   ;         	//transition (with  action(s)) 
 reset_transition  :   '->' id ('?' condition)? (':' transition_action)* ';'   ;         	//transition (with  action(s)) 
@@ -43,6 +43,8 @@ reset_transition  :   '->' id ('?' condition)? (':' transition_action)* ';'   ; 
 condition :  element ( element)*  ;
 expression :  id ( id)*  ;
 
+action_id_reset_asynchronous:  ID  | NUMBER
+   ;
 action_id: ID  | NUMBER
    ;
 
