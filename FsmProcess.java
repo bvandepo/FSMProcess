@@ -386,6 +386,8 @@ public class FsmProcess {
 		// SRESET have higher priority than standard transition, but there is
 		// the same problem if there exist multiple sreset conditions. The first
 		// has the higher priority
+		// TODO: definir une notion de priorité pour toutes les transitions (à
+		// afficher dans le dot) pour ordonner les if /elsif
 		Boolean modelOk = true;
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
@@ -429,11 +431,12 @@ public class FsmProcess {
 				}
 			}
 		}
-		//compute the ordered lists of inputs/outputs names
+		// compute the ordered lists of inputs/outputs names
+		// http://imss-www.upmf-grenoble.fr/prevert/Prog/Java/CoursJava/interface.html
 		Collections.sort(fsm.inputs);
 		Collections.sort(fsm.outputs);
 		Collections.sort(fsm.states);
-		
+
 		return modelOk;
 	}
 
@@ -456,13 +459,13 @@ public class FsmProcess {
 			bufVhdl.append(fsm.numberOfBitsForStates - 1);
 			bufVhdl.append(" downto 0);\n");
 		}
-		// ////////////////listing of inputs/outputs//////////////////	
+		// ////////////////listing of inputs/outputs//////////////////
 		for (int n = 0; n < fsm.hmapInput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.inputs.get(n).name);
 			bufVhdl.append(": in  std_logic;\n");
 		}
-		
+
 		for (int n = 0; n < fsm.hmapOutput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.outputs.get(n).name);
@@ -939,29 +942,31 @@ public class FsmProcess {
 		String expression;
 	} // //////////////////////////////////////////////////////////////////
 
-	static class Input  implements Comparable{
+	static class Input implements Comparable {
 		String type;
 		String name;
-		public int compareTo( Object o ){
-			Input a = (Input)o;  
+
+		public int compareTo(Object o) {
+			Input a = (Input) o;
 			return name.compareTo(a.name);// par ordre alphabétique
 		}
 	}
 
 	// //////////////////////////////////////////////////////////////////
-	static class Output  implements Comparable {
+	static class Output implements Comparable {
 		String type;
 		String name;
 		Boolean memorized;
 		String asyncResetExpression = null;
-		public int compareTo( Object o ){
-			Output a = (Output)o;  
+
+		public int compareTo(Object o) {
+			Output a = (Output) o;
 			return name.compareTo(a.name);// par ordre alphabétique
 		}
 	}
 
 	// //////////////////////////////////////////////////////////////////
-	static class State  implements Comparable {
+	static class State implements Comparable {
 		Boolean isInit; // initial state or not
 		// String name=new String("");
 		String name;
@@ -970,8 +975,9 @@ public class FsmProcess {
 		// static ArrayList<Transition> transitionFromThisState=new
 		// ArrayList<Transition>() ;
 		ArrayList<Transition> transitionsFromThisState = new ArrayList<Transition>();
-		public int compareTo( Object o ){
-			State a = (State)o;  
+
+		public int compareTo(Object o) {
+			State a = (State) o;
 			return name.compareTo(a.name);// par ordre alphabétique
 		}
 	}
@@ -1043,8 +1049,7 @@ public class FsmProcess {
 
 		public ArrayList<String> inputsOrderedNamesList = new ArrayList<String>();
 		public ArrayList<String> outputsOrderedNamesList = new ArrayList<String>();
-		
-		
+
 		// to know when parsing a condition if it should be added to
 		// ResetTransition or Transition
 
@@ -1166,7 +1171,10 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterClock_definition(FsmParser.Clock_definitionContext ctx) {
-			fsm.clkSignalName = ctx.children.get(1).getText().toUpperCase(); // to skip the /
+			fsm.clkSignalName = ctx.children.get(1).getText().toUpperCase(); // to
+																				// skip
+																				// the
+																				// /
 			fsm.clkSignalNameSpecified = true;
 		}
 
