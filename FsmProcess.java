@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -443,7 +444,7 @@ public class FsmProcess {
 		bufVhdl.append("		");
 		bufVhdl.append(fsm.aResetSignalName);
 		bufVhdl.append("		 : in  std_logic;\n");
-		// ////////////////listing of inputs/outputs//////////////////
+		// ////////////////listing of inputs/outputs//////////////////	
 		for (int n = 0; n < fsm.hmapInput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.inputs.get(n).name);
@@ -1107,7 +1108,7 @@ public class FsmProcess {
 	static class FunctionListener extends FsmBaseListener {
 		// ///////////////////////////////////////////////////////////////
 		public void enterReset_asynchronous(FsmParser.Reset_asynchronousContext ctx) {
-			String reset_asynchronous_state_new_name = ctx.children.get(1).getText();
+			String reset_asynchronous_state_new_name = ctx.children.get(1).getText().toUpperCase();
 			if (fsm.resetAsynchronousState == null) {
 				State s = new State();
 				s.name = reset_asynchronous_state_new_name; // TODO: check!!!
@@ -1136,20 +1137,20 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterCondition_reset_asynchronous(FsmParser.Condition_reset_asynchronousContext ctx) {
-			fsm.aResetSignalName = ctx.children.get(0).getText();
+			fsm.aResetSignalName = ctx.children.get(0).getText().toUpperCase();
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterClock_definition(FsmParser.Clock_definitionContext ctx) {
-			fsm.clkSignalName = ctx.children.get(1).getText(); // to skip the /
+			fsm.clkSignalName = ctx.children.get(1).getText().toUpperCase(); // to skip the /
 			fsm.clkSignalNameSpecified = true;
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterInput(FsmParser.InputContext ctx) {
 			Input i = new Input();
-			i.name = ctx.children.get(0).getText();
-			fsm.addInput(ctx.children.get(0).getText(), i);
+			i.name = ctx.children.get(0).getText().toUpperCase();
+			fsm.addInput(ctx.children.get(0).getText().toUpperCase(), i);
 		}
 
 		// ///////////////////////////////////////////////////////////////
@@ -1158,7 +1159,7 @@ public class FsmProcess {
 			ResetTransition rt = new ResetTransition();
 			fsm.currentResetTransition = rt;
 			rt.condition = "1"; // default condition
-			rt.destination = ctx.children.get(1).getText();
+			rt.destination = ctx.children.get(1).getText().toUpperCase();
 			fsm.resetTransitions.add(rt);
 		}
 
@@ -1169,7 +1170,7 @@ public class FsmProcess {
 			for (int n = 0; n < nbChildren; n++)
 			// reconstruct the condition, adding space characters between terms.
 			{
-				reconstructedCondition += ctx.children.get(n).getText();
+				reconstructedCondition += ctx.children.get(n).getText().toUpperCase();
 				if (n != nbChildren - 1)
 					reconstructedCondition += " ";
 			}
@@ -1186,8 +1187,8 @@ public class FsmProcess {
 			Transition t = new Transition();
 			t.condition = "1"; // default
 			fsm.currentTransition = t;
-			t.origin = ctx.children.get(0).getText();
-			t.destination = ctx.children.get(2).getText();
+			t.origin = ctx.children.get(0).getText().toUpperCase();
+			t.destination = ctx.children.get(2).getText().toUpperCase();
 			// add the transition in its origin state, first get the state from
 			// its name
 			if (fsm.hmapState.get(t.origin) != null) // the state exists
@@ -1204,7 +1205,7 @@ public class FsmProcess {
 			for (int n = 0; n < nbChildren; n++)
 			// reconstruct the condition, adding space characters between terms.
 			{
-				reconstructedExpression += ctx.children.get(n).getText();
+				reconstructedExpression += ctx.children.get(n).getText().toUpperCase();
 				if (n != nbChildren - 1)
 					reconstructedExpression += " ";
 			}
@@ -1213,7 +1214,7 @@ public class FsmProcess {
 
 		// //////////////////////////////////////////////////////////////
 		public void enterLevel_reset_asynchronous(FsmParser.Level_reset_asynchronousContext ctx) {
-			fsm.aResetSignalLevel = ctx.children.get(0).getText();
+			fsm.aResetSignalLevel = ctx.children.get(0).getText().toUpperCase();
 			fsm.resetAsynchronousIsDefined = true;
 		}
 
@@ -1224,7 +1225,7 @@ public class FsmProcess {
 			for (int n = 0; n < nbChildren; n++)
 			// reconstruct the condition, adding space characters between terms.
 			{
-				reconstructedExpression += ctx.children.get(n).getText();
+				reconstructedExpression += ctx.children.get(n).getText().toUpperCase();
 				if (n != nbChildren - 1)
 					reconstructedExpression += " ";
 			}
@@ -1233,7 +1234,7 @@ public class FsmProcess {
 
 		// //////////////////////////////////////////////////////////////
 		public void enterAction_id_reset_asynchronous(FsmParser.Action_id_reset_asynchronousContext ctx) {
-			String outputName = ctx.children.get(0).getText();
+			String outputName = ctx.children.get(0).getText().toUpperCase();
 			fsm.currentOutput = fsm.getOutputFromName(outputName);
 			if (fsm.currentOutput == null) {
 				Output o = new Output();
@@ -1252,7 +1253,7 @@ public class FsmProcess {
 
 		// //////////////////////////////////////////////////////////////
 		public void enterAction_id(FsmParser.Action_idContext ctx) {
-			String outputName = ctx.children.get(0).getText();
+			String outputName = ctx.children.get(0).getText().toUpperCase();
 			fsm.currentAction.name = outputName;
 			fsm.currentOutput = fsm.getOutputFromName(outputName);
 			if (fsm.currentOutput == null) {
@@ -1267,7 +1268,7 @@ public class FsmProcess {
 
 		// //////////////////////////////////////////////////////////////
 		public void enterAction_type(FsmParser.Action_typeContext ctx) {
-			fsm.currentAction.type = ctx.children.get(0).getText();
+			fsm.currentAction.type = ctx.children.get(0).getText().toUpperCase();
 		}
 
 		// //////////////////////////////////////////////////////////////
@@ -1308,7 +1309,7 @@ public class FsmProcess {
 
 		public void enterState(FsmParser.StateContext ctx) {
 			State s = new State();
-			s.name = ctx.children.get(0).getText();
+			s.name = ctx.children.get(0).getText().toUpperCase();
 			if (fsm.states.size() == 0) {
 				s.isInit = true;
 				fsm.resetAsynchronousState = s;
