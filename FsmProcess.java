@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -345,6 +346,7 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////
+	@SuppressWarnings("unchecked")
 	static public Boolean checkModel() {
 		// TODO: add optional output (bus or not) to display the number of the
 		// state in binary
@@ -427,6 +429,11 @@ public class FsmProcess {
 				}
 			}
 		}
+		//compute the ordered lists of inputs/outputs names
+		Collections.sort(fsm.inputs);
+		Collections.sort(fsm.outputs);
+		Collections.sort(fsm.states);
+		
 		return modelOk;
 	}
 
@@ -444,17 +451,18 @@ public class FsmProcess {
 		bufVhdl.append("		");
 		bufVhdl.append(fsm.aResetSignalName);
 		bufVhdl.append("		 : in  std_logic;\n");
+		if (fsm.GenerateNumberOfStateOutput) {
+			bufVhdl.append("		STATE_NUMBER: out std_logic_vector( ");
+			bufVhdl.append(fsm.numberOfBitsForStates - 1);
+			bufVhdl.append(" downto 0);\n");
+		}
 		// ////////////////listing of inputs/outputs//////////////////	
 		for (int n = 0; n < fsm.hmapInput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.inputs.get(n).name);
 			bufVhdl.append(": in  std_logic;\n");
 		}
-		if (fsm.GenerateNumberOfStateOutput) {
-			bufVhdl.append("		state_number: out std_logic_vector( ");
-			bufVhdl.append(fsm.numberOfBitsForStates - 1);
-			bufVhdl.append(" downto 0);\n");
-		}
+		
 		for (int n = 0; n < fsm.hmapOutput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.outputs.get(n).name);
@@ -926,26 +934,34 @@ public class FsmProcess {
 	} // //////////////////////////////////////////////////////////////////
 
 	static class Action {
-		String type; // I, R, S, F
+		String type; // I, R, S, M, F
 		String name;
 		String expression;
 	} // //////////////////////////////////////////////////////////////////
 
-	static class Input {
+	static class Input  implements Comparable{
 		String type;
 		String name;
+		public int compareTo( Object o ){
+			Input a = (Input)o;  
+			return name.compareTo(a.name);// par ordre alphabétique
+		}
 	}
 
 	// //////////////////////////////////////////////////////////////////
-	static class Output {
+	static class Output  implements Comparable {
 		String type;
 		String name;
 		Boolean memorized;
 		String asyncResetExpression = null;
+		public int compareTo( Object o ){
+			Output a = (Output)o;  
+			return name.compareTo(a.name);// par ordre alphabétique
+		}
 	}
 
 	// //////////////////////////////////////////////////////////////////
-	static class State {
+	static class State  implements Comparable {
 		Boolean isInit; // initial state or not
 		// String name=new String("");
 		String name;
@@ -954,6 +970,10 @@ public class FsmProcess {
 		// static ArrayList<Transition> transitionFromThisState=new
 		// ArrayList<Transition>() ;
 		ArrayList<Transition> transitionsFromThisState = new ArrayList<Transition>();
+		public int compareTo( Object o ){
+			State a = (State)o;  
+			return name.compareTo(a.name);// par ordre alphabétique
+		}
 	}
 
 	// //////////////////////////////////////////////////////////////////
@@ -1021,6 +1041,10 @@ public class FsmProcess {
 		public ResetTransition currentResetTransition = null;
 		public boolean currentTransitionIsReset;
 
+		public ArrayList<String> inputsOrderedNamesList = new ArrayList<String>();
+		public ArrayList<String> outputsOrderedNamesList = new ArrayList<String>();
+		
+		
 		// to know when parsing a condition if it should be added to
 		// ResetTransition or Transition
 
