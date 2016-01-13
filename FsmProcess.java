@@ -375,7 +375,9 @@ public class FsmProcess {
 		
 		//TODO: lors de la verification de l'existance de in/out/state avant ajout dans la liste, 
 		//utiliser un operateur de comparaison qui soit insensible à la casse
-		
+		//TODO: when transisitions conditions from one state are not exclusive, inform and check that the order in the vhdl is the same than thoose in the fsm
+		//anyway the priority does not appear on the dot graph -> WARNING
+		//SRESET have higher priority
 		Boolean modelOk = true;
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
@@ -538,10 +540,19 @@ public class FsmProcess {
 					bufVhdl.append("   if ( ");
 				else
 					bufVhdl.append("                         elsif ( ");
-				bufVhdl.append(" ( ");
-				bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
+				
+				if ( fsm.states.get(n).transitionsFromThisState.get(m).condition.equals("1"))
+					bufVhdl.append(" true ");
+				else
+				{
+					bufVhdl.append(" ( ");
+			
+					bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
 				bufVhdl.append(" ) ");
-				bufVhdl.append(" ='1' ) then etat_suivant <= state_");
+				
+				bufVhdl.append(" ='1' ");
+				}
+				bufVhdl.append(") then etat_suivant <= state_");
 				bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
 				bufVhdl.append(";\n");
 			}
