@@ -377,7 +377,7 @@ public class FsmProcess {
 		//utiliser un operateur de comparaison qui soit insensible à la casse
 		//TODO: when transisitions conditions from one state are not exclusive, inform and check that the order in the vhdl is the same than thoose in the fsm
 		//anyway the priority does not appear on the dot graph -> WARNING
-		//SRESET have higher priority
+		//SRESET have higher priority than standard transition, but there is the same problem if there exist multiple sreset conditions. The first has the higher priority
 		Boolean modelOk = true;
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
@@ -550,7 +550,7 @@ public class FsmProcess {
 					bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
 				bufVhdl.append(" ) ");
 				
-				bufVhdl.append(" ='1' ");
+				bufVhdl.append(" = '1' ");
 				}
 				bufVhdl.append(") then etat_suivant <= state_");
 				bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
@@ -566,7 +566,40 @@ public class FsmProcess {
 		}
 		bufVhdl.append("--    when others => etat_suivant <= state_");
 		bufVhdl.append(fsm.states.get(0).name);
-		bufVhdl.append(";\n    end case;\nend process;\n");
+		bufVhdl.append(";\n    end case;\n");
+		
+		
+
+		int nbResetTransitions=fsm.resetTransitions.size();
+		if (nbResetTransitions!=0){
+			bufVhdl.append("-----------Synchronous RESETs has higher priority than standard transitions\n");
+			for (int m = 0; m < nbResetTransitions; m++) {
+				if (m == 0)
+					bufVhdl.append("   if    ( ");
+				else
+					bufVhdl.append("   elsif ( ");
+
+				if ( fsm.resetTransitions.get(m).condition.equals("1"))
+					bufVhdl.append(" true "); //that would be dumb because the system should always be resetted, but if it is asked, I do it...
+				else
+				{
+					bufVhdl.append(" ( ");
+					bufVhdl.append(fsm.resetTransitions.get(m).condition);
+					bufVhdl.append(" ) ");
+					bufVhdl.append(" = '1' ");
+				}
+				bufVhdl.append(") then etat_suivant <= state_");
+				bufVhdl.append(fsm.resetTransitions.get(m).destination);
+				bufVhdl.append(";\n");
+			}
+			bufVhdl.append("   end if; --no else, so etat_suivant is not modified here if there is no synchronous reset\n");
+		}
+
+
+		
+		
+		
+		bufVhdl.append("end process;\n");
 		bufVhdl.append("------------------FLIP FLOPS FOR MEMORIZED OUTPUTS ------------\n");
 		for (int n = 0; n < fsm.outputs.size(); n++) {
 			Output out = fsm.outputs.get(n);
