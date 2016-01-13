@@ -802,18 +802,18 @@ public class FsmProcess {
 		// HashMap<String,Transition > hmapTransition = new
 		// HashMap<String,Transition>();
 
-		public static Boolean GenerateNumberOfStateOutput = true;
+		public Boolean GenerateNumberOfStateOutput = true;
 
 		// member variables for parsing
-		public static Boolean resetAsynchronousIsDefined = false;
-		public static State resetAsynchronousState = null;
+		public Boolean resetAsynchronousIsDefined = false;
+		public State resetAsynchronousState = null;
 
-		public static State currentState = null;
-		public static Action currentAction = null;
-		public static Output currentOutput = null;
-		public static Transition currentTransition = null;
-		public static ResetTransition currentResetTransition = null;
-		public static boolean currentTransitionIsReset;
+		public State currentState = null;
+		public Action currentAction = null;
+		public Output currentOutput = null;
+		public Transition currentTransition = null;
+		public ResetTransition currentResetTransition = null;
+		public boolean currentTransitionIsReset;
 
 		// to know when parsing a condition if it should be added to
 		// ResetTransition or Transition
@@ -1025,25 +1025,29 @@ public class FsmProcess {
 			}
 			fsm.currentOutput.asyncResetExpression = reconstructedExpression;
 		}
- 		// //////////////////////////////////////////////////////////////
-		public void enterAction_id_reset_asynchronous(FsmParser.Action_id_reset_asynchronousContext ctx){
-			String  outputName= ctx.children.get(0).getText();
+
+		// //////////////////////////////////////////////////////////////
+		public void enterAction_id_reset_asynchronous(FsmParser.Action_id_reset_asynchronousContext ctx) {
+			String outputName = ctx.children.get(0).getText();
 			fsm.currentOutput = fsm.getOutputFromName(outputName);
 			if (fsm.currentOutput == null) {
 				Output o = new Output();
 				o.name = outputName;
-		 		fsm.addOutput(outputName, o);
+				fsm.addOutput(outputName, o);
 				fsm.currentOutput = o;
 			}
-			// there is no  yet Action_expression_reset_asynchronous, only its
-			// name, so lets give a defaut "1" expression, that can be updated later
+			// there is no yet Action_expression_reset_asynchronous, only its
+			// name, so lets give a defaut "1" expression, that can be updated
+			// later
 			fsm.currentOutput.asyncResetExpression = "1"; // default
 			fsm.outputsWithAsynchronousResetValue.add(fsm.currentOutput);
-			fsm.currentOutput.memorized=true;	//  check that the output is memorized
+			fsm.currentOutput.memorized = true; // check that the output is
+												// memorized
 		}
+
 		// //////////////////////////////////////////////////////////////
 		public void enterAction_id(FsmParser.Action_idContext ctx) {
-			String  outputName= ctx.children.get(0).getText();
+			String outputName = ctx.children.get(0).getText();
 			fsm.currentAction.name = outputName;
 			fsm.currentOutput = fsm.getOutputFromName(outputName);
 			if (fsm.currentOutput == null) {
@@ -1051,7 +1055,7 @@ public class FsmProcess {
 				o.memorized = null; // default, will be defined later in the
 				// analysis
 				o.name = outputName;
-		 		fsm.addOutput(outputName, o);
+				fsm.addOutput(outputName, o);
 				fsm.currentOutput = o;
 			}
 		}
