@@ -105,17 +105,23 @@ public class FsmProcess {
 		int cptResetStates=0;
 		for (int n = 0; n < fsm.states.size(); n++) {
 			int nbAttachedActions = fsm.states.get(n).attachedActions.size();
+			int nbAttachedSynchronousReset=0;
+			
+			//TODO: nbAttachedSynchronousReset to determine
 			
 			// add states to the dot file
-			bufDot.append("    	//State:\n");
-			if (nbAttachedActions != 0) {
+			bufDot.append("    	//---------State:   ");
+			bufDot.append(fsm.states.get(n).name);
+			bufDot.append("    -----------------\n");
+			
+			//if (nbAttachedActions != 0) {
 				//	bufDot.append("    	subgraph cluster_"); ////open subgraph
 				//		bufDot.append(fsm.states.get(n).name);
 				//		bufDot.append(" { \n");
 				bufDot.append(" {");
 				//very important, thanks to this, the state and action nodes are on the same line or column, orthogonally of the rankdir
 				bufDot.append(" rank = same;\n"); 
-			}
+			//}
 			
 			bufDot.append("    	");
 			bufDot.append(fsm.states.get(n).name);
@@ -142,9 +148,69 @@ public class FsmProcess {
 				bufDot.append("  [arrowhead=none ]     ;\n");
 				
 			//	bufDot.append(" } \n"); //close subgraph	
-				bufDot.append(" }; \n"); //close rank...
 				
 			}
+
+
+			int nbResetTransitions = fsm.resetTransitions.size();
+			for (int k=0;k<nbResetTransitions ;k++) {
+				ResetTransition rt = fsm.resetTransitions.get(k);
+				if(rt.destination.equals(fsm.states.get(n).name)){
+					bufDot.append("    	//display reset transition to that state\n    	");
+					//for (int k = 0; k < nbResetTransitions; k++) {
+					// bufDot.append("    	node [shape=box] ");
+					//bufDot.append("    	emptystateforreset");
+					bufDot.append("    	r");
+					cptResetStates++;
+					bufDot.append(cptResetStates);
+
+					bufDot.append("[style=\"dashed\", shape=box, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
+					bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
+					int nbActionsInResetTransitions = rt.attachedActions.size();
+					if (nbActionsInResetTransitions == 0)
+						bufDot.append("1");
+					else
+						bufDot.append("2");
+					bufDot.append("\">");
+					bufDot.append(rt.condition);
+					bufDot.append("</TD> </TR>\n");
+					for (int l = 0; l < nbActionsInResetTransitions; l++) {
+						bufDot.append("    	    	<TR><TD>");
+						bufDot.append(rt.attachedActions.get(l).type);
+						bufDot.append("</TD><TD>");
+						bufDot.append(rt.attachedActions.get(l).name);
+						if (rt.attachedActions.size() != 0)
+							if (!rt.attachedActions.get(l).expression.equals("")) {
+								bufDot.append("=");
+								bufDot.append(rt.attachedActions.get(l).expression);
+							}
+						bufDot.append("</TD> </TR>\n");
+					}
+					bufDot.append("    	    	</TABLE>>  ];\n");
+
+					bufDot.append("    	//attach the reset transition to the state\n    	");
+					
+					bufDot.append("    	r");
+					bufDot.append(cptResetStates);
+					//bufDot.append("    	emptystateforreset");
+					//bufDot.append(k); // generate a name from the k value
+					//bufDot.append(" [shape=box, style=\"invis\" ];\n");
+					//bufDot.append("    	emptystateforreset");
+					//bufDot.append(k);
+
+
+					bufDot.append(" -> ");
+					bufDot.append(rt.destination);
+					bufDot.append("  ");
+					bufDot.append(" [ style=\"dashed\"];\n");
+				}
+			}
+
+			bufDot.append(" }; \n"); //close rank...
+			
+			
+			
+			
 			
 		}
 		bufDot.append("//////////////////display  transitions//////////////////\n");
@@ -183,56 +249,6 @@ public class FsmProcess {
 						GenerateDotForAction(t.attachedActions.get(l));
 					bufDot.append("    	    	</TABLE>>  ];\n");
 				}
-		}
-		int nbResetTransitions = fsm.resetTransitions.size();
-		if (nbResetTransitions != 0) {
-			bufDot.append("//////////////////display reset transitions//////////////////\n");
-			for (int k = 0; k < nbResetTransitions; k++) {
-				ResetTransition rt = fsm.resetTransitions.get(k);
-				// bufDot.append("    	node [shape=box] ");
-				//bufDot.append("    	emptystateforreset");
-				bufDot.append("    	r");
-				cptResetStates++;
-				bufDot.append(cptResetStates);
-				
-				bufDot.append("[style=\"dashed\", shape=box, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
-				bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
-				int nbActionsInResetTransitions = rt.attachedActions.size();
-				if (nbActionsInResetTransitions == 0)
-					bufDot.append("1");
-				else
-					bufDot.append("2");
-				bufDot.append("\">");
-				bufDot.append(rt.condition);
-				bufDot.append("</TD> </TR>\n");
-				for (int l = 0; l < nbActionsInResetTransitions; l++) {
-					bufDot.append("    	    	<TR><TD>");
-					bufDot.append(rt.attachedActions.get(l).type);
-					bufDot.append("</TD><TD>");
-					bufDot.append(rt.attachedActions.get(l).name);
-					if (rt.attachedActions.size() != 0)
-						if (!rt.attachedActions.get(l).expression.equals("")) {
-							bufDot.append("=");
-							bufDot.append(rt.attachedActions.get(l).expression);
-						}
-					bufDot.append("</TD> </TR>\n");
-				}
-				bufDot.append("    	    	</TABLE>>  ];\n");
-				
-				bufDot.append("    	r");
-				bufDot.append(cptResetStates);
-				//bufDot.append("    	emptystateforreset");
-				//bufDot.append(k); // generate a name from the k value
-				//bufDot.append(" [shape=box, style=\"invis\" ];\n");
-				//bufDot.append("    	emptystateforreset");
-				//bufDot.append(k);
-				
-				
-				bufDot.append(" -> ");
-				bufDot.append(rt.destination);
-				bufDot.append("  ");
-				bufDot.append(" [ style=\"dashed\"];\n");
-			}
 		}
 		
 		if (fsm.resetAsynchronousIsDefined) {
