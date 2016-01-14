@@ -398,6 +398,22 @@ public class FsmProcess {
 		// TODO: definir une notion de priorité pour toutes les transitions (à
 		// afficher dans le dot) pour ordonner les if /elsif
 		// TODO: //SRESET condition should be!='1' by construction
+		// TODO: verifier qu'il y a au max 1 définition d'horloge
+
+		// TODO; pour gérer la priorité des transitions, utiliser pour
+		// l'affichage
+		// taillabel="1", ajouter un champ priority, egale à max_int par defaut
+		// qui sera mis à jour si la valeur est parsée
+		// rendre les transitions et transitions reset comparable et trier
+		// Pas évident de ne pas générer les actions sur transition si plusieurs
+		// sont actives simultanement...
+
+		// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
+		// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
+		// et
+		// pour spécifier que des E ou S sont des bus de n bits
+		//
+
 		Boolean modelOk = true;
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
@@ -623,6 +639,38 @@ public class FsmProcess {
 		}
 		bufVhdl.append(")\n");
 		bufVhdl.append("begin\n");
+
+		int nbResetTransitions = fsm.resetTransitions.size();
+		if (nbResetTransitions != 0) {
+			bufVhdl.append("-----------Synchronous RESETs has higher priority than standard transitions\n");
+			for (int m = 0; m < nbResetTransitions; m++) {
+				if (m == 0)
+					bufVhdl.append("   if    ( ");
+				else
+					bufVhdl.append("   elsif ( ");
+
+				if (fsm.resetTransitions.get(m).condition.equals("1"))
+					bufVhdl.append(" true "); // that would be dumb because the
+												// system should always be
+												// resetted, but if it is asked,
+												// I do it...
+				else {
+					bufVhdl.append(" ( ");
+					bufVhdl.append(fsm.resetTransitions.get(m).condition);
+					bufVhdl.append(" ) ");
+					bufVhdl.append(" = '1' ");
+				}
+				bufVhdl.append(") then etat_suivant <= state_");
+				bufVhdl.append(fsm.resetTransitions.get(m).destination);
+				bufVhdl.append(";\n");
+			}
+			// bufVhdl.append("   end if; --no else, so etat_suivant is not modified here if there is no synchronous reset\n");
+			bufVhdl.append("   else \n");
+		}
+		// else
+		// bufVhdl.append("   if ( ");
+		bufVhdl.append("------------------------------standard transitions---------------------\n");
+
 		bufVhdl.append("    case etat_present is\n");
 		// pour chaque état, il peut y avoir plusieurs transitions, la première
 		// if, les suivantes elsif et finalement en plus le maintien dans l'état
@@ -665,33 +713,10 @@ public class FsmProcess {
 		bufVhdl.append("--    when others => etat_suivant <= state_");
 		bufVhdl.append(fsm.states.get(0).name);
 		bufVhdl.append(";\n    end case;\n");
-
-		int nbResetTransitions = fsm.resetTransitions.size();
-		if (nbResetTransitions != 0) {
-			bufVhdl.append("-----------Synchronous RESETs has higher priority than standard transitions\n");
-			for (int m = 0; m < nbResetTransitions; m++) {
-				if (m == 0)
-					bufVhdl.append("   if    ( ");
-				else
-					bufVhdl.append("   elsif ( ");
-
-				if (fsm.resetTransitions.get(m).condition.equals("1"))
-					bufVhdl.append(" true "); // that would be dumb because the
-												// system should always be
-												// resetted, but if it is asked,
-												// I do it...
-				else {
-					bufVhdl.append(" ( ");
-					bufVhdl.append(fsm.resetTransitions.get(m).condition);
-					bufVhdl.append(" ) ");
-					bufVhdl.append(" = '1' ");
-				}
-				bufVhdl.append(") then etat_suivant <= state_");
-				bufVhdl.append(fsm.resetTransitions.get(m).destination);
-				bufVhdl.append(";\n");
-			}
-			bufVhdl.append("   end if; --no else, so etat_suivant is not modified here if there is no synchronous reset\n");
-		}
+		// if there has been some synchronous reset transition, end if should be
+		// added
+		if (nbResetTransitions != 0)
+			bufVhdl.append("   end if;\n");
 
 		bufVhdl.append("end process;\n");
 		bufVhdl.append("------------------FLIP FLOPS FOR MEMORIZED OUTPUTS ------------\n");
