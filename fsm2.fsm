@@ -2,11 +2,30 @@
 //Nom de la machine à état= nom du fichier sans l'extension
 //Les différents états avec actions sur état
 	1 :R,sortie4=IN2 and IN1;
- 	2 : I,sortie2=IN1:
+ 	3 : I,sortie2=IN1:
             sortie3:
             S,sortie4=IN2;
-	3 :I,sortie3:
+	2 :I,sortie3:
             R,sortie4=IN1;
+4 : I,sortie7;
+5;
+6:M,sortie9=entree4;
+7;
+A: I,sortie2=IN1:
+            sortie3:
+            S,sortie4=IN2;
+	 
+B: I,sortie2=IN1:
+            sortie3:
+            S,sortie4=IN2;
+	 
+C;
+D: I,sortie2=IN1:
+            sortie3:
+            S,sortie4=IN2;
+	 
+E;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////// 
 //Transitions et actions sur transitions
 	1 -> 2 ?NOT IN3: R, sortie5=entree3;
@@ -16,17 +35,71 @@
  	3 -> 1 ?IN2:I,sortie1:
   	            I,sortie2=IN2 and not IN4:
 		    S,sortie4=IN3;
+3 -> 4? IN6:R,sortie4;
+4 -> 2*2? IN1;
+4 -> 1*5? IN2;
+
+1 -> 5?IN7;
+2 -> 5? not IN7;
+3 -> 5;
+4 -> 5;
+5 -> 1?TOTO:S,sortie=TUTU;
+
+2->6?in7;
+6->4?TOTO:M,sortie=TITI;
+
+5->7? IN7;
+7->2?IN7;
+5->A:I,sortie1:
+  	            I,sortie2=IN2 and not IN4:
+		    S,sortie4=IN3;
+
+7->5? IN6: S,sortie4=NOT IN4;
+
+A->B;
+B->C:I,sortie1:
+  	            I,sortie2=IN2 and not IN4:
+		    S,sortie4=IN3;
+C->D;
+D->E:I,sortie1:
+  	            I,sortie2=IN2 and not IN4:
+		    S,sortie4=IN3;
+E->2?fini: S,sortie;
+
+B->D?IN6:S, sortie5=entree4 ;
+E->1?IN6;
+
+C->7?TOTO:I,sortie1:
+  	            I,sortie2=IN2 and not IN4:
+		    S,sortie4=IN3;
+
+D->5?TITI;
+E->5?TITI;
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Transitions avec état d'origine vide pour reset synchrone, actions sur reset
  	->2 ?SRESET AND IN4: S,sortie4=IN1:
                              I, sortie2=IN2;
  	->3 ?SRESET AND NOT IN2: I,sortie2:
                                 R,sortie5=entree2;
+	->4 ? SRESET2 AND IN3: S,sortie4;
+	->1 ? SRESET3 AND IN2: S,sortie4;
+	->7 ? SRESET7 AND IN5: M,sortie10=entree21;
+
+->A*2?SRESET8;
+
+->A*1?SRESET6;
+
+->D? SRESET4;
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Actions toujours vraies
-	%I,sortie6;
+ 	%I,sortie6;
 	%I,sortie7=entree2;
 	%R,sortie8=entree3;
-	%S,sortie9=entree4;
+	%S,sortie5=entree4;
 
-
+//Reset asynchrone et valeurs par défaut pour les sorties mémorisées
+	=>1?arazb,0: sortie4=IN2;
+//redéfinition du signal d'horloge
+	/clk;
+ 
+/click;

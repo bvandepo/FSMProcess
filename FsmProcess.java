@@ -217,7 +217,14 @@ public class FsmProcess {
 					bufDot.append(" -> ");
 					bufDot.append(rt.destination);
 					bufDot.append("  ");
-					bufDot.append(" [ style=\"dashed\"];\n");
+					bufDot.append(" [ ");
+					//show the priority order if its not the default value
+					if (rt.priorityOrder != 1000000) {
+						bufDot.append("headlabel= <<font color=\"red\">");
+						bufDot.append(rt.priorityOrder);
+						bufDot.append("</font>>, ");
+					}
+					bufDot.append("style=\"dashed\"];\n");
 				}
 			}
 
@@ -245,7 +252,14 @@ public class FsmProcess {
 					// weight=1 :cost to stretch an edge, high cost=straight and
 					// short lines
 
-					bufDot.append("[shape=box,  label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
+					bufDot.append("[ ");
+					//show the priority order if its not the default value
+					if (t.priorityOrder != 1000000) {
+						bufDot.append("taillabel= <<font color=\"red\">");
+						bufDot.append(t.priorityOrder);
+						bufDot.append("</font>>, ");
+					}
+					bufDot.append("shape=box,  label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
 					// weight=0.1,headport=w, tailport=e,
 					// , minlen=2
 					// , maxlen=0.1
@@ -414,6 +428,11 @@ public class FsmProcess {
 		// pour spécifier que des E ou S sont des bus de n bits
 		//
 
+		// TODO: pour generer les actions sur (reset) & transitions, en gérant
+		// les priorités, il faudra faire une condition qui fait un AND NOT de
+		// toutes les conditions de transition plus prioritaires depuis le même
+		// état.... FAISABLE!!!!
+
 		Boolean modelOk = true;
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
@@ -457,11 +476,16 @@ public class FsmProcess {
 				}
 			}
 		}
-		// compute the ordered lists of inputs/outputs names
+		// compute the ordered lists of inputs/outputs/states by names
 		// http://imss-www.upmf-grenoble.fr/prevert/Prog/Java/CoursJava/interface.html
 		Collections.sort(fsm.inputs);
 		Collections.sort(fsm.outputs);
 		Collections.sort(fsm.states);
+		// compute the ordered lists of transition by priority. The sorting is
+		// global, but so it will be correct while looping in the list for each
+		// state
+		Collections.sort(fsm.transitions);
+		Collections.sort(fsm.resetTransitions);
 
 		return modelOk;
 	}
@@ -662,7 +686,13 @@ public class FsmProcess {
 				}
 				bufVhdl.append(") then etat_suivant <= state_");
 				bufVhdl.append(fsm.resetTransitions.get(m).destination);
-				bufVhdl.append(";\n");
+				bufVhdl.append(";");
+				//show the priority order if its not the default value
+				if (fsm.resetTransitions.get(m).priorityOrder != 1000000) {
+					bufVhdl.append(" -- priority order set to: ");
+					bufVhdl.append(fsm.resetTransitions.get(m).priorityOrder);
+				}
+				bufVhdl.append("\n");
 			}
 			// bufVhdl.append("   end if; --no else, so etat_suivant is not modified here if there is no synchronous reset\n");
 			bufVhdl.append("   else \n");
@@ -700,7 +730,13 @@ public class FsmProcess {
 				}
 				bufVhdl.append(") then etat_suivant <= state_");
 				bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
-				bufVhdl.append(";\n");
+				bufVhdl.append(";");
+				//show the priority order if its not the default value
+				if (fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder != 1000000) {
+					bufVhdl.append(" -- priority order set to: ");
+					bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder);
+				}
+				bufVhdl.append("\n");
 			}
 			if (transitionFromThisStateNumber != 0)
 				bufVhdl.append("                         else	");
@@ -992,17 +1028,31 @@ public class FsmProcess {
 
 	} // ///////////////////////////////////////////////////////////////
 
-	static class ResetTransition {
+	static class ResetTransition implements Comparable {
 		String destination;
 		String condition;
 		ArrayList<Action> attachedActions = new ArrayList<Action>();
+		int priorityOrder = 1000000; // by default, low priority, 1 is the higher
+								// priority
+
+		public int compareTo(Object o) {
+			ResetTransition a = (ResetTransition) o;
+			return priorityOrder - a.priorityOrder;
+		}
 	} // ///////////////////////////////////////////////////////////////
 
-	static class Transition {
+	static class Transition implements Comparable {
 		String origin;
 		String destination;
 		String condition;
 		ArrayList<Action> attachedActions = new ArrayList<Action>();
+		int priorityOrder = 1000000; // by default, low priority, 1 is the higher
+								// priority
+
+		public int compareTo(Object o) {
+			Transition a = (Transition) o;
+			return priorityOrder - a.priorityOrder;
+		}
 	} // //////////////////////////////////////////////////////////////////
 
 	static class Action {
@@ -1297,6 +1347,17 @@ public class FsmProcess {
 			else {
 				// TODO: deal with this error
 			}
+		}
+
+		// //////////////////////////////////////////////////////////////
+		public void enterReset_transition_priority(FsmParser.Reset_transition_priorityContext ctx) {
+			// int priority = ctx.children.get(0).getText().;
+			fsm.currentResetTransition.priorityOrder = Integer.parseInt(ctx.children.get(0).getText());
+		}
+
+		// //////////////////////////////////////////////////////////////
+		public void enterTransition_priority(FsmParser.Transition_priorityContext ctx) {
+			fsm.currentTransition.priorityOrder = Integer.parseInt(ctx.children.get(0).getText());
 		}
 
 		// //////////////////////////////////////////////////////////////
