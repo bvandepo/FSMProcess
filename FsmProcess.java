@@ -375,8 +375,9 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////
 	@SuppressWarnings("unchecked")
 	static public Boolean checkModel() {
-		//this method returns false and exit as soon as there is a critical error
-		
+		// this method returns false and exit as soon as there is a critical
+		// error
+
 		// TODO: add optional output (bus or not) to display the number of the
 		// state in binary
 
@@ -401,8 +402,7 @@ public class FsmProcess {
 		// existing
 		// TODO: have multi bits outputs (size could be automatically determined
 		// or given in code
-		// TODO: check that there is at least one output
-		// add M action that pilots S and R inconditionnaly
+
 		// TODO enforce that a M action have to have an expression (it memorizes
 		// an input!!!!)
 		// TODO check that no input has the same name as an output
@@ -451,7 +451,12 @@ public class FsmProcess {
 		int numberOfStates = fsm.states.size();
 
 		if (numberOfStates == 0) {
-			System.out.print("Critical error: The model contains no state... impossible to generate \n");
+			System.out.print("Critical error: The model contains no state... \n");
+			return false;
+		}
+
+		if (fsm.outputs.size() == 0) {
+			System.out.print("Critical error: The model contains no outputs... \n");
 			return false;
 		}
 
