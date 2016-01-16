@@ -411,8 +411,7 @@ public class FsmProcess {
 		int numberOfActionsTotal = fsm.actions.size();
 		// compute the number of bits to define the state in binary coding
 		// generate STATE_NUMBER: out std_logic_vector( 0 downto 0); for 1 or 2
-		// states
-		// but it is working
+		// states but it is working
 		fsm.numberOfBitsForStates = Integer.toBinaryString(numberOfStates - 1).length();
 
 		if (numberOfStates == 0) {
@@ -430,18 +429,35 @@ public class FsmProcess {
 
 		// check if inputs/outputs/states names are allowed, "in" and "out" are
 		// forbidden as they are reserved keyword of vhdl
-		for (int m = 0; m < numberOfStates; m++)
-			if (fsm.checkNameIsNotForbidden(fsm.states.get(m).name, "State") == false)
-				modelOk = false;
-		for (int m = 0; m < numberOfInputs; m++)
-			if (fsm.checkNameIsNotForbidden(fsm.inputs.get(m).name, "Input") == false)
-				modelOk = false;
-		for (int m = 0; m < numberOfOutputs; m++)
-			if (fsm.checkNameIsNotForbidden(fsm.outputs.get(m).name, "Output") == false)
-				modelOk = false;
-
+		// also other verifications that there could not be misleading between
+		// names
+		for (int m = 0; m < numberOfStates; m++) {
+			String name = fsm.states.get(m).name;
+			String type = "State";
+			modelOk &= fsm.checkNameIsNotForbidden(name, type);
+			modelOk &= fsm.checkIfNameNotAnInput(name, type);
+			modelOk &= fsm.checkIfNameNotAnOutput(name, type);
+			modelOk &= fsm.checkIfNameIsAsynchronousReset(name, type);
+			modelOk &= fsm.checkIfNameIsClock(name, type);
+		}
+		for (int m = 0; m < numberOfInputs; m++) {
+			String name = fsm.inputs.get(m).name;
+			String type = "Input";
+			modelOk &= fsm.checkNameIsNotForbidden(name, type);
+			modelOk &= fsm.checkIfNameNotAnOutput(name, type);
+			modelOk &= fsm.checkIfNameIsAsynchronousReset(name, type);
+			modelOk &= fsm.checkIfNameIsClock(name, type);
+		}
+		for (int m = 0; m < numberOfOutputs; m++) {
+			String name = fsm.outputs.get(m).name;
+			String type = "Output";
+			modelOk &= fsm.checkNameIsNotForbidden(name, type);
+			modelOk &= fsm.checkIfNameIsAsynchronousReset(name, type);
+			modelOk &= fsm.checkIfNameIsClock(name, type);
+		}
 		if (modelOk == false)
 			return false; // go no further
+ 
 
 		// check if all states have a (reset) transition or asynchronous reset
 		// to them, only the initial state can have no transition to it
@@ -1222,9 +1238,11 @@ public class FsmProcess {
 	static class FiniteStateMachine {
 		// member variables for storing the fsm model
 		public String name;
-		public String clkSignalName = "ck";
+		public String clkSignalName = "CK"; // caps to be compared with parsed
+											// names
 		public Boolean clkSignalNameSpecified = false;
-		public String aResetSignalName = "arazb";
+		public String aResetSignalName = "ARAZB"; // caps to be compared with
+													// parsed names
 		public String aResetSignalLevel = "0";
 
 		ArrayList<ResetTransition> resetTransitions = new ArrayList<ResetTransition>();
@@ -1276,7 +1294,6 @@ public class FsmProcess {
 
 		// list gotten from:
 		// http://www.csee.umbc.edu/portal/help/VHDL/reserved.html
-
 		public Boolean checkNameIsNotForbidden(String name, String type) {
 			if (forbiddenNames.contains(name)) {
 				System.out.print("Critical error: ");
@@ -1284,6 +1301,54 @@ public class FsmProcess {
 				System.out.print(" ");
 				System.out.print(name);
 				System.out.print(" is a reserved word and should not be used.\n");
+				return false;
+			} else
+				return true;
+		}
+
+		public Boolean checkIfNameNotAnInput(String name, String type) {
+			if (hmapInput.containsKey(name)) {
+				System.out.print("Critical error: ");
+				System.out.print(type);
+				System.out.print(" ");
+				System.out.print(name);
+				System.out.print(" is already defined as an input.\n");
+				return false;
+			} else
+				return true;
+		}
+
+		public Boolean checkIfNameNotAnOutput(String name, String type) {
+			if (hmapOutput.containsKey(name)) {
+				System.out.print("Critical error: ");
+				System.out.print(type);
+				System.out.print(" ");
+				System.out.print(name);
+				System.out.print(" is already defined as an output.\n");
+				return false;
+			} else
+				return true;
+		}
+
+		public Boolean checkIfNameIsAsynchronousReset(String name, String type) {
+			if (name.equals(aResetSignalName)) {
+				System.out.print("Critical error: ");
+				System.out.print(type);
+				System.out.print(" ");
+				System.out.print(name);
+				System.out.print(" is already defined as the Asynchronous Reset input.\n");
+				return false;
+			} else
+				return true;
+		}
+
+		public Boolean checkIfNameIsClock(String name, String type) {
+			if (name.equals(clkSignalName)) {
+				System.out.print("Critical error: ");
+				System.out.print(type);
+				System.out.print(" ");
+				System.out.print(name);
+				System.out.print(" is already defined as the Clock input.\n");
 				return false;
 			} else
 				return true;
