@@ -323,11 +323,8 @@ public class FsmProcess {
 		// this method returns false and exit as soon as there is a critical
 		// error
 
-		// TODO: check state_number: it is 2 bits wide when theres only 2
-		// states...., anyway there should be a special case when there's only
-		// two state because the output should be std logic instead of
-		// vector....
-
+		// TODO: in pragma, allow to fix the number of bits for state_number, so the interface doesn't change when states are added. Add a check that the pragma is set high enough...
+		
 		// TODO: que faire quand une action sur état est incompatible avec une
 		// action sur une transition émanant de cet état???
 
@@ -455,7 +452,10 @@ public class FsmProcess {
 			}
 		}
 		// compute the number of bits to define the state in binary coding
-		fsm.numberOfBitsForStates = Integer.toBinaryString(numberOfStates).length();
+		// generate STATE_NUMBER: out std_logic_vector( 0 downto 0); for 1 or 2 states
+		// but it is working
+		fsm.numberOfBitsForStates = Integer.toBinaryString(numberOfStates - 1).length();
+
 		// check that the action on a same output are all compatible
 		int nbActionTotal = fsm.actions.size();
 		for (int k = 0; k < nbActionTotal; k++) {
