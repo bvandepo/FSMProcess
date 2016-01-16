@@ -325,8 +325,9 @@ public class FsmProcess {
 		// error
 
 		// EASY TODOS:
-		// TODO: check repeatedly action are compatible with state and
-		// transition actions (they are exclusive, except for R and S)
+
+		// TODO: detect at parsing when a state is already defined -> warning
+		// mais ajouter les actions
 
 		// TODO enforce that a M action have to have an expression (it memorizes
 		// an input!!!!)
@@ -383,6 +384,8 @@ public class FsmProcess {
 		int numberOfResetTransitions = fsm.resetTransitions.size();
 		int numberOfTransitions = fsm.transitions.size();
 		int numberOfActionsTotal = fsm.actions.size();
+		int numberOfRepeatedlyActions = fsm.repeatedlyActions.size();
+		int numberOfNoRepeatedlyActions = fsm.noRepeatedlyActions.size();
 		// compute the number of bits to define the state in binary coding
 		// generate STATE_NUMBER: out std_logic_vector( 0 downto 0); for 1 or 2
 		// states but it is working
@@ -429,8 +432,10 @@ public class FsmProcess {
 			modelOk &= fsm.checkIfNameIsAsynchronousReset(name, type);
 			modelOk &= fsm.checkIfNameIsClock(name, type);
 		}
-		if (modelOk == false)
-			return false; // go no further
+
+		// TO STOP AT CRITICAL ERRORS!!!!
+		// if (modelOk == false)
+		// return false; // go no further
 
 		// check if all states have a (reset) transition or asynchronous reset
 		// to them, only the initial state can have no transition to it
@@ -494,6 +499,31 @@ public class FsmProcess {
 				}
 			}
 		}
+
+		// Check repeatedly action are compatible with state and
+		// transition actions (they are exclusive, except for R and S)
+		for (int m = 0; m < numberOfRepeatedlyActions; m++) {
+			Action ar = fsm.repeatedlyActions.get(m);
+			for (int n = 0; n < numberOfNoRepeatedlyActions; n++) {
+				Action an = fsm.noRepeatedlyActions.get(n);
+				if (ar.name.equals(an.name)) {
+
+					if (ar.type.equals("R") || ar.type.equals("S")) {
+						System.out.print("Warning: Actions ");
+						System.out.print(ar.name);
+						System.out
+								.print("  is defined as Set or Reset in a repeatedly action and is also defined in states or transitions. This is allowed, however dangerous...\n");
+					} else {
+						System.out.print("Error: Actions ");
+						System.out.print(ar.name);
+						System.out.print("  is defined as a repeatedly action and also on states or transitions. This is forbidden.\n");
+					}
+					System.out.print("\n ");
+					modelOk = false;
+				}
+			}
+		}
+
 		// compute the ordered lists of inputs/outputs/states by names
 		// http://imss-www.upmf-grenoble.fr/prevert/Prog/Java/CoursJava/interface.html
 		Collections.sort(fsm.inputs);
@@ -1228,12 +1258,13 @@ public class FsmProcess {
 		ArrayList<Transition> transitions = new ArrayList<Transition>();
 		HashMap<String, Transition> hmapTransition = new HashMap<String, Transition>();
 		// global actions list
+		ArrayList<Action> actions = new ArrayList<Action>();
+		// each Action in actions list is either one of the 2 following:
 		ArrayList<Action> repeatedlyActions = new ArrayList<Action>();
+		ArrayList<Action> noRepeatedlyActions = new ArrayList<Action>();
 
 		ArrayList<Output> outputsWithAsynchronousResetValue = new ArrayList<Output>();
 
-		ArrayList<Action> actions = new ArrayList<Action>(); // global actions
-																// list
 		// on stocke juste la liste pour pouvoir balayer et verifier les
 		// compatibilités, pas besoin de hashtable
 		// HashMap<String,Transition > hmapTransition = new
@@ -1620,6 +1651,7 @@ public class FsmProcess {
 			else
 				fsm.currentResetTransition.attachedActions.add(a);
 			fsm.actions.add(a); // add to the global action list
+			fsm.noRepeatedlyActions.add(a);
 		}
 
 		// //////////////////////////////////////////////////////////////
@@ -1631,6 +1663,7 @@ public class FsmProcess {
 			a.expression = ""; // default value if not specified
 			fsm.currentState.attachedActions.add(a);
 			fsm.actions.add(a);// add to the global action list
+			fsm.noRepeatedlyActions.add(a);
 		}
 
 		// //////////////////////////////////////////////////////////////
