@@ -17,6 +17,18 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
+//To generate the jar using eclipse:
+//F5 to refresh eclipse project
+//File->export->Java->Runnable JAR file
+//Launch configuration: chose FsmProcess - Fsm
+//Export destination /home/bvandepo/antlr/fsmjar/FsmProcess.jar
+//Package required libraries into generated JAR
+//Finish
+//to save the export info, click save as ANT script and browse: /home/bvandepo/antlr/fsm/exportjar.xml
+//click ok if warnings
+//to run: cd ~/antlr/fsmjar
+//        java -jar FsmProcess.jar train.fsm 
+
 //CTRL-SHIFT 0 : automatisation des inclusions
 //CTRL-SHIFT F : indentation et réorganisation
 
@@ -52,11 +64,6 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////
-
-	/**
-	 * 
-	 * @param a
-	 */
 	static public void GenerateDotForAction(Action a) {
 		bufDot.append("    	    	<TR><TD>");
 		bufDot.append(a.type);
@@ -81,9 +88,6 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////
-	/**
-	 * 
-	 */
 	static public void generateDot() {
 		// TODO: detect synchronous reset to the each state, and display them in
 		// the same rank!!!!
@@ -218,7 +222,7 @@ public class FsmProcess {
 					bufDot.append(rt.destination);
 					bufDot.append("  ");
 					bufDot.append(" [ ");
-					//show the priority order if its not the default value
+					// show the priority order if its not the default value
 					if (rt.priorityOrder != 1000000) {
 						bufDot.append("headlabel= <<font color=\"red\">");
 						bufDot.append(rt.priorityOrder);
@@ -253,7 +257,7 @@ public class FsmProcess {
 					// short lines
 
 					bufDot.append("[ ");
-					//show the priority order if its not the default value
+					// show the priority order if its not the default value
 					if (t.priorityOrder != 1000000) {
 						bufDot.append("taillabel= <<font color=\"red\">");
 						bufDot.append(t.priorityOrder);
@@ -374,6 +378,9 @@ public class FsmProcess {
 		// TODO: add optional output (bus or not) to display the number of the
 		// state in binary
 
+		// TODO : dans la doc sur les (reset) transitions, bien indiquer que
+		// l'ordre de définition ne définit en rien les priorités (pour les
+		// actions!!!!!)
 		// TODO: check if all states have a transition to them, only the initial
 		// state can have no transition to it
 		// check if inputs/outputs names are allowed, "in" and "out" are
@@ -484,9 +491,73 @@ public class FsmProcess {
 		// compute the ordered lists of transition by priority. The sorting is
 		// global, but so it will be correct while looping in the list for each
 		// state
-		Collections.sort(fsm.transitions);
+		// /////////////////// resetTransitions priorities ///////
 		Collections.sort(fsm.resetTransitions);
 
+		// now that the (reset) transitions are sorted, lets compute
+		// fsm.resetTransitions.conditionWithPriorities accordingly
+		int numberOfResetTransitions = fsm.resetTransitions.size();
+		/*
+		 * ArrayList<Integer> ResetTransitionsPriorityList = new
+		 * ArrayList<Integer>(); for (int n = 0; n < numberOfResetTransitions;
+		 * n++) { ResetTransition rt=fsm.resetTransitions.get(n);
+		 * ResetTransitionsPriorityList.add(rt.priorityOrder); }
+		 */
+
+		for (int n = 0; n < numberOfResetTransitions; n++) {
+			ResetTransition rt = fsm.resetTransitions.get(n);
+			rt.conditionWithPriorities = " ( " + rt.condition + " ) ";
+			// rt.conditionWithPriorities+=" et ca";
+		}
+		// loop inside the list and detect every adjacent elements with the same
+		// priority
+		for (int n = 1; n < numberOfResetTransitions; n++) {
+			ResetTransition rt1 = fsm.resetTransitions.get(n - 1);
+			ResetTransition rt2 = fsm.resetTransitions.get(n);
+			if (rt1.priorityOrder == rt2.priorityOrder) {
+				System.out
+						.print("Warning: Some reset transitions have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
+			} else {// compute rt2.conditionWithPriorities from the rt1 one
+				rt2.conditionWithPriorities += " AND NOT " + rt1.conditionWithPriorities + " ";
+				System.out.print("rt2.conditionWithPriorities upgraded to: ");
+				System.out.print(rt2.conditionWithPriorities);
+				System.out.print("\n");
+			}
+		}
+		// /////////////////// Transitions priorities ///////
+		// Collections.sort(fsm.transitions);
+		// sort the transition by priority for each state (origin)
+		for (int m = 0; m < numberOfStates; m++) {
+			int numberOfTransitionsFromThisState = fsm.states.get(m).transitionsFromThisState.size();
+			Collections.sort(fsm.states.get(m).transitionsFromThisState);
+			for (int n = 0; n < numberOfTransitionsFromThisState; n++) {
+				Transition t = fsm.states.get(m).transitionsFromThisState.get(n);
+				if (t.condition.equals("1"))
+					t.conditionWithPriorities = " ( true ) ";
+				else
+					t.conditionWithPriorities = " ( " + t.condition + " ) ";
+			}
+			// loop inside the list and detect every adjacent elements with the
+			// same
+			// priority
+			for (int n = 1; n < numberOfTransitionsFromThisState; n++) {
+				Transition t1 = fsm.states.get(m).transitionsFromThisState.get(n - 1);
+				Transition t2 = fsm.states.get(m).transitionsFromThisState.get(n);
+				if (t1.priorityOrder == t2.priorityOrder) {
+					System.out.print("Warning: Some  transitions from State: ");
+					System.out.print(fsm.states.get(m).name);
+					System.out
+							.print(" have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
+				} else {// compute rt2.conditionWithPriorities from the rt1 one
+					t2.conditionWithPriorities += " AND NOT " + t1.conditionWithPriorities + " ";
+					System.out.print("For state ");
+					System.out.print(fsm.states.get(m).name);
+					System.out.print(" , t2.conditionWithPriorities upgraded to: ");
+					System.out.print(t2.conditionWithPriorities);
+					System.out.print("\n");
+				}
+			}
+		}
 		return modelOk;
 	}
 
@@ -687,7 +758,7 @@ public class FsmProcess {
 				bufVhdl.append(") then etat_suivant <= state_");
 				bufVhdl.append(fsm.resetTransitions.get(m).destination);
 				bufVhdl.append(";");
-				//show the priority order if its not the default value
+				// show the priority order if its not the default value
 				if (fsm.resetTransitions.get(m).priorityOrder != 1000000) {
 					bufVhdl.append(" -- priority order set to: ");
 					bufVhdl.append(fsm.resetTransitions.get(m).priorityOrder);
@@ -731,7 +802,7 @@ public class FsmProcess {
 				bufVhdl.append(") then etat_suivant <= state_");
 				bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
 				bufVhdl.append(";");
-				//show the priority order if its not the default value
+				// show the priority order if its not the default value
 				if (fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder != 1000000) {
 					bufVhdl.append(" -- priority order set to: ");
 					bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder);
@@ -868,11 +939,6 @@ public class FsmProcess {
 								Action a = fsm.states.get(m).attachedActions.get(l);
 								if (a != null) {
 									if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
-										// is used to add a not for M action
-										// condition to generate the R condition
-										// if (cptActionType == 1 &&
-										// a.type.equals("M"))
-										// bufVhdl.append(" not ");
 										// if there is an expression
 										if ((!a.expression.equals("")) && (cptActionType != 3)) {
 											bufVhdl.append(" ( ");
@@ -901,13 +967,6 @@ public class FsmProcess {
 									Action a = t.attachedActions.get(l);
 									if (a != null) {
 										if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
-											// is used to add a not for M action
-											// condition to generate the R
-											// condition
-											// if (cptActionType == 1 &&
-											// a.type.equals("M"))
-											// bufVhdl.append(" not ");
-											// if (!a.expression.equals("")) {
 											if ((!a.expression.equals("")) && (cptActionType != 3)) {
 												// if there is an expression
 												bufVhdl.append(" ( ");
@@ -921,13 +980,14 @@ public class FsmProcess {
 											bufVhdl.append(fsm.states.get(m).name);
 											bufVhdl.append(") ");
 											bufVhdl.append(" and  (");
-											if (t.condition.equals("1"))
-												bufVhdl.append(" true ");
-											else {
-												bufVhdl.append(" ( ");
-												bufVhdl.append(t.condition);
-												bufVhdl.append(") = \'1\' ");
-											}
+											// if (t.condition.equals("1"))
+											// bufVhdl.append(" true ");
+											// else {
+											bufVhdl.append(" ( ");
+											// bufVhdl.append(t.condition);
+											bufVhdl.append(t.conditionWithPriorities);
+											bufVhdl.append(") = \'1\' ");
+											// }
 											bufVhdl.append(") )  else \n            ");
 										}
 									}
@@ -946,12 +1006,6 @@ public class FsmProcess {
 								Action a = rt.attachedActions.get(l);
 								if (a != null) {
 									if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
-										// is used to add a not for M action
-										// condition to generate the R condition
-										// if (cptActionType == 1 &&
-										// a.type.equals("M"))
-										// bufVhdl.append(" not ");
-										// if (!a.expression.equals("")) {
 										if ((!a.expression.equals("")) && (cptActionType != 3)) {
 											// if there is an expression
 											bufVhdl.append(" ( ");
@@ -960,10 +1014,11 @@ public class FsmProcess {
 										} else {
 											bufVhdl.append(" '1' ");
 										}
-										// rt.condition should be!='1' by
+										// rt.conditionWithPriorities should
+										// be!='1' by
 										// construction
 										bufVhdl.append("when ( ( ");
-										bufVhdl.append(rt.condition);
+										bufVhdl.append(rt.conditionWithPriorities);
 										bufVhdl.append(") = \'1\' )");
 										bufVhdl.append("   else  \n            ");
 									}
@@ -978,11 +1033,6 @@ public class FsmProcess {
 						Action a = fsm.repeatedlyActions.get(j);
 						if (a != null) {
 							if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
-								// is used to add a not for M action
-								// condition to generate the R condition
-								// if (cptActionType == 1 && a.type.equals("M"))
-								// bufVhdl.append(" not ");
-								// if (!a.expression.equals("")) {
 								if ((!a.expression.equals("")) && (cptActionType != 3)) {
 									// if there is an expression
 									bufVhdl.append(" ( ");
@@ -1030,10 +1080,16 @@ public class FsmProcess {
 
 	static class ResetTransition implements Comparable {
 		String destination;
+		// this string is the expression read from the fsm file
 		String condition;
+		// this string is equal to expression if there is no priority between
+		// action on (reset) transitions from(to) the same state. if properties
+		// are defined, the condition of lower priority action is computed
+		// using the complements of higher priority condition
+		String conditionWithPriorities;
 		ArrayList<Action> attachedActions = new ArrayList<Action>();
-		int priorityOrder = 1000000; // by default, low priority, 1 is the higher
-								// priority
+		int priorityOrder = 1000000; // by default, low priority, 1 is the
+										// higher priority
 
 		public int compareTo(Object o) {
 			ResetTransition a = (ResetTransition) o;
@@ -1044,10 +1100,16 @@ public class FsmProcess {
 	static class Transition implements Comparable {
 		String origin;
 		String destination;
+		// this string is the expression read from the fsm file
 		String condition;
+		// this string is equal to expression if there is no priority between
+		// action on (reset) transitions from(to) the same state. if properties
+		// are defined, the condition of lower priority action is computed
+		// using the complements of higher priority condition
+		String conditionWithPriorities;
 		ArrayList<Action> attachedActions = new ArrayList<Action>();
-		int priorityOrder = 1000000; // by default, low priority, 1 is the higher
-								// priority
+		int priorityOrder = 1000000; // by default, low priority, 1 is the
+										// higher priority
 
 		public int compareTo(Object o) {
 			Transition a = (Transition) o;
@@ -1494,6 +1556,10 @@ public class FsmProcess {
 		if (inputFile != null) {
 			is = new FileInputStream(inputFile);
 		}
+
+		System.out.println("FsmProcess B. Vandeportaele LAAS/CNRS 2016\n");
+		System.out.println("usage: FsmProcess fichier.fsm\n\n");
+
 		ANTLRInputStream input = new ANTLRInputStream(is);
 		FsmLexer lexer = new FsmLexer(input);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -1520,14 +1586,14 @@ public class FsmProcess {
 			fsmBaseName = fsmBaseName.substring(0, fsmBaseName.length() - 4);
 			if (fsmInputName.contains("/")) // it contains a unix based
 											// directory name
-				fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("/"), fsmInputName.length() - 4);
+				fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("/") + 1, fsmInputName.length() - 4);
 			else if (fsmInputName.contains("\\")) // it contains a windows based
 													// directory name
-				fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("\\"), fsmInputName.length() - 4); // it
-																												// is
-																												// a
-																												// relative
-																												// path
+				fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("\\") + 1, fsmInputName.length() - 4); // it
+																													// is
+																													// a
+																													// relative
+																													// path
 			else
 				fsm.name = fsmInputName.substring(0, fsmInputName.length() - 4);
 		}
@@ -1544,7 +1610,6 @@ public class FsmProcess {
 			bufVhdl.setLength(0);
 			generatePortMapVhdl();
 			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_portmap.vhd"));
-
 			// System.out.println(bufVhdl.toString());
 		}
 	}
