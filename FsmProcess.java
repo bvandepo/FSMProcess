@@ -105,6 +105,9 @@ public class FsmProcess {
 
 		// should be setable in the command line
 		// bufDot.append("    	rankdir=LR;\n");
+
+		bufDot.append("    	ranksep=0.5;\n"); // separation between different
+												// ranks
 		bufDot.append("    	nodesep=0.1;\n"); // separation between nodes in
 												// same rank (state and
 												// corresponding action)
