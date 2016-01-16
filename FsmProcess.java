@@ -325,16 +325,17 @@ public class FsmProcess {
 		// error
 
 		// EASY TODOS:
+		// TODO Add an option to generate dot and vhdl even if there is some
+		// errors (separate critials) to be able to get some wrong drawings or
+		// code
 
-		// TODO: when transisitions conditions from one state are not exclusive,
+		// TODO: when transitions conditions from one state are not exclusive,
 		// inform and check that the order in the vhdl is the same than thoose
 		// in the fsm
 		// anyway the priority does not appear on the dot graph -> WARNING
 		// SRESET have higher priority than standard transition, but there is
 		// the same problem if there exist multiple sreset conditions. The first
 		// has the higher priority
-
-		// TODO: verifier qu'il y a au max 1 définition d'horloge
 
 		// HARD TODOS:
 		// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
@@ -1507,8 +1508,14 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterClock_definition(FsmParser.Clock_definitionContext ctx) {
+			if (fsm.clkSignalNameSpecified) {
+				System.out.print("Warning:   Clock signal has been redefined more than one time...\n");
+			}
 			fsm.clkSignalName = ctx.children.get(1).getText().toUpperCase();
 			fsm.clkSignalNameSpecified = true;
+			System.out.print("Info:   Clock signal is defined as: ");
+			System.out.print(fsm.clkSignalName);
+			System.out.print("\n");
 		}
 
 		// ///////////////////////////////////////////////////////////////
