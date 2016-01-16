@@ -604,33 +604,70 @@ public class FsmProcess {
 				System.out.print(" because of higher priority reset transition(s) to the same state\n");
 			}
 		}
-		// add a post processing such that reset transitions to a state have to
-		// inhibate standard transition actions from that state
-		for (int n = 0; n < numberOfResetTransitions; n++) {
-			ResetTransition rt = fsm.resetTransitions.get(n);
-			State s = fsm.getStateFromName(rt.destination);
-			int numberOfTransitionsFromThisState = s.transitionsFromThisState.size();
-			for (int m = 0; m < numberOfTransitionsFromThisState; m++) {
-				Transition t = s.transitionsFromThisState.get(m);
-				String st = "( not ( ";
-				st += rt.condition;
-				st += " ) and ";
-				st += t.condition;
-				st += " ) ";
-				System.out.print("Info: Transition from state ");
-				System.out.print(t.origin);
-				System.out.print(" to state ");
-				System.out.print(t.destination);
-				System.out.print(" with condition: ");
-				System.out.print(t.condition);
-				System.out.print(" has been upgraded to condition: ");
-				t.condition = st;
-				System.out.print(t.condition);
-				System.out.print(" because of a reset transition(s) to the same state\n");
+		// add a post processing such that reset transitions have to
+		// inhibate standard transition and state actions from ALL states
+		if (fsm.ResetTransitionInhibatesTransitionActions || fsm.ResetTransitionInhibatesActionsOnStates) {
+			if (numberOfResetTransitions > 0) {
+
+				String resetConditionComplement = " (";
+				for (int n = 0; n < numberOfResetTransitions; n++) {
+					ResetTransition rt = fsm.resetTransitions.get(n);
+					if (n != 0)
+						resetConditionComplement += " AND ";
+					resetConditionComplement += " ( NOT ";
+					resetConditionComplement += rt.condition;
+					resetConditionComplement += " ) ";
+				}
+				resetConditionComplement += " ) ";
+				if (fsm.ResetTransitionInhibatesTransitionActions)
+					for (int l = 0; l < numberOfStates; l++) {
+						State s = fsm.states.get(l);
+						int numberOfTransitionsFromThisState = s.transitionsFromThisState.size();
+						for (int m = 0; m < numberOfTransitionsFromThisState; m++) {
+							Transition t = s.transitionsFromThisState.get(m);
+							String st = "( ";
+							st += resetConditionComplement;
+							st += "  and ";
+							st += t.conditionWithPriorities;
+							st += " ) ";
+							System.out.print("Info: Transition from state ");
+							System.out.print(t.origin);
+							System.out.print(" to state ");
+							System.out.print(t.destination);
+							System.out.print(" with condition: ");
+							System.out.print(t.conditionWithPriorities);
+							System.out.print(" has been upgraded to condition: ");
+							t.conditionWithPriorities = st;
+							System.out.print(t.conditionWithPriorities);
+							System.out.print(" because of a reset transition(s)\n");
+						}
+					}
+				if (fsm.ResetTransitionInhibatesActionsOnStates)
+					for (int l = 0; l < numberOfStates; l++) {
+						State s = fsm.states.get(l);
+						int numberOfActionInThisState = s.attachedActions.size();
+						for (int m = 0; m < numberOfActionInThisState; m++) {
+							Action a = s.attachedActions.get(m);
+							String st = "( ";
+							st += resetConditionComplement;
+							if (!a.expression.equals("")) {
+								st += "  and ( ";
+								st += a.expression;
+								st += "  ) ";
+							}
+							st += " ) ";
+							System.out.print("Info: Action on state ");
+							System.out.print(s.name);
+							System.out.print(" with expression: ");
+							System.out.print(a.expression);
+							System.out.print(" has been upgraded to expression: ");
+							a.expression = st;
+							System.out.print(a.expression);
+							System.out.print(" because of a reset transition(s)\n");
+						}
+					}
 			}
 		}
-		// TODO: TEST
-
 		return modelOk;
 	}
 
@@ -1305,6 +1342,13 @@ public class FsmProcess {
 		int numberOfResetAsynchronousDefinitions = 0;
 
 		public State resetAsynchronousState = null;
+
+		// if set to true, will make the actions on transition to be inhibated
+		// during reset
+		Boolean ResetTransitionInhibatesTransitionActions = true;
+		// if set to true, will make the actions on state to be inhibated
+		// during reset
+		Boolean ResetTransitionInhibatesActionsOnStates = true;
 
 		public State currentState = null;
 		public Action currentAction = null;
