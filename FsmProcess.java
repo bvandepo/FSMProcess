@@ -378,14 +378,24 @@ public class FsmProcess {
 		// this method returns false and exit as soon as there is a critical
 		// error
 
+		// TODO: que faire quand une action sur état est incompatible avec une
+		// action sur une transition émanant de cet état???
+
+		// TODO: passer l'expression pour les sorties I à gauche du when
+		// (permettra gestion de bus) et regler la valeur par defaut à others 0
+		// si bus..
+
 		// TODO: add optional output (bus or not) to display the number of the
 		// state in binary
 
 		// TODO : dans la doc sur les (reset) transitions, bien indiquer que
 		// l'ordre de définition ne définit en rien les priorités (pour les
-		// actions!!!!!)
-		// TODO: check if all states have a transition to them, only the initial
-		// state can have no transition to it
+		// actions!!!!!).
+		// Indique que l'on peut utiliser les priorités pour simplifier le
+		// modele, par exemple priorité 1 pour une condition complique et
+		// condition 1 pour une moins prioritaire qui sera effective que si la +
+		// prioritaire ne l'est pas
+
 		// check if inputs/outputs names are allowed, "in" and "out" are
 		// forbidden as they are reserved keyword of vhdl
 		// check doublons of actions, or states etc...
@@ -441,7 +451,7 @@ public class FsmProcess {
 		// toutes les conditions de transition plus prioritaires depuis le même
 		// état.... FAISABLE!!!!
 
-		Boolean modelOk = true;
+		Boolean modelOk = true; // until we found some errors....
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
 		// compatible
@@ -460,8 +470,40 @@ public class FsmProcess {
 			return false;
 		}
 
+		// check if all states have a (reset) transition or asynchronous reset
+		// to them, only the initial state can have no transition to it
+		for (int m = 0; m < numberOfStates; m++) {
+			State s = fsm.states.get(m);
+			if (s.isInit)
+				s.isAlone = false; // it's an asynchronous reset state
+			else
+				s.isAlone = true; // until we found the opposite...
+		}
+		int numberOfResetTransitions = fsm.resetTransitions.size();
+		for (int n = 0; n < numberOfResetTransitions; n++) {
+			ResetTransition rt = fsm.resetTransitions.get(n);
+			State s = fsm.hmapState.get(rt.destination);
+			if (s != null) // the state exists
+				s.isAlone = false;
+		}
+		int numberOfTransitions = fsm.transitions.size();
+		for (int n = 0; n < numberOfTransitions; n++) {
+			Transition t = fsm.transitions.get(n);
+			State s = fsm.hmapState.get(t.destination);
+			if (s != null) // the state exists
+				s.isAlone = false;
+		}
+		for (int m = 0; m < numberOfStates; m++) {
+			State s = fsm.states.get(m);
+			if (s.isAlone) {
+				System.out.print("Warning: State ");
+				System.out.print(s.name);
+				System.out.print(" is not accessible, a transition to that state should be added\n");
+			}
+		}
+		// compute the number of bits to define the state in binary coding
 		fsm.numberOfBitsForStates = Integer.toBinaryString(numberOfStates).length();
-
+		// check that the action on a same output are all compatible
 		int nbActionTotal = fsm.actions.size();
 		for (int k = 0; k < nbActionTotal; k++) {
 			Action a = fsm.actions.get(k);
@@ -508,7 +550,6 @@ public class FsmProcess {
 
 		// now that the (reset) transitions are sorted, lets compute
 		// fsm.resetTransitions.conditionWithPriorities accordingly
-		int numberOfResetTransitions = fsm.resetTransitions.size();
 		/*
 		 * ArrayList<Integer> ResetTransitionsPriorityList = new
 		 * ArrayList<Integer>(); for (int n = 0; n < numberOfResetTransitions;
@@ -518,8 +559,12 @@ public class FsmProcess {
 
 		for (int n = 0; n < numberOfResetTransitions; n++) {
 			ResetTransition rt = fsm.resetTransitions.get(n);
-			rt.conditionWithPriorities = " ( " + rt.condition + " ) ";
-			// rt.conditionWithPriorities+=" et ca";
+			rt.conditionWithPriorities = " ( ";
+			if (rt.condition.equals("1"))
+				rt.conditionWithPriorities += " value_one_internal ";
+			else
+				rt.conditionWithPriorities += rt.condition;
+			rt.conditionWithPriorities += " ) ";
 		}
 		// loop inside the list and detect every adjacent elements with the same
 		// priority
@@ -544,10 +589,12 @@ public class FsmProcess {
 			Collections.sort(fsm.states.get(m).transitionsFromThisState);
 			for (int n = 0; n < numberOfTransitionsFromThisState; n++) {
 				Transition t = fsm.states.get(m).transitionsFromThisState.get(n);
+				t.conditionWithPriorities = " ( ";
 				if (t.condition.equals("1"))
-					t.conditionWithPriorities = " ( true ) ";
+					t.conditionWithPriorities += " value_one_internal ";
 				else
-					t.conditionWithPriorities = " ( " + t.condition + " ) ";
+					t.conditionWithPriorities += t.condition;
+				t.conditionWithPriorities += " ) ";
 			}
 			// loop inside the list and detect every adjacent elements with the
 			// same
@@ -716,6 +763,8 @@ public class FsmProcess {
 				bufVhdl.append("_mem_value : std_logic;\n");
 			}
 		}
+		bufVhdl.append("signal value_one_internal: std_logic := '1';  --signal used internally to ease operation on conditions, to have a std_logic type '1' value\n");
+
 		// ////////////////let's animate all that stuff...//////////////////
 		bufVhdl.append("------------------------Process for the memorization of the state----------------------\n");
 		bufVhdl.append("begin\n");
@@ -1168,6 +1217,9 @@ public class FsmProcess {
 		// static ArrayList<Transition> transitionFromThisState=new
 		// ArrayList<Transition>() ;
 		ArrayList<Transition> transitionsFromThisState = new ArrayList<Transition>();
+		// true if there is no (reset) transition or asynchronous reset to that
+		// state
+		Boolean isAlone;
 
 		public int compareTo(Object o) {
 			State a = (State) o;
@@ -1417,8 +1469,11 @@ public class FsmProcess {
 			// add the transition in its origin state, first get the state from
 			// its name
 			if (fsm.hmapState.get(t.origin) != null) // the state exists
+			{
 				fsm.hmapState.get(t.origin).transitionsFromThisState.add(t);
-			else {
+				fsm.transitions.add(t); // also add it to the global transitions
+										// list
+			} else {
 				// TODO: deal with this error
 			}
 		}
