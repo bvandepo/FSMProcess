@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -323,8 +324,10 @@ public class FsmProcess {
 		// this method returns false and exit as soon as there is a critical
 		// error
 
-		// TODO: in pragma, allow to fix the number of bits for state_number, so the interface doesn't change when states are added. Add a check that the pragma is set high enough...
-		
+		// TODO: in pragma, allow to fix the number of bits for state_number, so
+		// the interface doesn't change when states are added. Add a check that
+		// the pragma is set high enough...
+
 		// TODO: que faire quand une action sur état est incompatible avec une
 		// action sur une transition émanant de cet état???
 
@@ -332,10 +335,7 @@ public class FsmProcess {
 		// (permettra gestion de bus) et regler la valeur par defaut à others 0
 		// si bus..
 
-		// TODO: add optional output (bus or not) to display the number of the
-		// state in binary
-
-		// TODO : dans la doc sur les (reset) transitions, bien indiquer que
+		// TODODOC: dans la doc sur les (reset) transitions, bien indiquer que
 		// l'ordre de définition ne définit en rien les priorités (pour les
 		// actions!!!!!).
 		// Indique que l'on peut utiliser les priorités pour simplifier le
@@ -343,8 +343,6 @@ public class FsmProcess {
 		// condition 1 pour une moins prioritaire qui sera effective que si la +
 		// prioritaire ne l'est pas
 
-		// check if inputs/outputs names are allowed, "in" and "out" are
-		// forbidden as they are reserved keyword of vhdl
 		// check doublons of actions, or states etc...
 
 		// TODO: add variable bus size to inputs and outputs in the grammar...
@@ -406,19 +404,44 @@ public class FsmProcess {
 		// F -> just store the action, no output
 		// //////////////////////////////////////////////////////////////////:
 		int numberOfStates = fsm.states.size();
+		int numberOfOutputs = fsm.outputs.size();
+		int numberOfInputs = fsm.inputs.size();
+		int numberOfResetTransitions = fsm.resetTransitions.size();
+		int numberOfTransitions = fsm.transitions.size();
+		int numberOfActionsTotal = fsm.actions.size();
+		// compute the number of bits to define the state in binary coding
+		// generate STATE_NUMBER: out std_logic_vector( 0 downto 0); for 1 or 2
+		// states
+		// but it is working
+		fsm.numberOfBitsForStates = Integer.toBinaryString(numberOfStates - 1).length();
 
 		if (numberOfStates == 0) {
 			System.out.print("Critical error: The model contains no state... \n");
-			return false;
+			modelOk = false;
 		}
 
 		if (fsm.outputs.size() == 0) {
 			System.out.print("Critical error: The model contains no outputs... \n");
-			return false;
+			modelOk = false; // its allowed to have no inputs
 		}
 
 		if (fsm.numberOfResetAsynchronousDefinitions > 1)
 			System.out.print("Warning:   Asynchronous reset has been redefined more than one time...\n");
+
+		// check if inputs/outputs/states names are allowed, "in" and "out" are
+		// forbidden as they are reserved keyword of vhdl
+		for (int m = 0; m < numberOfStates; m++)
+			if (fsm.checkNameIsNotForbidden(fsm.states.get(m).name, "State") == false)
+				modelOk = false;
+		for (int m = 0; m < numberOfInputs; m++)
+			if (fsm.checkNameIsNotForbidden(fsm.inputs.get(m).name, "Input") == false)
+				modelOk = false;
+		for (int m = 0; m < numberOfOutputs; m++)
+			if (fsm.checkNameIsNotForbidden(fsm.outputs.get(m).name, "Output") == false)
+				modelOk = false;
+
+		if (modelOk == false)
+			return false; // go no further
 
 		// check if all states have a (reset) transition or asynchronous reset
 		// to them, only the initial state can have no transition to it
@@ -429,14 +452,12 @@ public class FsmProcess {
 			else
 				s.isAlone = true; // until we found the opposite...
 		}
-		int numberOfResetTransitions = fsm.resetTransitions.size();
 		for (int n = 0; n < numberOfResetTransitions; n++) {
 			ResetTransition rt = fsm.resetTransitions.get(n);
 			State s = fsm.hmapState.get(rt.destination);
 			if (s != null) // the state exists
 				s.isAlone = false;
 		}
-		int numberOfTransitions = fsm.transitions.size();
 		for (int n = 0; n < numberOfTransitions; n++) {
 			Transition t = fsm.transitions.get(n);
 			State s = fsm.hmapState.get(t.destination);
@@ -451,14 +472,8 @@ public class FsmProcess {
 				System.out.print(" is not accessible, a transition to that state should be added\n");
 			}
 		}
-		// compute the number of bits to define the state in binary coding
-		// generate STATE_NUMBER: out std_logic_vector( 0 downto 0); for 1 or 2 states
-		// but it is working
-		fsm.numberOfBitsForStates = Integer.toBinaryString(numberOfStates - 1).length();
-
 		// check that the action on a same output are all compatible
-		int nbActionTotal = fsm.actions.size();
-		for (int k = 0; k < nbActionTotal; k++) {
+		for (int k = 0; k < numberOfActionsTotal; k++) {
 			Action a = fsm.actions.get(k);
 			if (!a.type.equals("F")) // don't care about function call, that are
 										// not relevant here
@@ -1181,6 +1196,7 @@ public class FsmProcess {
 	}
 
 	// //////////////////////////////////////////////////////////////////
+	// //////////////////////////////////////////////////////////////////
 	// doc de ArrayList :
 	// http://imss-www.upmf-grenoble.fr/prevert/Prog/Java/Conteneurs/ArrayList.html
 	// et
@@ -1248,6 +1264,30 @@ public class FsmProcess {
 
 		public ArrayList<String> inputsOrderedNamesList = new ArrayList<String>();
 		public ArrayList<String> outputsOrderedNamesList = new ArrayList<String>();
+
+		List<String> forbiddenNames = Arrays.asList("ABS", "ACCESS", "AFTER", "ALIAS", "ALL", "AND", "ARCHITECTURE", "ARRAY", "ASSERT",
+				"ATTRIBUTE", "BEGIN", "BLOCK", "BODY", "BUFFER", "BUS", "CASE", "COMPONENT", "CONFIGURATION", "CONSTANT", "DISCONNECT",
+				"DOWNTO", "ELSE", "ELSIF", "END", "ENTITY", "EXIT", "FILE", "FOR", "FUNCTION", "GENERATE", "GENERIC", "GROUP", "GUARDED",
+				"IF", "IMPURE", "IN", "INERTIAL", "INOUT", "IS", "LABEL", "LIBRARY", "LINKAGE", "LITERAL", "LOOP", "MAP", "MOD", "NAND",
+				"NEW", "NEXT", "NOR", "NOT", "NULL", "OF", "ON", "OPEN", "OR", "OTHERS", "OUT", "PACKAGE", "PORT", "POSTPONED",
+				"PROCEDURE", "PROCESS", "PURE", "RANGE", "RECORD", "REGISTER", "REJECT", "REM", "REPORT", "RETURN", "ROL", "ROR", "SELECT",
+				"SEVERITY", "SIGNAL", "SHARED", "SLA", "SLL", "SRA", "SRL", "SUBTYPE", "THEN", "TO", "TRANSPORT", "TYPE", "UNAFFECTED",
+				"UNITS", "UNTIL", "USE", "VARIABLE", "WAIT", "WHEN", "WHILE", "WITH", "XNOR", "XOR");
+
+		// list gotten from:
+		// http://www.csee.umbc.edu/portal/help/VHDL/reserved.html
+
+		public Boolean checkNameIsNotForbidden(String name, String type) {
+			if (forbiddenNames.contains(name)) {
+				System.out.print("Critical error: ");
+				System.out.print(type);
+				System.out.print(" ");
+				System.out.print(name);
+				System.out.print(" is a reserved word and should not be used.\n");
+				return false;
+			} else
+				return true;
+		}
 
 		// to know when parsing a condition if it should be added to
 		// ResetTransition or Transition
