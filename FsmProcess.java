@@ -378,6 +378,12 @@ public class FsmProcess {
 		// this method returns false and exit as soon as there is a critical
 		// error
 
+		 
+		// TODO: check state_number: it is 2 bits wide when theres only 2
+		// states...., anyway there should be a special case when there's only
+		// two state because the output should be std logic instead of
+		// vector....
+
 		// TODO: que faire quand une action sur état est incompatible avec une
 		// action sur une transition émanant de cet état???
 
@@ -1316,6 +1322,23 @@ public class FsmProcess {
 				return hmapState.get(name);
 		}
 
+		public State getStateOrCreateAndAdd(String name) {
+			// if this has already been added, return it
+			State s = hmapState.get(name);
+			if (s == null) {
+				s = new State();
+				s.name = name;
+				if (states.size() == 0) {
+					s.isInit = true;
+					resetAsynchronousState = s;
+				} else
+					s.isInit = false;
+				fsm.hmapState.put(name, s); // else add it to the hash map
+				states.add(s); // and to the list
+			}
+			return s;
+		}
+
 		public boolean addState(String name, State s) {
 			if (hmapState.containsKey(name) || hmapState.containsValue(s))
 				return false; // if this has already been added, return false
@@ -1416,10 +1439,7 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterClock_definition(FsmParser.Clock_definitionContext ctx) {
-			fsm.clkSignalName = ctx.children.get(1).getText().toUpperCase(); // to
-																				// skip
-																				// the
-																				// /
+			fsm.clkSignalName = ctx.children.get(1).getText().toUpperCase();  
 			fsm.clkSignalNameSpecified = true;
 		}
 
@@ -1437,6 +1457,9 @@ public class FsmProcess {
 			fsm.currentResetTransition = rt;
 			rt.condition = "1"; // default condition
 			rt.destination = ctx.children.get(1).getText().toUpperCase();
+			// add the transition in its origin state, first get the state from
+			// its name if the states do not yet exist, create them
+			State sd = fsm.getStateOrCreateAndAdd(rt.destination);
 			fsm.resetTransitions.add(rt);
 		}
 
@@ -1468,14 +1491,13 @@ public class FsmProcess {
 			t.destination = ctx.children.get(2).getText().toUpperCase();
 			// add the transition in its origin state, first get the state from
 			// its name
-			if (fsm.hmapState.get(t.origin) != null) // the state exists
-			{
-				fsm.hmapState.get(t.origin).transitionsFromThisState.add(t);
-				fsm.transitions.add(t); // also add it to the global transitions
-										// list
-			} else {
-				// TODO: deal with this error
-			}
+			// if the states do not yet exist, create them
+			State so = fsm.getStateOrCreateAndAdd(t.origin);
+			State sd = fsm.getStateOrCreateAndAdd(t.destination);
+
+			so.transitionsFromThisState.add(t);
+			fsm.transitions.add(t); // also add it to the global transitions
+									// list
 		}
 
 		// //////////////////////////////////////////////////////////////
@@ -1599,16 +1621,7 @@ public class FsmProcess {
 		}// //////////////////////////////////////////////////////////////
 
 		public void enterState(FsmParser.StateContext ctx) {
-			State s = new State();
-			s.name = ctx.children.get(0).getText().toUpperCase();
-			if (fsm.states.size() == 0) {
-				s.isInit = true;
-				fsm.resetAsynchronousState = s;
-			} else
-				s.isInit = false;
-			if (!fsm.addState(s.name, s)) {
-				// TODO: error: state already exists
-			}
+			State s = fsm.getStateOrCreateAndAdd(ctx.children.get(0).getText().toUpperCase());
 			fsm.currentState = s;
 		}
 		// ///////////////////////////////////////////////////////////////
