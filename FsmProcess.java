@@ -324,6 +324,28 @@ public class FsmProcess {
 		// this method returns false and exit as soon as there is a critical
 		// error
 
+		// EASY TODOS:
+		// TODO: check repeatedly action are compatible with state and
+		// transition actions (they are exclusive, except for R and S)
+
+		// TODO enforce that a M action have to have an expression (it memorizes
+		// an input!!!!)
+
+		// TODO: when transisitions conditions from one state are not exclusive,
+		// inform and check that the order in the vhdl is the same than thoose
+		// in the fsm
+		// anyway the priority does not appear on the dot graph -> WARNING
+		// SRESET have higher priority than standard transition, but there is
+		// the same problem if there exist multiple sreset conditions. The first
+		// has the higher priority
+
+		// TODO: verifier qu'il y a au max 1 définition d'horloge
+
+		// HARD TODOS:
+		// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
+		// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
+		// et
+		// pour spécifier que des E ou S sont des bus de n bits
 		// TODO: in pragma, allow to fix the number of bits for state_number, so
 		// the interface doesn't change when states are added. Add a check that
 		// the pragma is set high enough...
@@ -343,58 +365,10 @@ public class FsmProcess {
 		// condition 1 pour une moins prioritaire qui sera effective que si la +
 		// prioritaire ne l'est pas
 
-		// check doublons of actions, or states etc...
-
 		// TODO: add variable bus size to inputs and outputs in the grammar...
-		// hard...
-
-		// TODO: add to the model some always true action (no state or
-		// transition dependency, can be useful for reseting an AMAZE at any
-		// time for instance
-		// TODO: check repeatedly action are compatible with state and
-		// transition actions (they are exclusive, except for R and S)
-		// TODO: check that all transitions have origin and destination states
-		// existing
-		// TODO: have multi bits outputs (size could be automatically determined
+		// hard... : have multi bits outputs (size could be automatically
+		// determined
 		// or given in code
-
-		// TODO enforce that a M action have to have an expression (it memorizes
-		// an input!!!!)
-		// TODO check that no input has the same name as an output
-
-		// TODO: lors de la verification de l'existance de in/out/state avant
-		// ajout dans la liste,
-		// utiliser un operateur de comparaison qui soit insensible à la casse
-		// TODO: when transisitions conditions from one state are not exclusive,
-		// inform and check that the order in the vhdl is the same than thoose
-		// in the fsm
-		// anyway the priority does not appear on the dot graph -> WARNING
-		// SRESET have higher priority than standard transition, but there is
-		// the same problem if there exist multiple sreset conditions. The first
-		// has the higher priority
-		// TODO: definir une notion de priorité pour toutes les transitions (à
-		// afficher dans le dot) pour ordonner les if /elsif
-		// TODO: //SRESET condition should be!='1' by construction
-		// TODO: verifier qu'il y a au max 1 définition d'horloge
-
-		// TODO; pour gérer la priorité des transitions, utiliser pour
-		// l'affichage
-		// taillabel="1", ajouter un champ priority, egale à max_int par defaut
-		// qui sera mis à jour si la valeur est parsée
-		// rendre les transitions et transitions reset comparable et trier
-		// Pas évident de ne pas générer les actions sur transition si plusieurs
-		// sont actives simultanement...
-
-		// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
-		// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
-		// et
-		// pour spécifier que des E ou S sont des bus de n bits
-		//
-
-		// TODO: pour generer les actions sur (reset) & transitions, en gérant
-		// les priorités, il faudra faire une condition qui fait un AND NOT de
-		// toutes les conditions de transition plus prioritaires depuis le même
-		// état.... FAISABLE!!!!
 
 		Boolean modelOk = true; // until we found some errors....
 		// //////////////////////////////////////////////////////////////////:
@@ -457,7 +431,6 @@ public class FsmProcess {
 		}
 		if (modelOk == false)
 			return false; // go no further
- 
 
 		// check if all states have a (reset) transition or asynchronous reset
 		// to them, only the initial state can have no transition to it
