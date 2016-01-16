@@ -329,14 +329,6 @@ public class FsmProcess {
 		// errors (separate critials) to be able to get some wrong drawings or
 		// code
 
-		// TODO: when transitions conditions from one state are not exclusive,
-		// inform and check that the order in the vhdl is the same than thoose
-		// in the fsm
-		// anyway the priority does not appear on the dot graph -> WARNING
-		// SRESET have higher priority than standard transition, but there is
-		// the same problem if there exist multiple sreset conditions. The first
-		// has the higher priority
-
 		// HARD TODOS:
 		// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
 		// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
@@ -541,22 +533,48 @@ public class FsmProcess {
 		Collections.sort(fsm.inputs);
 		Collections.sort(fsm.outputs);
 		Collections.sort(fsm.states);
-		// compute the ordered lists of transition by priority. The sorting is
-		// global, but so it will be correct while looping in the list for each
-		// state
+
+		// /////////////////// Transitions priorities ///////
+		// Collections.sort(fsm.transitions); //it can not be done globaly but
+		// it has to be done state by state
+		// sort the transition by priority for each state (origin)
+		for (int m = 0; m < numberOfStates; m++) {
+			int numberOfTransitionsFromThisState = fsm.states.get(m).transitionsFromThisState.size();
+			Collections.sort(fsm.states.get(m).transitionsFromThisState);
+			for (int n = 0; n < numberOfTransitionsFromThisState; n++) {
+				Transition t = fsm.states.get(m).transitionsFromThisState.get(n);
+				t.conditionWithPriorities = " ( ";
+				if (t.condition.equals("1"))
+					t.conditionWithPriorities += " value_one_internal ";
+				else
+					t.conditionWithPriorities += t.condition;
+				t.conditionWithPriorities += " ) ";
+			}
+			// loop inside the list and detect every adjacent elements with the
+			// same priority
+			for (int n = 1; n < numberOfTransitionsFromThisState; n++) {
+				Transition t1 = fsm.states.get(m).transitionsFromThisState.get(n - 1);
+				Transition t2 = fsm.states.get(m).transitionsFromThisState.get(n);
+				if (t1.priorityOrder == t2.priorityOrder) {
+					System.out.print("Warning: Some  transitions from State: ");
+					System.out.print(fsm.states.get(m).name);
+					System.out
+							.print(" have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
+				} else {// compute rt2.conditionWithPriorities from the rt1 one
+					t2.conditionWithPriorities += " AND NOT " + t1.conditionWithPriorities + " ";
+					System.out.print("For state ");
+					System.out.print(fsm.states.get(m).name);
+					System.out.print(" , t2.conditionWithPriorities upgraded to: ");
+					System.out.print(t2.conditionWithPriorities);
+					System.out.print("\n");
+				}
+			}
+		}
 		// /////////////////// resetTransitions priorities ///////
 		Collections.sort(fsm.resetTransitions);
-
 		// now that the (reset) transitions are sorted, lets compute
 		// fsm.resetTransitions.conditionWithPriorities accordingly
-		/*
-		 * ArrayList<Integer> ResetTransitionsPriorityList = new
-		 * ArrayList<Integer>(); for (int n = 0; n < numberOfResetTransitions;
-		 * n++) { ResetTransition rt=fsm.resetTransitions.get(n);
-		 * ResetTransitionsPriorityList.add(rt.priorityOrder); }
-		 */
-
-		for (int n = 0; n < numberOfResetTransitions; n++) {
+			for (int n = 0; n < numberOfResetTransitions; n++) {
 			ResetTransition rt = fsm.resetTransitions.get(n);
 			rt.conditionWithPriorities = " ( ";
 			if (rt.condition.equals("1"))
@@ -580,42 +598,11 @@ public class FsmProcess {
 				System.out.print("\n");
 			}
 		}
-		// /////////////////// Transitions priorities ///////
-		// Collections.sort(fsm.transitions);
-		// sort the transition by priority for each state (origin)
-		for (int m = 0; m < numberOfStates; m++) {
-			int numberOfTransitionsFromThisState = fsm.states.get(m).transitionsFromThisState.size();
-			Collections.sort(fsm.states.get(m).transitionsFromThisState);
-			for (int n = 0; n < numberOfTransitionsFromThisState; n++) {
-				Transition t = fsm.states.get(m).transitionsFromThisState.get(n);
-				t.conditionWithPriorities = " ( ";
-				if (t.condition.equals("1"))
-					t.conditionWithPriorities += " value_one_internal ";
-				else
-					t.conditionWithPriorities += t.condition;
-				t.conditionWithPriorities += " ) ";
-			}
-			// loop inside the list and detect every adjacent elements with the
-			// same
-			// priority
-			for (int n = 1; n < numberOfTransitionsFromThisState; n++) {
-				Transition t1 = fsm.states.get(m).transitionsFromThisState.get(n - 1);
-				Transition t2 = fsm.states.get(m).transitionsFromThisState.get(n);
-				if (t1.priorityOrder == t2.priorityOrder) {
-					System.out.print("Warning: Some  transitions from State: ");
-					System.out.print(fsm.states.get(m).name);
-					System.out
-							.print(" have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
-				} else {// compute rt2.conditionWithPriorities from the rt1 one
-					t2.conditionWithPriorities += " AND NOT " + t1.conditionWithPriorities + " ";
-					System.out.print("For state ");
-					System.out.print(fsm.states.get(m).name);
-					System.out.print(" , t2.conditionWithPriorities upgraded to: ");
-					System.out.print(t2.conditionWithPriorities);
-					System.out.print("\n");
-				}
-			}
-		}
+		
+		
+		
+		
+		
 		return modelOk;
 	}
 
