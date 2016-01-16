@@ -560,13 +560,15 @@ public class FsmProcess {
 					System.out.print(fsm.states.get(m).name);
 					System.out
 							.print(" have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
-				} else {// compute rt2.conditionWithPriorities from the rt1 one
-					t2.conditionWithPriorities += " AND NOT " + t1.conditionWithPriorities + " ";
-					System.out.print("For state ");
-					System.out.print(fsm.states.get(m).name);
-					System.out.print(" , t2.conditionWithPriorities upgraded to: ");
+				} else {// compute t2.conditionWithPriorities from the t1 one
+					System.out.print("Info: Transition to state ");
+					System.out.print(t2.destination);
+					System.out.print(" with condition: ");
 					System.out.print(t2.conditionWithPriorities);
-					System.out.print("\n");
+					System.out.print(" has been upgraded to condition: ");
+					t2.conditionWithPriorities += " AND NOT " + t1.conditionWithPriorities + " ";
+					System.out.print(t2.conditionWithPriorities);
+					System.out.print(" because of higher priority transition(s) to the same state\n");
 				}
 			}
 		}
@@ -574,7 +576,7 @@ public class FsmProcess {
 		Collections.sort(fsm.resetTransitions);
 		// now that the (reset) transitions are sorted, lets compute
 		// fsm.resetTransitions.conditionWithPriorities accordingly
-			for (int n = 0; n < numberOfResetTransitions; n++) {
+		for (int n = 0; n < numberOfResetTransitions; n++) {
 			ResetTransition rt = fsm.resetTransitions.get(n);
 			rt.conditionWithPriorities = " ( ";
 			if (rt.condition.equals("1"))
@@ -592,17 +594,43 @@ public class FsmProcess {
 				System.out
 						.print("Warning: Some reset transitions have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
 			} else {// compute rt2.conditionWithPriorities from the rt1 one
-				rt2.conditionWithPriorities += " AND NOT " + rt1.conditionWithPriorities + " ";
-				System.out.print("rt2.conditionWithPriorities upgraded to: ");
+				System.out.print("Info: Reset transition to state ");
+				System.out.print(rt2.destination);
+				System.out.print(" with condition: ");
 				System.out.print(rt2.conditionWithPriorities);
-				System.out.print("\n");
+				System.out.print(" has been upgraded to condition: ");
+				rt2.conditionWithPriorities += " AND NOT " + rt1.conditionWithPriorities + " ";
+				System.out.print(rt2.conditionWithPriorities);
+				System.out.print(" because of higher priority reset transition(s) to the same state\n");
 			}
 		}
-		
-		
-		
-		
-		
+		// add a post processing such that reset transitions to a state have to
+		// inhibate standard transition actions from that state
+		for (int n = 0; n < numberOfResetTransitions; n++) {
+			ResetTransition rt = fsm.resetTransitions.get(n);
+			State s = fsm.getStateFromName(rt.destination);
+			int numberOfTransitionsFromThisState = s.transitionsFromThisState.size();
+			for (int m = 0; m < numberOfTransitionsFromThisState; m++) {
+				Transition t = s.transitionsFromThisState.get(m);
+				String st = "( not ( ";
+				st += rt.condition;
+				st += " ) and ";
+				st += t.condition;
+				st += " ) ";
+				System.out.print("Info: Transition from state ");
+				System.out.print(t.origin);
+				System.out.print(" to state ");
+				System.out.print(t.destination);
+				System.out.print(" with condition: ");
+				System.out.print(t.condition);
+				System.out.print(" has been upgraded to condition: ");
+				t.condition = st;
+				System.out.print(t.condition);
+				System.out.print(" because of a reset transition(s) to the same state\n");
+			}
+		}
+		// TODO: TEST
+
 		return modelOk;
 	}
 
