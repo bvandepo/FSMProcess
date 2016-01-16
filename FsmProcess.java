@@ -329,6 +329,11 @@ public class FsmProcess {
 		// errors (separate critials) to be able to get some wrong drawings or
 		// code
 
+		// TODO: pour les comparaisons de valeurs sur des bus d'entrée, utiliser
+		// une syntaxe particulière (ajouter à la grammaire) puis générer dans
+		// le vhdl un signal qui prendra la valeur 1 quand la condition est
+		// vraie
+
 		// HARD TODOS:
 		// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
 		// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
@@ -338,10 +343,14 @@ public class FsmProcess {
 		// the interface doesn't change when states are added. Add a check that
 		// the pragma is set high enough...
 
+		// TODO: make Boolean ResetTransitionInhibatesTransitionActions = true;
+		// and Boolean ResetTransitionInhibatesActionsOnStates = true
+		// configurable through pragma
+
 		// TODO: que faire quand une action sur état est incompatible avec une
 		// action sur une transition émanant de cet état???
 
-		// TODO: passer l'expression pour les sorties I à gauche du when
+		// TODO: passer l'expression pour les sorties I et M à gauche du when
 		// (permettra gestion de bus) et regler la valeur par defaut à others 0
 		// si bus..
 
@@ -606,64 +615,57 @@ public class FsmProcess {
 		}
 		// add a post processing such that reset transitions have to
 		// inhibate standard transition and state actions from ALL states
-		if (fsm.ResetTransitionInhibatesTransitionActions || fsm.ResetTransitionInhibatesActionsOnStates) {
+		// if configured so...
+		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
 			if (numberOfResetTransitions > 0) {
-
-				String resetConditionComplement = " (";
+				fsm.resetConditionComplement = "";
 				for (int n = 0; n < numberOfResetTransitions; n++) {
 					ResetTransition rt = fsm.resetTransitions.get(n);
 					if (n != 0)
-						resetConditionComplement += " AND ";
-					resetConditionComplement += " ( NOT ";
-					resetConditionComplement += rt.condition;
-					resetConditionComplement += " ) ";
+						fsm.resetConditionComplement += " AND ";
+					fsm.resetConditionComplement += "  (  NOT ( ";
+					fsm.resetConditionComplement += rt.condition;
+					fsm.resetConditionComplement += " ) = '1' ) ";
 				}
-				resetConditionComplement += " ) ";
-				if (fsm.ResetTransitionInhibatesTransitionActions)
+				// add this condition to the needed action.condition
+				if (fsm.resetTransitionInhibatesTransitionActions)
 					for (int l = 0; l < numberOfStates; l++) {
 						State s = fsm.states.get(l);
 						int numberOfTransitionsFromThisState = s.transitionsFromThisState.size();
 						for (int m = 0; m < numberOfTransitionsFromThisState; m++) {
 							Transition t = s.transitionsFromThisState.get(m);
-							String st = "( ";
-							st += resetConditionComplement;
-							st += "  and ";
-							st += t.conditionWithPriorities;
-							st += " ) ";
-							System.out.print("Info: Transition from state ");
-							System.out.print(t.origin);
-							System.out.print(" to state ");
-							System.out.print(t.destination);
-							System.out.print(" with condition: ");
-							System.out.print(t.conditionWithPriorities);
-							System.out.print(" has been upgraded to condition: ");
-							t.conditionWithPriorities = st;
-							System.out.print(t.conditionWithPriorities);
-							System.out.print(" because of a reset transition(s)\n");
+							int numberOfActionsInThisTransition = t.attachedActions.size();
+							for (int n = 0; n < numberOfActionsInThisTransition; n++) {
+								Action a = t.attachedActions.get(n);
+								System.out.print("Info: Action on Transition from state ");
+								System.out.print(t.origin);
+								System.out.print(" to state ");
+								System.out.print(t.destination);
+								System.out.print(" with condition: ");
+								System.out.print(t.conditionWithPriorities);
+								System.out.print(" and with expression: ");
+								System.out.print(a.expression);
+								System.out.print(" has been upgraded with supplementary condition: ");
+								System.out.print(fsm.resetConditionComplement);
+								System.out.print(" because of a reset transition(s)\n");								
+								a.condition = " AND (not_any_s_reset_internal = '1' ) ";
+							}
 						}
 					}
-				if (fsm.ResetTransitionInhibatesActionsOnStates)
+				if (fsm.resetTransitionInhibatesActionsOnStates)
 					for (int l = 0; l < numberOfStates; l++) {
 						State s = fsm.states.get(l);
-						int numberOfActionInThisState = s.attachedActions.size();
-						for (int m = 0; m < numberOfActionInThisState; m++) {
+						int numberOfActionsInThisState = s.attachedActions.size();
+						for (int m = 0; m < numberOfActionsInThisState; m++) {
 							Action a = s.attachedActions.get(m);
-							String st = "( ";
-							st += resetConditionComplement;
-							if (!a.expression.equals("")) {
-								st += "  and ( ";
-								st += a.expression;
-								st += "  ) ";
-							}
-							st += " ) ";
 							System.out.print("Info: Action on state ");
 							System.out.print(s.name);
 							System.out.print(" with expression: ");
 							System.out.print(a.expression);
-							System.out.print(" has been upgraded to expression: ");
-							a.expression = st;
-							System.out.print(a.expression);
+							System.out.print(" has been upgraded with supplementary condition: ");
+							System.out.print(fsm.resetConditionComplement);
 							System.out.print(" because of a reset transition(s)\n");
+							a.condition = " AND (not_any_s_reset_internal = '1' ) ";
 						}
 					}
 			}
@@ -815,10 +817,19 @@ public class FsmProcess {
 			}
 		}
 		bufVhdl.append("signal value_one_internal: std_logic := '1';  --signal used internally to ease operation on conditions, to have a std_logic type '1' value\n");
-
+		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
+			bufVhdl.append("signal not_any_s_reset_internal: std_logic ;  --signal used internally to ease inhibition of actions when reset transitions occurs\n");
+		}
 		// ////////////////let's animate all that stuff...//////////////////
-		bufVhdl.append("------------------------Process for the memorization of the state----------------------\n");
+		bufVhdl.append("---------------------------------------------------------------------------------------\n");
 		bufVhdl.append("begin\n");
+		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
+			bufVhdl.append("-----------------------Combination of sreset signal(s) to inhibate actions on states and/or transitions--------------\n");
+			bufVhdl.append("not_any_s_reset_internal<= '1' when ");
+			bufVhdl.append(fsm.resetConditionComplement);
+			bufVhdl.append(" else\n                          '0';\n");
+		}
+		bufVhdl.append("------------------------Process for the memorization of the state----------------------\n");
 		bufVhdl.append("process (");
 		bufVhdl.append(fsm.clkSignalName);
 		bufVhdl.append(", ");
@@ -1034,7 +1045,6 @@ public class FsmProcess {
 				break;
 			}
 			for (int n = 0; n < fsm.outputs.size(); n++)
-				// if (!fsm.outputs.get(n).memorized)
 				if (fsm.outputs.get(n).memorized == processMemorizedOutput) {
 					String currentOutputName = fsm.outputs.get(n).name;
 					bufVhdl.append("    ");
@@ -1063,6 +1073,8 @@ public class FsmProcess {
 										bufVhdl.append("state_");
 										bufVhdl.append(fsm.states.get(m).name);
 										bufVhdl.append(") ");
+										if (fsm.resetTransitionInhibatesActionsOnStates == true)
+											bufVhdl.append(a.condition);
 										bufVhdl.append(")   else \n            ");
 									}
 								}
@@ -1100,7 +1112,10 @@ public class FsmProcess {
 											bufVhdl.append(t.conditionWithPriorities);
 											bufVhdl.append(") = \'1\' ");
 											// }
-											bufVhdl.append(") )  else \n            ");
+											bufVhdl.append(") ");
+											if (fsm.resetTransitionInhibatesTransitionActions == true)
+												bufVhdl.append(a.condition);
+											bufVhdl.append(")  else \n            ");
 										}
 									}
 								}
@@ -1232,7 +1247,10 @@ public class FsmProcess {
 	static class Action {
 		String type; // I, R, S, M, F
 		String name;
-		String expression;
+		String expression; // would be a bus expression in the future
+		String condition = ""; // is always a boolean expression, mainly to
+								// inhibate the action. for instance inhibate
+								// action when a synchronous reset occurs
 	} // //////////////////////////////////////////////////////////////////
 
 	static class Input implements Comparable {
@@ -1345,10 +1363,14 @@ public class FsmProcess {
 
 		// if set to true, will make the actions on transition to be inhibated
 		// during reset
-		Boolean ResetTransitionInhibatesTransitionActions = true;
+		Boolean resetTransitionInhibatesTransitionActions = true;
 		// if set to true, will make the actions on state to be inhibated
 		// during reset
-		Boolean ResetTransitionInhibatesActionsOnStates = true;
+		Boolean resetTransitionInhibatesActionsOnStates = true;
+		// this string is computed only if there are some reset transition(s)
+		// and either resetTransitionInhibatesTransitionActions or
+		// resetTransitionInhibatesActionsOnStates is true
+		String resetConditionComplement = null;
 
 		public State currentState = null;
 		public Action currentAction = null;
@@ -1360,7 +1382,7 @@ public class FsmProcess {
 		public ArrayList<String> inputsOrderedNamesList = new ArrayList<String>();
 		public ArrayList<String> outputsOrderedNamesList = new ArrayList<String>();
 
-		List<String> forbiddenNames = Arrays.asList("ABS", "ACCESS", "AFTER", "ALIAS", "ALL", "AND", "ARCHITECTURE", "ARRAY", "ASSERT",
+		List<String> forbiddenNamesVHDL = Arrays.asList("ABS", "ACCESS", "AFTER", "ALIAS", "ALL", "AND", "ARCHITECTURE", "ARRAY", "ASSERT",
 				"ATTRIBUTE", "BEGIN", "BLOCK", "BODY", "BUFFER", "BUS", "CASE", "COMPONENT", "CONFIGURATION", "CONSTANT", "DISCONNECT",
 				"DOWNTO", "ELSE", "ELSIF", "END", "ENTITY", "EXIT", "FILE", "FOR", "FUNCTION", "GENERATE", "GENERIC", "GROUP", "GUARDED",
 				"IF", "IMPURE", "IN", "INERTIAL", "INOUT", "IS", "LABEL", "LIBRARY", "LINKAGE", "LITERAL", "LOOP", "MAP", "MOD", "NAND",
@@ -1368,16 +1390,41 @@ public class FsmProcess {
 				"PROCEDURE", "PROCESS", "PURE", "RANGE", "RECORD", "REGISTER", "REJECT", "REM", "REPORT", "RETURN", "ROL", "ROR", "SELECT",
 				"SEVERITY", "SIGNAL", "SHARED", "SLA", "SLL", "SRA", "SRL", "SUBTYPE", "THEN", "TO", "TRANSPORT", "TYPE", "UNAFFECTED",
 				"UNITS", "UNTIL", "USE", "VARIABLE", "WAIT", "WHEN", "WHILE", "WITH", "XNOR", "XOR");
+		// TODO complete lists
+		List<String> forbiddenNamesFSM = Arrays.asList("value_one_internal", "not_any_s_reset_internal");
+		List<String> forbiddenNamesC = Arrays.asList();
+		List<String> forbiddenNamesVerilog = Arrays.asList();
 
-		// list gotten from:
+		// VHDL list gotten from:
 		// http://www.csee.umbc.edu/portal/help/VHDL/reserved.html
 		public Boolean checkNameIsNotForbidden(String name, String type) {
-			if (forbiddenNames.contains(name)) {
+			if (forbiddenNamesVHDL.contains(name)) {
 				System.out.print("Critical error: ");
 				System.out.print(type);
 				System.out.print(" ");
 				System.out.print(name);
-				System.out.print(" is a reserved word and should not be used.\n");
+				System.out.print(" is a reserved VHDL word and should not be used.\n");
+				return false;
+			} else if (forbiddenNamesFSM.contains(name)) {
+				System.out.print("Critical error: ");
+				System.out.print(type);
+				System.out.print(" ");
+				System.out.print(name);
+				System.out.print(" is a reserved FSM word and should not be used.\n");
+				return false;
+			} else if (forbiddenNamesC.contains(name)) {
+				System.out.print("Critical error: ");
+				System.out.print(type);
+				System.out.print(" ");
+				System.out.print(name);
+				System.out.print(" is a reserved C word and should not be used.\n");
+				return false;
+			} else if (forbiddenNamesVerilog.contains(name)) {
+				System.out.print("Critical error: ");
+				System.out.print(type);
+				System.out.print(" ");
+				System.out.print(name);
+				System.out.print(" is a reserved Verilog word and should not be used.\n");
 				return false;
 			} else
 				return true;
