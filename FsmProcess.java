@@ -283,7 +283,7 @@ public class FsmProcess {
 				}
 		}
 
-		if (fsm.numberOfResetAsynchronousDefinitions>0) {
+		if (fsm.numberOfResetAsynchronousDefinitions > 0) {
 			bufDot.append("//////////////////display asynchronous reset transition//////////////////\n");
 			// bufDot.append("    	node [shape=box] ");
 			// bufDot.append("    	emptystateforasyncreset");
@@ -475,10 +475,9 @@ public class FsmProcess {
 			return false;
 		}
 
-		if (fsm.numberOfResetAsynchronousDefinitions>1)
+		if (fsm.numberOfResetAsynchronousDefinitions > 1)
 			System.out.print("Warning:   Asynchronous reset has been redefined more than one time...\n");
 
-		
 		// check if all states have a (reset) transition or asynchronous reset
 		// to them, only the initial state can have no transition to it
 		for (int m = 0; m < numberOfStates; m++) {
@@ -1530,8 +1529,8 @@ public class FsmProcess {
 		// //////////////////////////////////////////////////////////////
 		public void enterLevel_reset_asynchronous(FsmParser.Level_reset_asynchronousContext ctx) {
 			fsm.aResetSignalLevel = ctx.children.get(0).getText().toUpperCase();
-			 fsm.numberOfResetAsynchronousDefinitions++;
-			}
+			fsm.numberOfResetAsynchronousDefinitions++;
+		}
 
 		// //////////////////////////////////////////////////////////////
 		public void enterAction_expression_reset_asynchronous(FsmParser.Action_expression_reset_asynchronousContext ctx) {
@@ -1642,18 +1641,6 @@ public class FsmProcess {
 		System.out.println("FsmProcess B. Vandeportaele LAAS/CNRS 2016\n");
 		System.out.println("usage: FsmProcess fichier.fsm\n\n");
 
-		ANTLRInputStream input = new ANTLRInputStream(is);
-		FsmLexer lexer = new FsmLexer(input);
-		CommonTokenStream tokens = new CommonTokenStream(lexer);
-		FsmParser parser = new FsmParser(tokens);
-		parser.setBuildParseTree(true);
-		ParseTree tree = parser.file();
-		ParseTreeWalker walker = new ParseTreeWalker();
-		FunctionListener collector = new FunctionListener();
-		bufVhdl = new StringBuilder();
-		bufDot = new StringBuilder();
-		walker.walk(collector, tree);
-
 		String fsmInputName = args[0];
 
 		// TODO: check the file exists:
@@ -1671,14 +1658,31 @@ public class FsmProcess {
 				fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("/") + 1, fsmInputName.length() - 4);
 			else if (fsmInputName.contains("\\")) // it contains a windows based
 													// directory name
-				fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("\\") + 1, fsmInputName.length() - 4); // it
-																													// is
-																													// a
-																													// relative
-																													// path
+				// it is a relative path
+				fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("\\") + 1, fsmInputName.length() - 4);
 			else
 				fsm.name = fsmInputName.substring(0, fsmInputName.length() - 4);
+		} else {
+			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
+			return;
 		}
+
+		System.out.print("Processing the file: ");
+		System.out.print(fsmInputName);
+		System.out.print("\n");
+
+		ANTLRInputStream input = new ANTLRInputStream(is);
+		FsmLexer lexer = new FsmLexer(input);
+		CommonTokenStream tokens = new CommonTokenStream(lexer);
+		FsmParser parser = new FsmParser(tokens);
+		parser.setBuildParseTree(true);
+		ParseTree tree = parser.file();
+		ParseTreeWalker walker = new ParseTreeWalker();
+		FunctionListener collector = new FunctionListener();
+		bufVhdl = new StringBuilder();
+		bufDot = new StringBuilder();
+		walker.walk(collector, tree);
+
 		if (checkModel()) // could be optional to display and generate bad fsm
 		{
 			generateDot();
