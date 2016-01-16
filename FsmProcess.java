@@ -326,9 +326,6 @@ public class FsmProcess {
 
 		// EASY TODOS:
 
-		// TODO enforce that a M action have to have an expression (it memorizes
-		// an input!!!!)
-
 		// TODO: when transisitions conditions from one state are not exclusive,
 		// inform and check that the order in the vhdl is the same than thoose
 		// in the fsm
@@ -520,6 +517,23 @@ public class FsmProcess {
 				}
 			}
 		}
+
+		// enforce that a M action have to have an expression (it memorizes
+		// an input!!!!)
+		for (int m = 0; m < numberOfActionsTotal; m++) {
+			Action a = fsm.actions.get(m);
+			if (a.type.equals("M") && (a.expression.equals(""))) {
+				System.out.print("Critical error: The M action ");
+				System.out.print(a.name);
+				System.out.print(" has no expression.");
+				System.out.print(a.expression);
+				System.out.print(" \n");
+				modelOk = false;
+			}
+		}
+		// TODO: enforce that Action in a same state (and transition from that
+		// state) can not use the same outputs, except if there is only R
+		// actions and S actions whose expression are exclusive
 
 		// compute the ordered lists of inputs/outputs/states by names
 		// http://imss-www.upmf-grenoble.fr/prevert/Prog/Java/CoursJava/interface.html
@@ -1205,8 +1219,8 @@ public class FsmProcess {
 		// state
 		Boolean isAlone;
 
-		int nbTimeFoundInFSMFile=0;
-		
+		int nbTimeFoundInFSMFile = 0;
+
 		public int compareTo(Object o) {
 			State a = (State) o;
 			return name.compareTo(a.name);// par ordre alphabétique
@@ -1382,7 +1396,7 @@ public class FsmProcess {
 			// is there already a defined resetAsynchronousState
 			if (fsm.resetAsynchronousState != null) {
 				fsm.numberOfResetAsynchronousDefinitions++;
-				System.out.print("Previous asynchronous reset state ");
+				System.out.print("Info: Previous asynchronous reset state ");
 				System.out.print(fsm.resetAsynchronousState.name);
 				System.out.print(" replaced by ");
 				System.out.print(reset_asynchronous_state_new_name);
@@ -1403,7 +1417,7 @@ public class FsmProcess {
 				s = new State();
 				s.name = name;
 				if (states.size() == 0) {
-					System.out.print("Asynchronous reset state is defined to ");
+					System.out.print("Info: Asynchronous reset state is defined to ");
 					System.out.print(name);
 					System.out.print(" \n");
 					s.isInit = true;
@@ -1680,7 +1694,7 @@ public class FsmProcess {
 			String name = ctx.children.get(0).getText().toUpperCase();
 			State s = fsm.getStateOrCreateAndAdd(name);
 			s.nbTimeFoundInFSMFile++;
-			if (s.nbTimeFoundInFSMFile>1){
+			if (s.nbTimeFoundInFSMFile > 1) {
 				System.out.print("Warning: State ");
 				System.out.print(name);
 				System.out.print(" has already been defined in the model when found in the fsm file.\n");
