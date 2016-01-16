@@ -1329,6 +1329,7 @@ public class FsmProcess {
 		public void setThisStateAsResetAsynchronousState(String reset_asynchronous_state_new_name) {
 			// is there already a defined resetAsynchronousState
 			if (fsm.resetAsynchronousState != null) {
+				fsm.numberOfResetAsynchronousDefinitions++;
 				System.out.print("Previous asynchronous reset state ");
 				System.out.print(fsm.resetAsynchronousState.name);
 				System.out.print(" replaced by ");
@@ -1431,7 +1432,6 @@ public class FsmProcess {
 		public void enterReset_asynchronous(FsmParser.Reset_asynchronousContext ctx) {
 			String reset_asynchronous_state_new_name = ctx.children.get(1).getText().toUpperCase();
 			fsm.setThisStateAsResetAsynchronousState(reset_asynchronous_state_new_name);
-			fsm.numberOfResetAsynchronousDefinitions++;
 		}
 
 		// ///////////////////////////////////////////////////////////////
