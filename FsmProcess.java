@@ -283,7 +283,7 @@ public class FsmProcess {
 				}
 		}
 
-		if (fsm.resetAsynchronousIsDefined) {
+		if (fsm.numberOfResetAsynchronousDefinitions>0) {
 			bufDot.append("//////////////////display asynchronous reset transition//////////////////\n");
 			// bufDot.append("    	node [shape=box] ");
 			// bufDot.append("    	emptystateforasyncreset");
@@ -378,7 +378,6 @@ public class FsmProcess {
 		// this method returns false and exit as soon as there is a critical
 		// error
 
-		 
 		// TODO: check state_number: it is 2 bits wide when theres only 2
 		// states...., anyway there should be a special case when there's only
 		// two state because the output should be std logic instead of
@@ -476,6 +475,10 @@ public class FsmProcess {
 			return false;
 		}
 
+		if (fsm.numberOfResetAsynchronousDefinitions>1)
+			System.out.print("Warning:   Asynchronous reset has been redefined more than one time...\n");
+
+		
 		// check if all states have a (reset) transition or asynchronous reset
 		// to them, only the initial state can have no transition to it
 		for (int m = 0; m < numberOfStates; m++) {
@@ -1288,7 +1291,8 @@ public class FsmProcess {
 		public Boolean GenerateNumberOfStateOutput = true;
 		public int numberOfBitsForStates;
 		// member variables for parsing
-		public Boolean resetAsynchronousIsDefined = false;
+		int numberOfResetAsynchronousDefinitions = 0;
+
 		public State resetAsynchronousState = null;
 
 		public State currentState = null;
@@ -1322,6 +1326,23 @@ public class FsmProcess {
 				return hmapState.get(name);
 		}
 
+		public void setThisStateAsResetAsynchronousState(String reset_asynchronous_state_new_name) {
+			// is there already a defined resetAsynchronousState
+			if (fsm.resetAsynchronousState != null) {
+				System.out.print("Previous asynchronous reset state ");
+				System.out.print(fsm.resetAsynchronousState.name);
+				System.out.print(" replaced by ");
+				System.out.print(reset_asynchronous_state_new_name);
+				System.out.print(" \n");
+				// the previous fsm.resetAsynchronousState is not anymore
+				resetAsynchronousState.isInit = false;
+			}
+			// create the state if necessary
+			State sd = fsm.getStateOrCreateAndAdd(reset_asynchronous_state_new_name);
+			sd.isInit = true;
+			resetAsynchronousState = sd;
+		}
+
 		public State getStateOrCreateAndAdd(String name) {
 			// if this has already been added, return it
 			State s = hmapState.get(name);
@@ -1329,6 +1350,9 @@ public class FsmProcess {
 				s = new State();
 				s.name = name;
 				if (states.size() == 0) {
+					System.out.print("Asynchronous reset state is defined to ");
+					System.out.print(name);
+					System.out.print(" \n");
 					s.isInit = true;
 					resetAsynchronousState = s;
 				} else
@@ -1406,30 +1430,8 @@ public class FsmProcess {
 		// ///////////////////////////////////////////////////////////////
 		public void enterReset_asynchronous(FsmParser.Reset_asynchronousContext ctx) {
 			String reset_asynchronous_state_new_name = ctx.children.get(1).getText().toUpperCase();
-			if (fsm.resetAsynchronousState == null) {
-				State s = new State();
-				s.name = reset_asynchronous_state_new_name; // TODO: check!!!
-				s.isInit = true;
-				fsm.resetAsynchronousState = s;
-				fsm.addState(reset_asynchronous_state_new_name, s);
-			} else {
-				if (!fsm.resetAsynchronousState.name.equals(reset_asynchronous_state_new_name)) {
-					// the previous fsm.resetAsynchronousState is not anymore
-					// relevant
-					fsm.resetAsynchronousState.isInit = false;
-					// get the state in the list from the hash table
-					State s2 = fsm.getStateFromName(reset_asynchronous_state_new_name);
-					if (s2 == null) {
-						// this state does not yet exist in the list
-						s2 = new State();
-						s2.name = reset_asynchronous_state_new_name; // TODO:
-																		// check!!!
-						fsm.addState(reset_asynchronous_state_new_name, s2);
-					}
-					fsm.resetAsynchronousState = s2;
-					fsm.resetAsynchronousState.isInit = true;
-				}
-			}
+			fsm.setThisStateAsResetAsynchronousState(reset_asynchronous_state_new_name);
+			fsm.numberOfResetAsynchronousDefinitions++;
 		}
 
 		// ///////////////////////////////////////////////////////////////
@@ -1439,7 +1441,7 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterClock_definition(FsmParser.Clock_definitionContext ctx) {
-			fsm.clkSignalName = ctx.children.get(1).getText().toUpperCase();  
+			fsm.clkSignalName = ctx.children.get(1).getText().toUpperCase();
 			fsm.clkSignalNameSpecified = true;
 		}
 
@@ -1528,8 +1530,8 @@ public class FsmProcess {
 		// //////////////////////////////////////////////////////////////
 		public void enterLevel_reset_asynchronous(FsmParser.Level_reset_asynchronousContext ctx) {
 			fsm.aResetSignalLevel = ctx.children.get(0).getText().toUpperCase();
-			fsm.resetAsynchronousIsDefined = true;
-		}
+			 fsm.numberOfResetAsynchronousDefinitions++;
+			}
 
 		// //////////////////////////////////////////////////////////////
 		public void enterAction_expression_reset_asynchronous(FsmParser.Action_expression_reset_asynchronousContext ctx) {
