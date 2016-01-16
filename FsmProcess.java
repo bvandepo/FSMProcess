@@ -326,9 +326,6 @@ public class FsmProcess {
 
 		// EASY TODOS:
 
-		// TODO: detect at parsing when a state is already defined -> warning
-		// mais ajouter les actions
-
 		// TODO enforce that a M action have to have an expression (it memorizes
 		// an input!!!!)
 
@@ -1208,6 +1205,8 @@ public class FsmProcess {
 		// state
 		Boolean isAlone;
 
+		int nbTimeFoundInFSMFile=0;
+		
 		public int compareTo(Object o) {
 			State a = (State) o;
 			return name.compareTo(a.name);// par ordre alphabétique
@@ -1678,7 +1677,14 @@ public class FsmProcess {
 		}// //////////////////////////////////////////////////////////////
 
 		public void enterState(FsmParser.StateContext ctx) {
-			State s = fsm.getStateOrCreateAndAdd(ctx.children.get(0).getText().toUpperCase());
+			String name = ctx.children.get(0).getText().toUpperCase();
+			State s = fsm.getStateOrCreateAndAdd(name);
+			s.nbTimeFoundInFSMFile++;
+			if (s.nbTimeFoundInFSMFile>1){
+				System.out.print("Warning: State ");
+				System.out.print(name);
+				System.out.print(" has already been defined in the model when found in the fsm file.\n");
+			}
 			fsm.currentState = s;
 		}
 		// ///////////////////////////////////////////////////////////////
