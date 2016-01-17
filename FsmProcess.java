@@ -51,6 +51,39 @@ public class FsmProcess {
 	static FiniteStateMachine fsm = new FiniteStateMachine();
 
 	// ///////////////////////////////////////////////
+	static public String intToDecimalString(int i, int digits) {
+		return String.format("%" + digits + "s", Integer.toString(i)).replace(" ", "0");
+	}
+
+	// ///////////////////////////////////////////////
+	static public void generateCounter(int maxValue) {
+		StringBuilder bufGenerated = new StringBuilder();
+		// the coding of the state on the same number of digits helps the
+		// synthesizer
+		String t;
+		int nbdigits = 3;
+		for (int i = 0; i < maxValue; i++) {
+			t = intToDecimalString(i, nbdigits);
+			t += "->";
+			t += intToDecimalString(i + 1, nbdigits);
+			t += "?EN;\n";
+			bufGenerated.append(t);
+		}
+		t = intToDecimalString(maxValue, nbdigits);
+		t += "->";
+		t += intToDecimalString(0, nbdigits);
+		t += "?EN:ENDED;\n";
+		bufGenerated.append(t);
+
+		t = "->";
+		t += intToDecimalString(0, nbdigits);
+		t += "?SRESET;\n";
+		bufGenerated.append(t);
+
+		saveToFile(bufGenerated.toString(), "counter.fsm");
+	}
+
+	// ///////////////////////////////////////////////
 	static public void saveToFile(String buf, String name) {
 		PrintWriter out = null;
 		try {
@@ -342,9 +375,18 @@ public class FsmProcess {
 		begin
 		   if (ARAZB='0') then SORTIE4<=IN2;
 		 */
- 
+
+		// TODO: show infos, warnings errors etc in a buffer instead of
+		// system...
+		// to speed up and so it can be logged and hidden if necessary (pipe?)
+
+		// TODO; regler les problèmes de fichier unix/windows pour ne pas avoir
+		// à utiliser unix2dos
 
 		// HARD TODOS:
+
+		// TODO: pragma pour enlever des entrees/sorties, changer leur taille
+
 		// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
 		// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
 		// et
@@ -680,9 +722,12 @@ public class FsmProcess {
 			}
 		}
 		// cheat...
-		modelOk = true;
+		// modelOk = true;
 		if (modelOk)
 			System.out.print("Info: No Critial error: Output files can be generated\n\n");
+		else
+			System.out.print("Info: At least one Critial error: Output files canNOT be generated\n\n");
+
 		return modelOk;
 	}
 
@@ -1854,6 +1899,8 @@ public class FsmProcess {
 
 		System.out.println("FsmProcess B. Vandeportaele LAAS/CNRS 2016\n");
 		System.out.println("usage: FsmProcess fichier.fsm\n\n");
+
+		generateCounter(100);
 
 		String fsmInputName = args[0];
 
