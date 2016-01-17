@@ -1,0 +1,281 @@
+=====Equivalences=====
+MAE: machine à états
+
+=====Documentation de FsmProcess=====
+
+FsmProcess est un utils pour la modélisation et l'implémentation simultanée des machines à états évoluées.
+
+A partir d'une description textuelle d'un modèle de MAE, cet outils génère: 
+ -code VHDL (composant, package, code d'instantiation etc...)
+ -code DOT pour la visualisation
+ -code C pour le test
+ -à terme Verilog ou ce que l'on veut.
+
+
+Donner un exemple simple de .fsm
+
+====Organisation de la documentation====
+Présentation des éléments du langage de manière progressive.
+  
+
+====Description de l'outils====
+Outils écrit en Java pour portabilité. Executable sur n'importe quelle machine équipée d'une machine virtuelle Java >...? 
+
+
+Pourquoi un nouvel outil?
+FsmProcess a été créé dans le but de répondre au besoin de développer et utiliser des composants ayant un comportement de type machine à état (plus quelques subtilités supplémentaires détaillées plus loin). 
+
+
+Un outils pour traiter des modèles décrit dans un language adapté au modèle:
+
+language FSM compact et souple correspondant directement au modèle. Inspiré de la syntaxe de dot 
+
+ 
+
+possibilité de générer le code du composant implémentant le modèle mais également le code permettant d'inclure ce composant (package en VHDL, fichier header en C), le code permettant d'instancier le composant (intanciation avec port map en VHDL) et de le tester (testbench en VHDL).
+
+language relativement indépendant de la cible (FPGA, uP...)
+
+Permet de se concentrer sur le modèle, utile en enseignement. Coût des itérations sur le modèle réduit car il n'y a pas besoin de modifier l'implémentation. Erreurs modelisation <-> codage . Lors des allers retours nombreuses erreurs possibles.   Utile en enseignements. Mais inconvénient c'est qu'on pratique moins le langage cible (par exemple le VHDL). 
+
+Permet de valider que le modèle est implémentable. Si l'on peut le décrire dans le langage FSM, et après quelques vérifications automatiques réalisée par l'outils, l'utilisateur est informé.
+
+Permet d'inférer automatiquement l'interface (ce via quoi il communique) du composant machine à état d'après la description du modèle.
+ 
+dessin à la main ou  en WYSIWYG de machine à états, jamais la place... Ici le choix est de laisser dot positionner et router automatiquement, en le guidant pour que le graphe produit soit facilement interprétable
+
+possibilité de commenter le modèle (et pas le code d'implémentation), donc les commentaires s'applique à l'emplacement où ils sont définits (par exemple c'est sur cette transition que tel composant va faire cela)
+
+Possibilité de générer automatiquement la documentation sous forme d'un graphe DOT, que l'on peut inclure dans une documentation d'un projet. La documentation est ainsi générée toujours à jour par rapport au modèle.
+
+Possibilité d'intégrer le codes de differentes machines à état utilisée dans un système dans un système de build automatisée
+
+Possibilité d'utiliser des outils de gestion de version tels que SVN, CVS ou Git pour suivre l'évolution du modèle au fûr et à mesure des mises à jours.
+
+Possibilité de générer le code décrivant le modèle à partir d'un programme.
+
+
+Possibilité d'inclure du code du langage cible directement dans le fichier décrivant le modèle.
+
+
+Et pour rendre à Caesar ce qui lui appartient:
+
+Outils utilisant 
+  -Ant LR pour la lecture des fichiers d'entrée (lien) 
+  -Dot de Graphviz pour la génération des graphiques (lien)
+
+inspiré de mon expérience avec les langages SHDL et MAC  (...) http://diabeto.enseeiht.fr/buisson/
+ 
+
+référence à l'outils de Clément pour WYSIWYG
+
+=====Le langage FSM=====
+  
+
+
+voir ce qui est interdit (====Mots réservés====)
+
+instruction terminée par ;
+
+espace, retour à la ligne et tabulation sont transparents;
+
+
+commentaires comme en C:
+  // pour un commentaire sur une ligne
+  /*   */ pour un bloc de commentaires, éventuellement sur plusieurs lignes
+
+
+====Machine à états====
+
+Système séquentiel synchrone
+
+utilisable pour la commande 
+
+
+
+====Utilisation Basique====
+
+===Définition des états===
+
+Le premier état définit est l'état initial par défaut de la machine à état. 
+
+Syntaxe: nom_etat;
+
+
+
+Noms valides pour un état:
+
+==Exemples==
+
+<<FSM ex_etat1.fsm --ignore_errors
+//définition de 3 états pas très soigneuse 
+etat0;state1;
+
+e4;
+/FSM>>
+
+Bien qu'étant correcte, ce code n'est pas très lisible, la version suivante sera donc préférée:
+
+<<FSM ex_etat2.fsm --ignore_errors
+//définition de 3 états
+etat_0;     //dans cet état, le système fait...
+etat_1;     //dans cet état, le système fait...
+etat_2;     //dans cet état, le système fait...
+/FSM>>
+
+Pour que le modèle de cette MAE puisse être implémenté, il faudra utiliser l'option --ignore_errors car le modèle ne répond pas à différentes contraintes détaillées dans ===Contraintes sur le modèle===, notament il ne décrit aucune sorties et les états etat_1 et etat_2 sont orphelins, le système n'ayant aucun moyen d'arriver dans ces états.
+
+ 
+Deux états différents ne peuvent bien sûr pas avoir le même nom, et dans la description suivante, un seul état etat_1 est donc créé.
+  
+<<FSM ex_etat3.fsm --ignore_errors
+//définition de 3 états avec un état décrit deux fois
+etat_0;     //dans cet état, le système fait...
+etat_1;     //dans cet état, le système fait...
+etat_2;     //dans cet état, le système fait...
+etat_1;     //dans cet état, le système fait aussi...
+/FSM>>
+
+===Définition des transitions entre états===
+
+La définition de transition entre états se fait de la manière suivante:
+ 
+Syntaxe: nom_etat_initial -> nom_etat_destination;
+
+<<FSM ex_transition1.fsm --ignore_errors
+//définition de 3 transitions
+etat_0;     //dans cet état, le système fait...
+etat_1;     //dans cet état, le système fait...
+etat_2;     //dans cet état, le système fait...
+etat_0->etat_1;
+etat_1->etat_2;
+etat_2->etat_1;
+/FSM>>
+
+Il est possible de décrire des transitions utilisant des états avant que ceux ci ne soit eux même définit, voir même sans définir les états si le modèle ne nécessite pas d'action sur ces états. Ainsi le modèle suivant est valide:
+
+<<FSM ex_transition2.fsm --ignore_errors
+//définition de 3 transitions 
+etat_1->etat_2;
+etat_0->etat_1;
+etat_2;     //dans cet état, le système fait...
+etat_2->etat_0;
+/FSM>>
+
+On pourra noter dans cet exemple que le premier état rencontré dans la lecture du code est l'état etat_1 apparaissant dans la première transition, et c'est donc lui qui sera l'état initial par défaut de la machine à état. 
+
+
+===Définition des conditions de transition===
+
+La définition d'une condition pour une transition est optionnelle est se fait ainsi:
+
+Syntaxe: nom_etat_initial -> nom_etat_destination?condition;
+
+condition valide= combinaison d'entrées et d'opérateurs
+
+les entrées sont automatiquement détectées.
+
+<<FSM ex_transition_condition1.fsm --ignore_errors
+//définition de 3 transitions 
+etat_1->etat_2?IN1;
+etat_0->etat_1?NOT IN1;
+etat_2;     //dans cet état, le système fait...
+etat_2->etat_0?IN2;
+/FSM>>
+
+Les conditions de sorties d'un état doivent être mutuellement exclusives
+
+Le modèle suivant est donc ambigue: dans l'état 1, que se passe-t il si IN1 et IN2 sont tous les deux vrais?
+<<FSM ex_transition_condition2.fsm --ignore_errors
+etat_1->etat_2?IN1;
+etat_1->etat_0?IN2;
+etat_0->etat_1?NOT IN1;
+etat_2;     //dans cet état, le système fait...
+etat_2->etat_0?IN2;
+/FSM>>
+
+Pour pallier à ce problème, il est possible de desambiguiser à la main le modèle, en ajoutant une priorité. Si l'on souhaite rendre la transition de etat_1 vers etat_2 plus prioritaire, il suffit d'inhiber la transition de etat_1 vers etat_0 de la façon suivante:
+
+<<FSM ex_transition_condition3.fsm --ignore_errors
+etat_1->etat_2?IN1;
+etat_1->etat_0?IN2 AND NOT IN1;
+etat_0->etat_1?NOT IN1;
+etat_2;     //dans cet état, le système fait...
+etat_2->etat_0?IN2;
+/FSM>>
+
+
+Ce mécanisme est automatisé par l'outils comme présenté plus loins dans la partie === Priorités===
+
+
+===Définition des actions===
+Action AMZI pour commencer
+=0 si l'action n'est pas indiquée
+
+=1 par défaut
+éventuellement avec condition sous forme d'expression
+===Actions sur état===
+<<FSM ex_etat2.fsm
+//définition de 3 états
+etat_0;     //dans cet état, le système fait...
+etat_1;     //dans cet état, le système fait...
+etat_2;     //dans cet état, le système fait...
+/FSM>>
+
+
+===Actions sur transition===
+
+
+
+====Utilisation Avancée====
+===Notion de priorité entre les transitions===
+
+
+sreset> t
+
+inhibition
+
+
+===Actions mémorisées===
+M , S et R
+
+sur état et sur tansition
+
+valeur par défaut au démarrage =0 peut être réglée par un état transitoire d'init ou reset asynchrone (plus bas)
+
+===Réinitialisation synchrone===
+
+Condition et action
+==Notion de priorité sur les transitions standard==
+inhibe les actions sur état et sur transition quand la condition de reset est valide
+
+===Réinitialisation asynchrone===
+
+
+
+===Spécifications via Pragma===
+==Indiquer taille de bus==
+
+
+===Inclusions de code via Pragma===
+
+à l'intérieur des balises, on peut utiliser les mots réservés
+
+===Génération de modèle par programme===
+
+====Exemples d'applications====
+
+====Mots réservés====
+
+récupérer des listes dans le fichier FsmProcesss.java....
+
+
+====Les messages Info, Warning et Error====
+===Contraintes sur le modèle===
+récupérer de toutes les vérifications que je fais dans le code.
+
+
+
+====Paramètres de l'exécutable====
+
+
