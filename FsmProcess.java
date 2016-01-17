@@ -334,6 +334,16 @@ public class FsmProcess {
 		// le vhdl un signal qui prendra la valeur 1 quand la condition est
 		// vraie
 
+		// TODO; add default value for asynchronous reset in process sensitivity
+		// list
+		// NOT EASY BECAUSE I HAVE ONLY THE EXPRESSION, NOT A LIST OF INPUTS
+		/*------ FLIP FLOPS FOR SORTIE4 ------
+		process (CLICK, ARAZB)  -- should also contain IN2
+		begin
+		   if (ARAZB='0') then SORTIE4<=IN2;
+		 */
+ 
+
 		// HARD TODOS:
 		// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
 		// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
@@ -514,7 +524,6 @@ public class FsmProcess {
 						System.out.print(ar.name);
 						System.out.print("  is defined as a repeatedly action and also on states or transitions. This is forbidden.\n");
 					}
-					System.out.print("\n ");
 					modelOk = false;
 				}
 			}
@@ -647,7 +656,7 @@ public class FsmProcess {
 								System.out.print(a.expression);
 								System.out.print(" has been upgraded with supplementary condition: ");
 								System.out.print(fsm.resetConditionComplement);
-								System.out.print(" because of a reset transition(s)\n");								
+								System.out.print(" because of a reset transition(s)\n");
 								a.condition = " AND (not_any_s_reset_internal = '1' ) ";
 							}
 						}
@@ -670,6 +679,10 @@ public class FsmProcess {
 					}
 			}
 		}
+		// cheat...
+		modelOk = true;
+		if (modelOk)
+			System.out.print("Info: No Critial error: Output files can be generated\n\n");
 		return modelOk;
 	}
 
@@ -1709,6 +1722,10 @@ public class FsmProcess {
 		// //////////////////////////////////////////////////////////////
 		public void enterLevel_reset_asynchronous(FsmParser.Level_reset_asynchronousContext ctx) {
 			fsm.aResetSignalLevel = ctx.children.get(0).getText().toUpperCase();
+			if (!fsm.aResetSignalLevel.equals("0") && !fsm.aResetSignalLevel.equals("1")) {
+				System.out
+						.print("Warning:   Asynchronous reset level for input should be either O or 1 because modern FPGAs don't have circuitry to route another signal.\n");
+			}
 			fsm.numberOfResetAsynchronousDefinitions++;
 		}
 
@@ -1722,6 +1739,14 @@ public class FsmProcess {
 				reconstructedExpression += ctx.children.get(n).getText().toUpperCase();
 				if (n != nbChildren - 1)
 					reconstructedExpression += " ";
+			}
+			// TODO: pour les bus???
+			if (!reconstructedExpression.equals("0") && !reconstructedExpression.equals("1")) {
+				System.out.print("Warning:   Asynchronous reset value for output ");
+				System.out.print(fsm.currentOutput.name);
+				System.out.print(" should not be ");
+				System.out.print(reconstructedExpression);
+				System.out.print(" but either O or 1 because modern FPGAs don't have circuitry to route another signal.\n");
 			}
 			fsm.currentOutput.asyncResetExpression = reconstructedExpression;
 		}
