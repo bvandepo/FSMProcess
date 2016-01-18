@@ -119,7 +119,8 @@ Noms valides pour un état:
 ==Exemples==
 
 <<FSM ex_etat1.fsm>>
-//définition de 3 états pas très soigneuse 
+//définition de 4 états pas très soigneuse 
+2;
 etat0;state1;
 
 e4;

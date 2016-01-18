@@ -125,9 +125,9 @@ public class FsmProcess {
 			fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("\\") + 1, fsmInputName.length() - 4);
 		else
 			fsm.name = fsmInputName.substring(0, fsmInputName.length() - 4);
-		bufLog.append("Processing the file: ");
-		bufLog.append(fsmInputName);
-		bufLog.append("\n");
+		System.out.print("Processing the file: ");
+		System.out.print(fsmInputName);
+		System.out.print("\n");
 		ANTLRInputStream input = null;
 		try {
 			input = new ANTLRInputStream(is);
@@ -168,7 +168,7 @@ public class FsmProcess {
 
 	static public void processTheDoc() {
 		String source = "/home/bvandepo/antlr/fsm/doc.txt";
-		String directoryName = "/home/bvandepo/antlr/doc_fsm/";
+		String directoryName = "/home/bvandepo/antlr/fsm/doc_generated/";
 		System.out.print("Generating the FSMProcess Documentation from ");
 		System.out.print(source);
 		System.out.print(" to : ");
@@ -548,6 +548,8 @@ public class FsmProcess {
 		// errors (separate critials) to be able to get some wrong drawings or
 		// code
 
+		//Make the size of node fixed: fixedsize=true from http://stackoverflow.com/questions/1265996/size-of-node-with-shape-circle
+		
 		// TODO: modifier pour avoir des actions à 1 par defaut
 
 		// TODO: verifier si on redefinit une transition avec les mêmes etats
@@ -2100,7 +2102,7 @@ public class FsmProcess {
 
 		if (fsmInputName.endsWith(".fsm"))
 			GenerateFiles(fsmInputName, true);
-		else if (fsmInputName.equals("doc"))
+		else if (fsmInputName.endsWith("doc.txt"))
 			processTheDoc();
 		else {
 			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
