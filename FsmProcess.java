@@ -2,11 +2,16 @@
  * FSM
  @author Bertrand VANDEPORTAELE LAAS/CNRS 2016
  *  ***/
+//import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+//import java.io.PipedInputStream;
+//import java.io.PipedOutputStream;
 import java.io.PrintWriter;
+//import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,11 +49,144 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 // comment fonctionne le contains (c'est lui qui est appelé pour faire la
 // comparaison).
 
+/*
+ //////////////////////////////////////////////////////////
+ class FilteredStream extends InputStream {
+ public InputStream inputStream;
+ public PipedOutputStream pipedOutputStream;
+ public PipedInputStream pipedInputStream;
+ public BufferedReader inBuf;
+ public int state;
+
+ public FilteredStream(InputStream i) {
+ inputStream = i;
+ pipedOutputStream = new PipedOutputStream();
+ pipedInputStream = new PipedInputStream(pipedOutputStream); // FIFO
+ inBuf = new BufferedReader(new Reader(inputStream));
+ state = 0;
+ }
+
+ @Override
+ public int read() throws IOException {
+
+ String line = inBuf.readLine();
+ if (line.contains("<<FSM")) {
+ state = 1;
+ } else if (line.contains("/FSM>>")) {
+ state = 0;
+ // //appeler parsing par antlr qui travaille sur pipedInputStream
+ }
+ if (state == 1)
+ pipedOutputStream.write(line.getBytes()); // to antlr , qui s'abonne
+ else
+ return pipedInputStream.read();
+ }
+
+ }*/
+//////////////////////////////////////////////////////////
 public class FsmProcess {
 
 	static StringBuilder bufDot;
 	static StringBuilder bufVhdl;
 	static FiniteStateMachine fsm = new FiniteStateMachine();
+
+	// static public void processASingleFSM(String fsmBaseName) {}
+
+	// ///////////////////////////////////////////////
+
+	static public void GenerateFiles(String fsmInputName) {
+		// by default, the input stream is System.in
+		InputStream is = System.in;
+		if (fsmInputName != null)
+			try {
+				is = new FileInputStream(fsmInputName);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4);  // file location and name without extension
+		// extract fsm.name from the fsmInputName file name
+		if (fsmInputName.contains("/")) // it contains a unix based
+										// directory name
+			fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("/") + 1, fsmInputName.length() - 4);
+		else if (fsmInputName.contains("\\")) // it contains a windows based
+												// directory name
+			// it is a relative path
+			fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("\\") + 1, fsmInputName.length() - 4);
+		else
+			fsm.name = fsmInputName.substring(0, fsmInputName.length() - 4);
+		System.out.print("Processing the file: ");
+		System.out.print(fsmInputName);
+		System.out.print("\n");
+
+		//
+		// processASingleFSMFile(fsmBaseName);
+
+		ANTLRInputStream input = null;
+		try {
+			input = new ANTLRInputStream(is);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		FsmLexer lexer = new FsmLexer(input);
+		CommonTokenStream tokens = new CommonTokenStream(lexer);
+		FsmParser parser = new FsmParser(tokens);
+		parser.setBuildParseTree(true);
+		ParseTree tree = parser.file();
+		ParseTreeWalker walker = new ParseTreeWalker();
+		FunctionListener collector = new FunctionListener();
+		bufVhdl = new StringBuilder();
+		bufDot = new StringBuilder();
+		walker.walk(collector, tree);
+		if (checkModel()) // could be optional to display and generate bad fsm
+		{
+			generateDot();
+			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot")); //
+			System.out.println(bufDot.toString());
+			generateVhdl();
+			saveToFile(bufVhdl.toString(), fsmBaseName.concat(".vhd"));
+			bufVhdl.setLength(0);
+			generatePackageVhdl();
+			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_pack.vhd"));
+			bufVhdl.setLength(0);
+			generatePortMapVhdl();
+			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_portmap.vhd"));
+			// System.out.println(bufVhdl.toString()); // TODO: log file
+		}
+
+	}
+
+	// ///////////////////////////////////////////////
+	/*
+	 * static public void processTheDoc() { String source =
+	 * "/home/bvandepo/antlr/fsm/doc.txt"; String directoryName = "./doc/";
+	 * System.out.print("Generating the FSMProcess Documentation from ");
+	 * System.out.print(source); System.out.print(" to : ");
+	 * System.out.print(directoryName); System.out.println("");
+	 * 
+	 * InputStream docStream = new FileInputStream(source);
+	 * 
+	 * FilteredStream doc = new FilteredStream(docStream); } /* File theDir =
+	 * new File(directoryName); // TODO != pour windows?
+	 * 
+	 * 
+	 * // if the directory does not exist, create it if (!theDir.exists()) {
+	 * System.out.println("creating directory: " + directoryName);
+	 * theDir.mkdir(); }
+	 */
+
+	// is = new FileInputStream();
+
+	/*
+	 * try { String ligne; //BufferedReader fichier = new BufferedReader(new
+	 * FileReader(source)); FilteredStream fs=new FilteredStream (new
+	 * FileInputStream(new File(source))); ile ((ligne = fichier.readLine()) !=
+	 * null) { System.out.println(ligne);
+	 * 
+	 * // ligne. } fichier.close(); } catch (Exception e) { e.printStackTrace();
+	 * }
+	 */
 
 	// ///////////////////////////////////////////////
 	static public String intToDecimalString(int i, int digits) {
@@ -80,7 +218,7 @@ public class FsmProcess {
 		t += "?SRESET;\n";
 		bufGenerated.append(t);
 
-		saveToFile(bufGenerated.toString(), "counter.fsm");
+		saveToFile(bufGenerated.toString(), "/home/bvandepo/antlr/examples/test.fsm");
 	}
 
 	// ///////////////////////////////////////////////
@@ -361,6 +499,12 @@ public class FsmProcess {
 		// TODO Add an option to generate dot and vhdl even if there is some
 		// errors (separate critials) to be able to get some wrong drawings or
 		// code
+
+		// TODO: modifier pour avoir des actions à 1 par defaut
+
+		// TODO: verifier si on redefinit une transition avec les mêmes etats
+		// source et dest et la même condition si l'outils ajoute les actions
+		// (si il y en a) à la transition existante
 
 		// TODO: pour les comparaisons de valeurs sur des bus d'entrée, utiliser
 		// une syntaxe particulière (ajouter à la grammaire) puis générer dans
@@ -1889,19 +2033,15 @@ public class FsmProcess {
 
 	// ///////////////////////////////////////////////////////////////
 	public static void main(String[] args) throws Exception {
-		String inputFile = null;
-		if (args.length > 0)
-			inputFile = args[0];
-		InputStream is = System.in;
-		if (inputFile != null) {
-			is = new FileInputStream(inputFile);
-		}
 
+		/*
+		 * if (args.length > 0) inputFile = args[0]; InputStream is = System.in;
+		 * if (inputFile != null) { is = new FileInputStream(inputFile); }
+		 */
 		System.out.println("FsmProcess B. Vandeportaele LAAS/CNRS 2016\n");
 		System.out.println("usage: FsmProcess fichier.fsm\n\n");
 
-		generateCounter(100);
-
+		//generateCounter(10);
 		String fsmInputName = args[0];
 
 		// TODO: check the file exists:
@@ -1911,53 +2051,14 @@ public class FsmProcess {
 		 * System.out.println(f.getCanonicalPath()); } catch ( IOException e) {
 		 * System.out.println("f.getCanonicalPath() failed"); }
 		 */
-		String fsmBaseName = fsmInputName;
-		if (fsmBaseName.endsWith(".fsm")) {
-			fsmBaseName = fsmBaseName.substring(0, fsmBaseName.length() - 4);
-			if (fsmInputName.contains("/")) // it contains a unix based
-											// directory name
-				fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("/") + 1, fsmInputName.length() - 4);
-			else if (fsmInputName.contains("\\")) // it contains a windows based
-													// directory name
-				// it is a relative path
-				fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("\\") + 1, fsmInputName.length() - 4);
-			else
-				fsm.name = fsmInputName.substring(0, fsmInputName.length() - 4);
-		} else {
+
+		if (fsmInputName.endsWith(".fsm"))
+			GenerateFiles(fsmInputName);
+		// else if (fsmInputName.equals("doc"))
+		// processTheDoc();
+		else {
 			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
 			return;
-		}
-
-		System.out.print("Processing the file: ");
-		System.out.print(fsmInputName);
-		System.out.print("\n");
-
-		ANTLRInputStream input = new ANTLRInputStream(is);
-		FsmLexer lexer = new FsmLexer(input);
-		CommonTokenStream tokens = new CommonTokenStream(lexer);
-		FsmParser parser = new FsmParser(tokens);
-		parser.setBuildParseTree(true);
-		ParseTree tree = parser.file();
-		ParseTreeWalker walker = new ParseTreeWalker();
-		FunctionListener collector = new FunctionListener();
-		bufVhdl = new StringBuilder();
-		bufDot = new StringBuilder();
-		walker.walk(collector, tree);
-
-		if (checkModel()) // could be optional to display and generate bad fsm
-		{
-			generateDot();
-			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot"));
-			// System.out.println(bufDot.toString());
-			generateVhdl();
-			saveToFile(bufVhdl.toString(), fsmBaseName.concat(".vhd"));
-			bufVhdl.setLength(0);
-			generatePackageVhdl();
-			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_pack.vhd"));
-			bufVhdl.setLength(0);
-			generatePortMapVhdl();
-			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_portmap.vhd"));
-			// System.out.println(bufVhdl.toString());
 		}
 	}
 }
