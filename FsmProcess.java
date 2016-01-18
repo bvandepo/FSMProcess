@@ -1407,7 +1407,7 @@ public class FsmProcess {
 
 	} // ///////////////////////////////////////////////////////////////
 
-	static class ResetTransition implements Comparable {
+	static class ResetTransition implements Comparable<Object> {
 		String destination;
 		// this string is the expression read from the fsm file
 		String condition;
@@ -1426,7 +1426,7 @@ public class FsmProcess {
 		}
 	} // ///////////////////////////////////////////////////////////////
 
-	static class Transition implements Comparable {
+	static class Transition implements Comparable<Transition> {
 		String origin;
 		String destination;
 		// this string is the expression read from the fsm file
@@ -1440,7 +1440,7 @@ public class FsmProcess {
 		int priorityOrder = 1000000; // by default, low priority, 1 is the
 										// higher priority
 
-		public int compareTo(Object o) {
+		public int compareTo(Transition o) {
 			Transition a = (Transition) o;
 			return priorityOrder - a.priorityOrder;
 		}
@@ -1455,31 +1455,31 @@ public class FsmProcess {
 								// action when a synchronous reset occurs
 	} // //////////////////////////////////////////////////////////////////
 
-	static class Input implements Comparable {
+	static class Input implements Comparable<Input> {
 		String type;
 		String name;
 
-		public int compareTo(Object o) {
+		public int compareTo(Input o) {
 			Input a = (Input) o;
 			return name.compareTo(a.name);// par ordre alphabétique
 		}
 	}
 
 	// //////////////////////////////////////////////////////////////////
-	static class Output implements Comparable {
+	static class Output implements Comparable<Output> {
 		String type;
 		String name;
 		Boolean memorized;
 		String asyncResetExpression = null;
 
-		public int compareTo(Object o) {
+		public int compareTo(Output o) {
 			Output a = (Output) o;
 			return name.compareTo(a.name);// par ordre alphabétique
 		}
 	}
 
 	// //////////////////////////////////////////////////////////////////
-	static class State implements Comparable {
+	static class State implements Comparable<State> {
 		Boolean isInit; // initial state or not
 		// String name=new String("");
 		String name;
@@ -1494,7 +1494,7 @@ public class FsmProcess {
 
 		int nbTimeFoundInFSMFile = 0;
 
-		public int compareTo(Object o) {
+		public int compareTo(State o) {
 			State a = (State) o;
 			return name.compareTo(a.name);// par ordre alphabétique
 		}
