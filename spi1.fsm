@@ -14,22 +14,19 @@
 		sload_tx=E:
 		R,SSB;
 	1 -> 2 ?cpt_duree_egal2:
-		S,SCLK=CPOL:
-		R,SCLK=NOT CPOL: 
+		M,SCLK=CPOL:
 		sraz_cpt_duree: 
 		en_rx=not CPHA: 
 		en_cpt_bit=not CPHA;
 	2 -> 3 ?cpt_duree_egal2:
-		S,SCLK=CPOL:
-		R,SCLK=NOT CPOL: 
+		M,SCLK=CPOL:
 		sraz_cpt_duree: 
 		en_tx=not CPHA: 
 		en_rx= CPHA: 
 		en_cpt_bit=CPHA;
 	3 -> 2 ?cpt_duree_egal2 AND cpt_bit_inf_x:  
 		sraz_cpt_duree: 
-		S,SCLK=CPOL:
-		R,SCLK=NOT CPOL: 
+		M,SCLK=CPOL:
 		en_tx= CPHA: 
 		en_rx= not CPHA: 
 		en_cpt_bit=not CPHA;
@@ -41,10 +38,15 @@
 //Actions toujours vraies
 
 //Reset Asynchrone
-	=> 0 ?resetn , 0 : SSB=1:		SCLK=CPOL;
+	=> 0 ?resetn , 0 : SSB=1:		SCLK=CPOL;  
 //Definition d'un nom de signal d'horloge
 	/ horloge;
 
+/*
 //junk for test:
-// ->3? SRESET:S,toto=tata;
+ ->3? SRESET:S,toto=tata;
+*/
+%M,titi=toot;
+%I,tutu=ttttt;
+
 

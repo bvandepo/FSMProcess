@@ -1,0 +1,15 @@
+0;
+1: marche=Inter0:sens:A8;
+2: marche=Inter0;
+3: marche=Inter0:sens:A9;
+4: marche=Inter0:A9;
+5: marche=Inter0:sens;
+6: marche=Inter0:A8;
+
+0 -> 1 ?inter1;
+1 -> 2 ?NOT C12;
+2 -> 3 ?NOT C11; 
+3 -> 4 ?NOT C13;
+4 -> 5 ?NOT C9;
+5 -> 6 ?NOT C10;
+6 -> 0 ?NOT C8;

@@ -1,30 +1,25 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 //Nom de la machine à état= nom du fichier sans l'extension
 //Les différents états avec actions sur état
-	0;
-	1 : b0;
-	2 : b1;
-        3 : b0:b1;
-        4 : b2;
-        5 : b2:b0;
-        6 : b2:b1;
-        7 : b2:b1:b0;
-        8 : b3;
+	1 ;
+ 	3 ;
+	2 ;
 ////////////////////////////////////////////////////////////////////////////////////////////////////// 
 //Transitions et actions sur transitions
-	0 -> 1 ?EN;
-	1 -> 2 ?EN;
-	2 -> 3 ?EN;
-	3 -> 4 ?EN;
-	4 -> 5 ?EN;
-	5 -> 6 ?EN;
-	6 -> 7 ?EN;
-	7 -> 8 ?EN;
-	8 -> 0 ?EN:S,FINI;
-	3 -> 6 ?TRICHE:S,ATRICHE;
+	1 -> 2*2 ?NOT IN3: R, sortie5=entree3;
+	1 -> 3*1 ? IN4 : S,sortie4=entree6;
+
+	2->1*2?IN5 : S,sortie9;
+	2->3*1?IN2 : R,sortie9;
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Transitions avec état d'origine vide pour reset synchrone, actions sur reset
-->0 ?SRESET :S,MISEAZERO;
+ 
+->1*2?SRESET8:SORTIE1;
+
+->2*1?SRESET6:SORTIE2;
+->3*3?SRESET5:SORTIE3;
+ 
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Actions toujours vraies
- 
+ 	 
