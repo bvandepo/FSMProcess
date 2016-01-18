@@ -490,7 +490,6 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////
-	@SuppressWarnings("unchecked")
 	static public Boolean checkModel() {
 		// this method returns false and exit as soon as there is a critical
 		// error
@@ -1842,7 +1841,7 @@ public class FsmProcess {
 			rt.destination = ctx.children.get(1).getText().toUpperCase();
 			// add the transition in its origin state, first get the state from
 			// its name if the states do not yet exist, create them
-			State sd = fsm.getStateOrCreateAndAdd(rt.destination);
+			fsm.getStateOrCreateAndAdd(rt.destination);
 			fsm.resetTransitions.add(rt);
 		}
 
@@ -1876,7 +1875,7 @@ public class FsmProcess {
 			// its name
 			// if the states do not yet exist, create them
 			State so = fsm.getStateOrCreateAndAdd(t.origin);
-			State sd = fsm.getStateOrCreateAndAdd(t.destination);
+			fsm.getStateOrCreateAndAdd(t.destination);
 
 			so.transitionsFromThisState.add(t);
 			fsm.transitions.add(t); // also add it to the global transitions
