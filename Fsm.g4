@@ -1,4 +1,13 @@
 grammar Fsm;
+@lexer::members {
+Boolean ignore_ws= true;
+  
+}
+
+//  public static final int WHITESPACE = 1;
+//    public static final int COMMENTS = 2;
+
+
 file  : (line)+ ;          //a state machine is many lines, the fsm name is mandatory as the first entry
 
 line : state 
@@ -7,7 +16,9 @@ line : state
      | repeatedly_action
      | reset_asynchronous
      | clock_definition
+     | pragma_def
      ;
+
 
 state   :  id (':' state_action)* ';'   ;         	//state (with  action(s))
 
@@ -108,34 +119,61 @@ fragment TAG
    : '<' .*? '>'
    ;
 
+
+
 COMMENT
    : '/*' .*? '*/' -> skip
    ;
-
 LINE_COMMENT
    : '//' .*? '\r'? '\n' -> skip
    ;
-
-/** "a '#' character is considered a line output from a C preprocessor (e.g.,
- *  # 34 to indicate line 34 ) and discarded"
- */ PREPROC
-   : '#' .*? '\n' -> skip
-   ;
-
 WS
    : [ \t\n\r]+ -> skip
    ;
 
 
-BlockComment
-    :   '/*' .*? '*/'
-        -> skip
-    ;
+/** "a '#' character is considered a line output from a C preprocessor (e.g.,
+ *  # 34 to indicate line 34 ) and discarded"
+ */
 
-LineComment
-    :   '//' ~[\r\n]*
-        -> skip
-    ;
+/* PREPROC
+   : '#' .*? '\n' -> skip
+   ;
+*/
+
+
+//from p226(239)
+//CData ::= (Char* - (Char* ']]>' Char*)) // anything but ']]>'
+//CDATA : '<![CDATA[' .*? ']]>' ;
+
+//Match anything!!!!!!!! usefull for pragma mode
+anything :  .*?   ;
+
+
+
+/////////////////////////////////////////////////////////////// 
+
+pragma_def : PRAGMA_VE_BEGIN pragma_vhdl_entity PRAGMA_VE_END  ';' ;
+ 
+
+PRAGMA_VE_BEGIN : '#VE{' { ignore_ws=false; System.out.println("Info: Begin Pragma\n"); } ;
+PRAGMA_VE_END :   '}#VE' { ignore_ws=true;  System.out.println("Info: End Pragma\n"); } ;
+
+//    #VE{  titi toto tata }#VE ;
+
+//#p222(235) pour mode
+//PRAGMA_VE_BEGIN : '#VE{' -> mode(PRAGMA_MODE) ;
+
+pragma_vhdl_entity: anything ; //mettre du code non parsé en conservant tout (espace ,\n ...)
+
+//page 204 du guide, explication des channels pour les commentaires
+
+
+/////////////////////////////////////////////////////////////// 
+//mode PRAGMA_MODE;
+
+
+//PRAGMA_VE_END :   '}#VE' -> mode(DEFAULT_MODE) ;
 
 
 
