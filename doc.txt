@@ -1,6 +1,15 @@
 =====Equivalences=====
 MAE: machine à états
 
+pour compiler la doc
+  sudo apt-get install xml-twig-tools
+le mieux est d'utiliser le parser java comme ca pas de dépendances supplémentaires.
+-> appelle le même executable jar mais en lui donnant le nom du fichier txt....
+sans même parser, il suffit d'analyser le fichier et quand on tombe sur un <<FSM, ca appelle la fonction qui parserait normalement un fichier entier!-> génération des noms des fichiers a partir du nom lu depuis le txt
+
+
+
+
 =====Documentation de FsmProcess=====
 
 FsmProcess est un utils pour la modélisation et l'implémentation simultanée des machines à états évoluées.
@@ -66,6 +75,8 @@ Outils utilisant
 
 inspiré de mon expérience avec les langages SHDL et MAC  (...) http://diabeto.enseeiht.fr/buisson/
  
+Utilise le modèle de A. Nketsa.
+
 
 référence à l'outils de Clément pour WYSIWYG
 
@@ -107,34 +118,34 @@ Noms valides pour un état:
 
 ==Exemples==
 
-<<FSM ex_etat1.fsm --ignore_errors
+<<FSM ex_etat1.fsm>>
 //définition de 3 états pas très soigneuse 
 etat0;state1;
 
 e4;
-/FSM>>
+<</FSM>>
 
 Bien qu'étant correcte, ce code n'est pas très lisible, la version suivante sera donc préférée:
 
-<<FSM ex_etat2.fsm --ignore_errors
+<<FSM ex_etat2.fsm>>
 //définition de 3 états
 etat_0;     //dans cet état, le système fait...
 etat_1;     //dans cet état, le système fait...
 etat_2;     //dans cet état, le système fait...
-/FSM>>
+<</FSM>>
 
-Pour que le modèle de cette MAE puisse être implémenté, il faudra utiliser l'option --ignore_errors car le modèle ne répond pas à différentes contraintes détaillées dans ===Contraintes sur le modèle===, notament il ne décrit aucune sorties et les états etat_1 et etat_2 sont orphelins, le système n'ayant aucun moyen d'arriver dans ces états.
+Pour que le modèle de cette MAE puisse être implémenté, il faudra utiliser l'option>> car le modèle ne répond pas à différentes contraintes détaillées dans ===Contraintes sur le modèle===, notament il ne décrit aucune sorties et les états etat_1 et etat_2 sont orphelins, le système n'ayant aucun moyen d'arriver dans ces états.
 
  
 Deux états différents ne peuvent bien sûr pas avoir le même nom, et dans la description suivante, un seul état etat_1 est donc créé.
   
-<<FSM ex_etat3.fsm --ignore_errors
+<<FSM ex_etat3.fsm>>
 //définition de 3 états avec un état décrit deux fois
 etat_0;     //dans cet état, le système fait...
 etat_1;     //dans cet état, le système fait...
 etat_2;     //dans cet état, le système fait...
 etat_1;     //dans cet état, le système fait aussi...
-/FSM>>
+<</FSM>>
 
 ===Définition des transitions entre états===
 
@@ -142,7 +153,7 @@ La définition de transition entre états se fait de la manière suivante:
  
 Syntaxe: nom_etat_initial -> nom_etat_destination;
 
-<<FSM ex_transition1.fsm --ignore_errors
+<<FSM ex_transition1.fsm>>
 //définition de 3 transitions
 etat_0;     //dans cet état, le système fait...
 etat_1;     //dans cet état, le système fait...
@@ -150,17 +161,17 @@ etat_2;     //dans cet état, le système fait...
 etat_0->etat_1;
 etat_1->etat_2;
 etat_2->etat_1;
-/FSM>>
+<</FSM>>
 
 Il est possible de décrire des transitions utilisant des états avant que ceux ci ne soit eux même définit, voir même sans définir les états si le modèle ne nécessite pas d'action sur ces états. Ainsi le modèle suivant est valide:
 
-<<FSM ex_transition2.fsm --ignore_errors
+<<FSM ex_transition2.fsm>>
 //définition de 3 transitions 
 etat_1->etat_2;
 etat_0->etat_1;
 etat_2;     //dans cet état, le système fait...
 etat_2->etat_0;
-/FSM>>
+<</FSM>>
 
 On pourra noter dans cet exemple que le premier état rencontré dans la lecture du code est l'état etat_1 apparaissant dans la première transition, et c'est donc lui qui sera l'état initial par défaut de la machine à état. 
 
@@ -175,37 +186,37 @@ condition valide= combinaison d'entrées et d'opérateurs
 
 les entrées sont automatiquement détectées.
 
-<<FSM ex_transition_condition1.fsm --ignore_errors
+<<FSM ex_transition_condition1.fsm>>
 //définition de 3 transitions 
 etat_1->etat_2?IN1;
 etat_0->etat_1?NOT IN1;
 etat_2;     //dans cet état, le système fait...
 etat_2->etat_0?IN2;
-/FSM>>
+<</FSM>>
 
 Les conditions de sorties d'un état doivent être mutuellement exclusives
 
 Le modèle suivant est donc ambigue: dans l'état 1, que se passe-t il si IN1 et IN2 sont tous les deux vrais?
-<<FSM ex_transition_condition2.fsm --ignore_errors
+<<FSM ex_transition_condition2.fsm>>
 etat_1->etat_2?IN1;
 etat_1->etat_0?IN2;
 etat_0->etat_1?NOT IN1;
 etat_2;     //dans cet état, le système fait...
 etat_2->etat_0?IN2;
-/FSM>>
+<</FSM>>
 
-Pour pallier à ce problème, il est possible de desambiguiser à la main le modèle, en ajoutant une priorité. Si l'on souhaite rendre la transition de etat_1 vers etat_2 plus prioritaire, il suffit d'inhiber la transition de etat_1 vers etat_0 de la façon suivante:
+Pour pallier à ce problème, il est possible de rendre non ambigu à la main le modèle, en ajoutant une priorité. Si l'on souhaite rendre la transition de etat_1 vers etat_2 plus prioritaire, il suffit d'inhiber la transition de etat_1 vers etat_0 de la façon suivante:
 
-<<FSM ex_transition_condition3.fsm --ignore_errors
+<<FSM ex_transition_condition3.fsm>>
 etat_1->etat_2?IN1;
 etat_1->etat_0?IN2 AND NOT IN1;
 etat_0->etat_1?NOT IN1;
 etat_2;     //dans cet état, le système fait...
 etat_2->etat_0?IN2;
-/FSM>>
+<</FSM>>
 
 
-Ce mécanisme est automatisé par l'outils comme présenté plus loins dans la partie === Priorités===
+Ce mécanisme est automatisé par l'outils comme présenté plus loins dans la partie === Priorités=== k
 
 
 ===Définition des actions===
@@ -220,7 +231,7 @@ Action AMZI pour commencer
 etat_0;     //dans cet état, le système fait...
 etat_1;     //dans cet état, le système fait...
 etat_2;     //dans cet état, le système fait...
-/FSM>>
+<</FSM>>
 
 
 ===Actions sur transition===
@@ -277,5 +288,10 @@ récupérer de toutes les vérifications que je fais dans le code.
 
 
 ====Paramètres de l'exécutable====
+
+choix compacité du graphe
+
+arret sur erreur critique ou non
+
 
 

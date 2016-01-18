@@ -3,15 +3,15 @@
  @author Bertrand VANDEPORTAELE LAAS/CNRS 2016
  *  ***/
 //import java.io.BufferedReader;
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-//import java.io.PipedInputStream;
-//import java.io.PipedOutputStream;
 import java.io.PrintWriter;
-//import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,6 +22,10 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+
+//TODO: move src files in src to avoir .git in jar file
+
+//add an arg to the app to set Boolean ignoreErrors
 
 //To generate the jar using eclipse:
 //F5 to refresh eclipse project
@@ -94,7 +98,7 @@ public class FsmProcess {
 
 	// ///////////////////////////////////////////////
 
-	static public void GenerateFiles(String fsmInputName) {
+	static public void GenerateFiles(String fsmInputName, Boolean ignoreErrors) {
 		// by default, the input stream is System.in
 		InputStream is = System.in;
 		if (fsmInputName != null)
@@ -104,7 +108,12 @@ public class FsmProcess {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4);  // file location and name without extension
+		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4); // file
+																					// location
+																					// and
+																					// name
+																					// without
+																					// extension
 		// extract fsm.name from the fsmInputName file name
 		if (fsmInputName.contains("/")) // it contains a unix based
 										// directory name
@@ -118,10 +127,6 @@ public class FsmProcess {
 		System.out.print("Processing the file: ");
 		System.out.print(fsmInputName);
 		System.out.print("\n");
-
-		//
-		// processASingleFSMFile(fsmBaseName);
-
 		ANTLRInputStream input = null;
 		try {
 			input = new ANTLRInputStream(is);
@@ -139,7 +144,8 @@ public class FsmProcess {
 		bufVhdl = new StringBuilder();
 		bufDot = new StringBuilder();
 		walker.walk(collector, tree);
-		if (checkModel()) // could be optional to display and generate bad fsm
+		if (checkModel() || ignoreErrors) // if ignoreErrors, then display and
+											// generate fsm that have errors
 		{
 			generateDot();
 			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot")); //
@@ -158,28 +164,70 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////
-	/*
-	 * static public void processTheDoc() { String source =
-	 * "/home/bvandepo/antlr/fsm/doc.txt"; String directoryName = "./doc/";
-	 * System.out.print("Generating the FSMProcess Documentation from ");
-	 * System.out.print(source); System.out.print(" to : ");
-	 * System.out.print(directoryName); System.out.println("");
-	 * 
-	 * InputStream docStream = new FileInputStream(source);
-	 * 
-	 * FilteredStream doc = new FilteredStream(docStream); } /* File theDir =
-	 * new File(directoryName); // TODO != pour windows?
-	 * 
-	 * 
-	 * // if the directory does not exist, create it if (!theDir.exists()) {
-	 * System.out.println("creating directory: " + directoryName);
-	 * theDir.mkdir(); }
-	 */
 
-	// is = new FileInputStream();
+	static public void processTheDoc() {
+		String source = "/home/bvandepo/antlr/fsm/doc.txt";
+		String directoryName = "/home/bvandepo/antlr/doc_fsm/";
+		System.out.print("Generating the FSMProcess Documentation from ");
+		System.out.print(source);
+		System.out.print(" to : ");
+		System.out.print(directoryName);
+		System.out.println("");
+		// if the directory does not exist, create it
+		File theDir = new File(directoryName); // TODO != pour windows?
+		if (!theDir.exists()) {
+			System.out.println("creating directory: " + directoryName);
+			theDir.mkdir();
+		}
+
+		try {
+			String lineToRead;
+			BufferedReader fichier = new BufferedReader(new FileReader(source));
+			while ((lineToRead = fichier.readLine()) != null) {
+				// System.out.println(lineToRead);
+				if (lineToRead.contains("<<FSM") && lineToRead.contains(">>")) {
+					// get the fsm filename
+					String fsmDestName = directoryName
+							+ lineToRead.substring(lineToRead.lastIndexOf("<<FSM") + 6, lineToRead.lastIndexOf(">>"));
+					System.out.println(fsmDestName);
+					String lineToWrite = lineToRead.substring(lineToRead.lastIndexOf(">>") + 2, lineToRead.length());
+
+					System.out.println(lineToWrite);
+					String buf = "";
+					buf += lineToWrite + "\n";
+					Boolean ended = false;
+					while (!ended) {
+						if ((lineToRead = fichier.readLine()) != null) {
+							if (lineToRead.contains("<</FSM>>")) {
+								ended = true;
+								// get the end of the line before "<</FSM>>"
+								lineToWrite = lineToRead.substring(0, lineToRead.lastIndexOf("<</FSM>>"));
+							} else
+								lineToWrite = lineToRead;
+							System.out.println(lineToWrite);
+							buf += lineToWrite + "\n";
+						} else
+							ended = true;
+					}
+					saveToFile(buf, fsmDestName);
+				}
+			}
+			fichier.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 	/*
-	 * try { String ligne; //BufferedReader fichier = new BufferedReader(new
+	 * try { InputStream docStream = new FileInputStream(source); } catch
+	 * (FileNotFoundException e) { // TODO Auto-generated catch block
+	 * e.printStackTrace(); }
+	 * 
+	 * // FilteredStream doc = new FilteredStream(docStream); }
+	 * 
+	 * /* // is = new FileInputStream();
+	 * 
+	 * try { String ligne; BufferedReader fichier = new BufferedReader(new
 	 * FileReader(source)); FilteredStream fs=new FilteredStream (new
 	 * FileInputStream(new File(source))); ile ((ligne = fichier.readLine()) !=
 	 * null) { System.out.println(ligne);
@@ -2040,7 +2088,7 @@ public class FsmProcess {
 		System.out.println("FsmProcess B. Vandeportaele LAAS/CNRS 2016\n");
 		System.out.println("usage: FsmProcess fichier.fsm\n\n");
 
-		//generateCounter(10);
+		// generateCounter(10);
 		String fsmInputName = args[0];
 
 		// TODO: check the file exists:
@@ -2052,12 +2100,13 @@ public class FsmProcess {
 		 */
 
 		if (fsmInputName.endsWith(".fsm"))
-			GenerateFiles(fsmInputName);
-		// else if (fsmInputName.equals("doc"))
-		// processTheDoc();
+			GenerateFiles(fsmInputName, true);
+		else if (fsmInputName.equals("doc"))
+			processTheDoc();
 		else {
 			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
 			return;
 		}
+
 	}
 }
