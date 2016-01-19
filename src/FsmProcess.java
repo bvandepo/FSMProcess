@@ -554,6 +554,7 @@ public class FsmProcess {
 		// error
 
 		// EASY TODOS:
+ 
 		// TODO Add an option to generate dot and vhdl even if there is some
 		// errors (separate critials) to be able to get some wrong drawings or
 		// code
@@ -1090,17 +1091,22 @@ public class FsmProcess {
 			}
 		}
 		bufVhdl.append("signal value_one_internal: std_logic := '1';  --signal used internally to ease operation on conditions, to have a std_logic type '1' value\n");
+		int numberOfResetTransitions = fsm.resetTransitions.size();
 		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
-			bufVhdl.append("signal not_any_s_reset_internal: std_logic ;  --signal used internally to ease inhibition of actions when reset transitions occurs\n");
+			if (numberOfResetTransitions > 0) {
+				bufVhdl.append("signal not_any_s_reset_internal: std_logic ;  --signal used internally to ease inhibition of actions when reset transitions occurs\n");
+			}
 		}
 		// ////////////////let's animate all that stuff...//////////////////
 		bufVhdl.append("---------------------------------------------------------------------------------------\n");
 		bufVhdl.append("begin\n");
 		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
-			bufVhdl.append("-----------------------Combination of sreset signal(s) to inhibate actions on states and/or transitions--------------\n");
-			bufVhdl.append("not_any_s_reset_internal<= '1' when ");
-			bufVhdl.append(fsm.resetConditionComplement);
-			bufVhdl.append(" else\n                          '0';\n");
+			if (numberOfResetTransitions > 0) {
+				bufVhdl.append("-----------------------Combination of sreset signal(s) to inhibate actions on states and/or transitions--------------\n");
+				bufVhdl.append("not_any_s_reset_internal<= '1' when ");
+				bufVhdl.append(fsm.resetConditionComplement);
+				bufVhdl.append(" else\n                           '0';\n");
+			}
 		}
 		bufVhdl.append("------------------------Process for the memorization of the state----------------------\n");
 		bufVhdl.append("process (");
@@ -1688,7 +1694,7 @@ public class FsmProcess {
 		// this string is computed only if there are some reset transition(s)
 		// and either resetTransitionInhibatesTransitionActions or
 		// resetTransitionInhibatesActionsOnStates is true
-		String resetConditionComplement = null;
+		String resetConditionComplement;
 
 		public State currentState = null;
 		public Action currentAction = null;
