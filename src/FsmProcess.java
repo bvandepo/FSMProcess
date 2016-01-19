@@ -554,16 +554,13 @@ public class FsmProcess {
 		// error
 
 		// EASY TODOS:
- 
+
 		// TODO Add an option to generate dot and vhdl even if there is some
 		// errors (separate critials) to be able to get some wrong drawings or
 		// code
 
 		// TODO: modifier pour avoir des actions à 1 par defaut
 
-		// TODO: verifier si on redefinit une transition avec les mêmes etats
-		// source et dest et la même condition si l'outils ajoute les actions
-		// (si il y en a) à la transition existante
 
 		// TODO: pour les comparaisons de valeurs sur des bus d'entrée, utiliser
 		// une syntaxe particulière (ajouter à la grammaire) puis générer dans
@@ -695,6 +692,75 @@ public class FsmProcess {
 			modelOk &= fsm.checkNameIsNotForbidden(name, type);
 			modelOk &= fsm.checkIfNameIsAsynchronousReset(name, type);
 			modelOk &= fsm.checkIfNameIsClock(name, type);
+		}
+
+		// Detect transitions from same a state to itself
+		for (int n = 0; n < numberOfTransitions; n++) {
+			Transition t1 = fsm.transitions.get(n);
+			if (t1.origin.equals(t1.destination)) {
+				bufLog.append("Warning: There is a transition between state ");
+				bufLog.append(t1.origin);
+				bufLog.append(" and itself ");
+				if (t1.attachedActions.size() == 0) {
+					bufLog.append(" and no action on it, so it is completely useless...\n");
+				} else {
+					bufLog.append(" and action(s) on it, so you should consider using a conditional state(s) action\n");
+				}
+			}
+		}
+		// Try to regroup transitions from same states to sames states and
+		// having same condition
+		// for (int n = 0; n < numberOfTransitions - 1; n++) {
+		// for (int m = n + 1; m < numberOfTransitions;) {
+		if (true) {
+			int n = 0;
+			while (n < fsm.transitions.size() - 1) {
+				int m = n + 1;
+				while (m < fsm.transitions.size()) {
+					Transition t1 = fsm.transitions.get(n);
+					Transition t2 = fsm.transitions.get(m);
+					if (t1.origin.equals(t2.origin) && t1.destination.equals(t2.destination) && t1.condition.equals(t2.condition)) {
+						bufLog.append("Warning: Transition from state ");
+						bufLog.append(t1.origin);
+						bufLog.append(" to state ");
+						bufLog.append(t1.destination);
+						bufLog.append(" with condition ");
+						bufLog.append(t1.condition);
+						bufLog.append(" appears more than once. FSMProcess is trying to regroup the corresponding actions.");
+						bufLog.append("\n");
+						if (t1.priorityOrder != t2.priorityOrder) {
+							bufLog.append(" Priority order is different for the two transitions, taking value ");
+							bufLog.append(t1.priorityOrder);
+							bufLog.append("\n");
+						}
+						for (int l = 0; l < t2.attachedActions.size(); l++) {
+							t1.attachedActions.add(t2.attachedActions.get(l));
+							bufLog.append("      Migrating action: ");
+							bufLog.append(t2.attachedActions.get(l).type);
+							bufLog.append(" ");
+							bufLog.append(t2.attachedActions.get(l).name);
+							bufLog.append(" ");
+							bufLog.append(t2.attachedActions.get(l).expression);
+							bufLog.append(" ");
+							bufLog.append(t2.attachedActions.get(l).condition);
+							bufLog.append("\n");
+						}
+						for (int l = 0; l < t2.attachedActions.size(); l++)
+							t2.attachedActions.remove(0);
+						// remove the corresponding transition, from the state
+						State s = fsm.getStateFromName(t2.origin);
+						s.transitionsFromThisState.remove(t2);
+						// remove the transition from the global list
+						fsm.transitions.remove(t2);
+						numberOfTransitions--;
+						// don't increment m because the transition has been
+						// removed, so the index should be processed again
+					} else
+						m++; // only if the transition has not been erased
+				}
+				n++;
+
+			}
 		}
 
 		// TO STOP AT CRITICAL ERRORS!!!!
@@ -865,8 +931,7 @@ public class FsmProcess {
 			ResetTransition rt1 = fsm.resetTransitions.get(n - 1);
 			ResetTransition rt2 = fsm.resetTransitions.get(n);
 			if (rt1.priorityOrder == rt2.priorityOrder) {
-				System.out
-						.print("Warning: Some reset transitions have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
+				bufLog.append("Warning: Some reset transitions have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
 			} else {// compute rt2.conditionWithPriorities from the rt1 one
 				bufLog.append("Info: Reset transition to state ");
 				bufLog.append(rt2.destination);
@@ -1072,7 +1137,7 @@ public class FsmProcess {
 				bufVhdl.append(", ");
 		}
 		bufVhdl.append(");\n");
-		bufVhdl.append("signal etat_present, etat_suivant : fsm_state;\n");
+		bufVhdl.append("signal current_state, next_state : fsm_state;\n");
 		// ////////////////listing of internal signals for memorized
 		// outputs//////////////////
 		for (int n = 0; n < fsm.outputs.size(); n++) {
@@ -1117,7 +1182,7 @@ public class FsmProcess {
 		bufVhdl.append(fsm.aResetSignalName);
 		bufVhdl.append("='");
 		bufVhdl.append(fsm.aResetSignalLevel);
-		bufVhdl.append("') then etat_present <=");
+		bufVhdl.append("') then current_state <=");
 		bufVhdl.append("state_");
 		bufVhdl.append(fsm.resetAsynchronousState.name);
 		bufVhdl.append(";\n");
@@ -1125,11 +1190,11 @@ public class FsmProcess {
 		bufVhdl.append(fsm.clkSignalName);
 		bufVhdl.append("'event and ");
 		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append("='1' then etat_present<=etat_suivant;\n");
+		bufVhdl.append("='1' then current_state<=next_state;\n");
 		bufVhdl.append("    end if;\n");
 		bufVhdl.append("end process;\n\n");
 		bufVhdl.append("-------------------Combinatorial process for the evolution of the state------------------\n");
-		bufVhdl.append("process (etat_present");
+		bufVhdl.append("process (current_state");
 		for (int n = 0; n < fsm.inputs.size(); n++) {
 			bufVhdl.append(", ");
 			bufVhdl.append(fsm.inputs.get(n).name);
@@ -1157,7 +1222,7 @@ public class FsmProcess {
 					bufVhdl.append(" ) ");
 					bufVhdl.append(" = '1' ");
 				}
-				bufVhdl.append(")\n    then etat_suivant <= state_");
+				bufVhdl.append(")\n    then next_state <= state_");
 				bufVhdl.append(fsm.resetTransitions.get(m).destination);
 				bufVhdl.append(";");
 				// show the priority order if its not the default value
@@ -1167,14 +1232,14 @@ public class FsmProcess {
 				}
 				bufVhdl.append("\n");
 			}
-			// bufVhdl.append("   end if; --no else, so etat_suivant is not modified here if there is no synchronous reset\n");
+			// bufVhdl.append("   end if; --no else, so next_state is not modified here if there is no synchronous reset\n");
 			bufVhdl.append("   else \n");
 		}
 		// else
 		// bufVhdl.append("   if ( ");
 		bufVhdl.append("------------------------------standard transitions---------------------\n");
 
-		bufVhdl.append("    case etat_present is\n");
+		bufVhdl.append("    case current_state is\n");
 		// pour chaque état, il peut y avoir plusieurs transitions, la première
 		// if, les suivantes elsif et finalement en plus le maintien dans l'état
 		// courant
@@ -1202,7 +1267,7 @@ public class FsmProcess {
 
 					bufVhdl.append(" = '1' ");
 				}
-				bufVhdl.append(") then etat_suivant <= state_");
+				bufVhdl.append(") then next_state <= state_");
 				bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
 				bufVhdl.append(";");
 				// show the priority order if its not the default value
@@ -1216,7 +1281,7 @@ public class FsmProcess {
 				bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
 				bufVhdl.append("else	");
 			}
-			bufVhdl.append("etat_suivant <= state_");
+			bufVhdl.append("next_state <= state_");
 			bufVhdl.append(fsm.states.get(n).name);
 			bufVhdl.append(";\n");
 			if (transitionFromThisStateNumber != 0) {
@@ -1224,7 +1289,7 @@ public class FsmProcess {
 				bufVhdl.append("end if;\n");
 			}
 		}
-		bufVhdl.append("--    when others => etat_suivant <= state_");
+		bufVhdl.append("--    when others => next_state <= state_");
 		bufVhdl.append(fsm.states.get(0).name);
 		bufVhdl.append(";\n    end case;\n");
 		// if there has been some synchronous reset transition, end if should be
@@ -1354,7 +1419,7 @@ public class FsmProcess {
 										} else {
 											bufVhdl.append(" '1' ");
 										}
-										bufVhdl.append("when ( (etat_present = ");
+										bufVhdl.append("when ( (current_state = ");
 										bufVhdl.append("state_");
 										bufVhdl.append(fsm.states.get(m).name);
 										bufVhdl.append(") ");
@@ -1387,7 +1452,7 @@ public class FsmProcess {
 											} else {
 												bufVhdl.append(" '1' ");
 											}
-											bufVhdl.append("when ( (etat_present = ");
+											bufVhdl.append("when ( (current_state = ");
 											bufVhdl.append("state_");
 											bufVhdl.append(fsm.states.get(m).name);
 											bufVhdl.append(") ");
@@ -1488,7 +1553,7 @@ public class FsmProcess {
 				bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(i)).replace(
 						" ", "0"));
 				// bufVhdl.append( Integer.toBinaryString(i));
-				bufVhdl.append("\" when ( etat_present = ");
+				bufVhdl.append("\" when ( current_state = ");
 				bufVhdl.append("state_");
 				bufVhdl.append(fsm.states.get(i).name);
 				bufVhdl.append(")\n");
@@ -1534,7 +1599,6 @@ public class FsmProcess {
 		// are defined, the condition of lower priority action is computed
 		// using the complements of higher priority condition
 		String conditionWithPriorities;
-		String paddedConditionWithPriorities;
 		ArrayList<Action> attachedActions = new ArrayList<Action>();
 		int priorityOrder = 1000000; // by default, low priority, 1 is the
 										// higher priority
@@ -2030,8 +2094,7 @@ public class FsmProcess {
 		public void enterLevel_reset_asynchronous(FsmParser.Level_reset_asynchronousContext ctx) {
 			fsm.aResetSignalLevel = ctx.children.get(0).getText().toUpperCase();
 			if (!fsm.aResetSignalLevel.equals("0") && !fsm.aResetSignalLevel.equals("1")) {
-				System.out
-						.print("Warning:   Asynchronous reset level for input should be either O or 1 because modern FPGAs don't have circuitry to route another signal.\n");
+				bufLog.append("Warning:   Asynchronous reset level for input should be either O or 1 because modern FPGAs don't have circuitry to route another signal.\n");
 			}
 			fsm.numberOfResetAsynchronousDefinitions++;
 		}
