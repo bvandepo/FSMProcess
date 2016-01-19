@@ -8,6 +8,8 @@ le mieux est d'utiliser le parser java comme ca pas de dépendances supplémenta
 sans même parser, il suffit d'analyser le fichier et quand on tombe sur un <<FSM, ca appelle la fonction qui parserait normalement un fichier entier!-> génération des noms des fichiers a partir du nom lu depuis le txt
 
 
+autoriser des commentaires
+des liens inter et intra doc
 
 
 =====Documentation de FsmProcess=====
@@ -51,7 +53,7 @@ Permet de valider que le modèle est implémentable. Si l'on peut le décrire da
 
 Permet d'inférer automatiquement l'interface (ce via quoi il communique) du composant machine à état d'après la description du modèle.
  
-dessin à la main ou  en WYSIWYG de machine à états, jamais la place... Ici le choix est de laisser dot positionner et router automatiquement, en le guidant pour que le graphe produit soit facilement interprétable
+dessin à la main ou  en WYSIWYG de machine à états, jamais la place... Ici le choix est de laisser dot positionner et router automatiquement, en le guidant pour que le graphe produit soit facilement interprétable. Des options permettent d'adapter le rendu (compacité, taille des noeuds, orientation générale etc...)
 
 possibilité de commenter le modèle (et pas le code d'implémentation), donc les commentaires s'applique à l'emplacement où ils sont définits (par exemple c'est sur cette transition que tel composant va faire cela)
 
@@ -226,6 +228,20 @@ Action AMZI pour commencer
 
 =1 par défaut
 éventuellement avec condition sous forme d'expression
+
+
+Mauvaise façon de faire: action sur transition -> warning
+<<FSM ex_action_condition_bad.fsm>>
+1->1?INPUT:OUTPUT;
+<</FSM>>
+
+Bonne facon 
+<<FSM ex_action_condition_good.fsm>>
+1:INPUT=OUTPUT;
+<</FSM>>
+
+
+ 
 ===Actions sur état===
 <<FSM ex_etat2.fsm
 //définition de 3 états
@@ -293,6 +309,14 @@ récupérer de toutes les vérifications que je fais dans le code.
 choix compacité du graphe
 
 arret sur erreur critique ou non
+
+choix des simplifications de modele par le checker
+ 
+
+
+
+
+
 
 
 
