@@ -310,7 +310,6 @@ public class FsmProcess {
 
 	// ////////////////////////////////////////////////
 	static public void generateDot() {
-		fsm.states.get(0);
 		// compute size of node from the longest state name
 		Double nodeWidth = 0.5 + State.longestName * 0.12;
 		bufDot.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
