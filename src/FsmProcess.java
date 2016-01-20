@@ -92,7 +92,10 @@ public class FsmProcess {
 
 	static StringBuilder bufDot;
 	static StringBuilder bufVhdl;
-	static StringBuilder bufLog;
+	static StringBuilder bufLogInfo;
+	static StringBuilder bufLogWarning;
+	static StringBuilder bufLogError;
+
 	static FiniteStateMachine fsm = new FiniteStateMachine();
 
 	// static public void processASingleFSM(String fsmBaseName) {}
@@ -144,7 +147,10 @@ public class FsmProcess {
 		FunctionListener collector = new FunctionListener();
 		bufVhdl = new StringBuilder();
 		bufDot = new StringBuilder();
-		bufLog = new StringBuilder();
+		bufLogInfo = new StringBuilder();
+		bufLogWarning = new StringBuilder();
+		bufLogError = new StringBuilder();
+
 		walker.walk(collector, tree);
 		if (checkModel() || ignoreErrors) // if ignoreErrors, then display and
 											// generate fsm that have errors
@@ -160,7 +166,8 @@ public class FsmProcess {
 			bufVhdl.setLength(0);
 			generatePortMapVhdl();
 			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_portmap.vhd"));
-			saveToFile(bufLog.toString(), fsmBaseName.concat(".log"));
+			saveToFile(bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n" + bufLogInfo.toString(),
+					fsmBaseName.concat(".log"));
 		}
 	}
 
@@ -555,12 +562,38 @@ public class FsmProcess {
 
 		// EASY TODOS:
 
+		// DOC DOT: http://www.graphviz.org/Documentation/dotguide.pdf
+		// graphviz.org/Documentation.php
+		// http://www.graphviz.org/doc/info/lang.html
+		// http://www.tonyballantyne.com/graphs.html
+		// TODO: pour les pragma, se baser sur la grammaire du C:
+		// https://github.com/antlr/grammars-v4/blob/master/c/C.g4
+		// par exemple pour les chaines de caractères, les espaces ne sont pas
+		// ignorés!
+		/*
+		 * PragmaDirective : '#' Whitespace? 'pragma' Whitespace ~[\r\n]* ->
+		 * skip ;
+		 * 
+		 * 
+		 * 
+		 * StringLiteral : EncodingPrefix? '"' SCharSequence? '"' ; fragment
+		 * EncodingPrefix : 'u8' | 'u' | 'U' | 'L' ; fragment SCharSequence :
+		 * SChar+ ; fragment SChar : ~["\\\r\n] | EscapeSequence ;
+		 * 
+		 * 
+		 * la regle suivante arrive après:
+		 * 
+		 * Whitespace : [ \t]+ -> skip ;
+		 */
+
+		// TODO: indiquer dans le fichier package le codage utilisé pour les
+		// sorties state number
+
 		// TODO Add an option to generate dot and vhdl even if there is some
 		// errors (separate critials) to be able to get some wrong drawings or
 		// code
 
 		// TODO: modifier pour avoir des actions à 1 par defaut
-
 
 		// TODO: pour les comparaisons de valeurs sur des bus d'entrée, utiliser
 		// une syntaxe particulière (ajouter à la grammaire) puis générer dans
@@ -653,17 +686,17 @@ public class FsmProcess {
 
 		// TODO: continue
 		if (numberOfStates == 0) {
-			bufLog.append("Critical error: The model contains no state... \n");
+			bufLogError.append("Critical Error: The model contains no state... \n");
 			modelOk = false;
 		}
 
 		if (fsm.outputs.size() == 0) {
-			bufLog.append("Critical error: The model contains no outputs... \n");
+			bufLogError.append("Critical Error: The model contains no outputs... \n");
 			modelOk = false; // its allowed to have no inputs
 		}
 
 		if (fsm.numberOfResetAsynchronousDefinitions > 1)
-			bufLog.append("Warning:   Asynchronous reset has been redefined more than one time...\n");
+			bufLogWarning.append("Warning:   Asynchronous reset has been redefined more than one time...\n");
 
 		// check if inputs/outputs/states names are allowed, "in" and "out" are
 		// forbidden as they are reserved keyword of vhdl
@@ -698,13 +731,13 @@ public class FsmProcess {
 		for (int n = 0; n < numberOfTransitions; n++) {
 			Transition t1 = fsm.transitions.get(n);
 			if (t1.origin.equals(t1.destination)) {
-				bufLog.append("Warning: There is a transition between state ");
-				bufLog.append(t1.origin);
-				bufLog.append(" and itself ");
+				bufLogWarning.append("Warning: There is a transition between state ");
+				bufLogWarning.append(t1.origin);
+				bufLogWarning.append(" and itself ");
 				if (t1.attachedActions.size() == 0) {
-					bufLog.append(" and no action on it, so it is completely useless...\n");
+					bufLogWarning.append(" and no action on it, so it is completely useless...\n");
 				} else {
-					bufLog.append(" and action(s) on it, so you should consider using a conditional state(s) action\n");
+					bufLogWarning.append(" and action(s) on it.\n     You should consider using a conditional state(s) action\n");
 				}
 			}
 		}
@@ -720,30 +753,30 @@ public class FsmProcess {
 					Transition t1 = fsm.transitions.get(n);
 					Transition t2 = fsm.transitions.get(m);
 					if (t1.origin.equals(t2.origin) && t1.destination.equals(t2.destination) && t1.condition.equals(t2.condition)) {
-						bufLog.append("Warning: Transition from state ");
-						bufLog.append(t1.origin);
-						bufLog.append(" to state ");
-						bufLog.append(t1.destination);
-						bufLog.append(" with condition ");
-						bufLog.append(t1.condition);
-						bufLog.append(" appears more than once. FSMProcess is trying to regroup the corresponding actions.");
-						bufLog.append("\n");
+						bufLogWarning.append("Warning: Transition from state ");
+						bufLogWarning.append(t1.origin);
+						bufLogWarning.append(" to state ");
+						bufLogWarning.append(t1.destination);
+						bufLogWarning.append(" with condition ");
+						bufLogWarning.append(t1.condition);
+						bufLogWarning.append(" appears more than once.\n     FSMProcess is trying to regroup the corresponding actions.");
+						bufLogWarning.append("\n");
 						if (t1.priorityOrder != t2.priorityOrder) {
-							bufLog.append(" Priority order is different for the two transitions, taking value ");
-							bufLog.append(t1.priorityOrder);
-							bufLog.append("\n");
+							bufLogWarning.append("     Priority order is different for the two transitions, taking value ");
+							bufLogWarning.append(t1.priorityOrder);
+							bufLogWarning.append("\n");
 						}
 						for (int l = 0; l < t2.attachedActions.size(); l++) {
 							t1.attachedActions.add(t2.attachedActions.get(l));
-							bufLog.append("      Migrating action: ");
-							bufLog.append(t2.attachedActions.get(l).type);
-							bufLog.append(" ");
-							bufLog.append(t2.attachedActions.get(l).name);
-							bufLog.append(" ");
-							bufLog.append(t2.attachedActions.get(l).expression);
-							bufLog.append(" ");
-							bufLog.append(t2.attachedActions.get(l).condition);
-							bufLog.append("\n");
+							bufLogWarning.append("       Migrating action: ");
+							bufLogWarning.append(t2.attachedActions.get(l).type);
+							bufLogWarning.append(" ");
+							bufLogWarning.append(t2.attachedActions.get(l).name);
+							bufLogWarning.append(" ");
+							bufLogWarning.append(t2.attachedActions.get(l).expression);
+							bufLogWarning.append(" ");
+							bufLogWarning.append(t2.attachedActions.get(l).condition);
+							bufLogWarning.append("\n");
 						}
 						for (int l = 0; l < t2.attachedActions.size(); l++)
 							t2.attachedActions.remove(0);
@@ -791,9 +824,9 @@ public class FsmProcess {
 		for (int m = 0; m < numberOfStates; m++) {
 			State s = fsm.states.get(m);
 			if (s.isAlone) {
-				bufLog.append("Warning: State ");
-				bufLog.append(s.name);
-				bufLog.append(" is not accessible, a transition to that state should be added\n");
+				bufLogWarning.append("Warning: State ");
+				bufLogWarning.append(s.name);
+				bufLogWarning.append(" is not accessible, a transition to that state should be added\n");
 			}
 		}
 		// check that the action on a same output are all compatible
@@ -814,16 +847,16 @@ public class FsmProcess {
 				{
 					if ((a.type.equals("I") && out.memorized) || (a.type.equals("R") && !out.memorized)
 							|| (a.type.equals("S") && !out.memorized) || (a.type.equals("M") && !out.memorized)) {
-						bufLog.append("Error: Incompatible actions on ");
-						bufLog.append(a.name);
-						bufLog.append("   type: ");
-						bufLog.append(a.type);
-						bufLog.append("    expression: ");
-						bufLog.append(a.expression);
-						bufLog.append("    has already been detected as ");
+						bufLogError.append("Error: Incompatible actions on ");
+						bufLogError.append(a.name);
+						bufLogError.append("   type: ");
+						bufLogError.append(a.type);
+						bufLogError.append("    expression: ");
+						bufLogError.append(a.expression);
+						bufLogError.append("    has already been detected as ");
 						if (out.memorized == false)
-							bufLog.append("non ");
-						bufLog.append("memorized\n");
+							bufLogError.append("non ");
+						bufLogError.append("memorized\n");
 						modelOk = false;
 					}
 				}
@@ -839,13 +872,14 @@ public class FsmProcess {
 				if (ar.name.equals(an.name)) {
 
 					if (ar.type.equals("R") || ar.type.equals("S")) {
-						bufLog.append("Warning: Actions ");
-						bufLog.append(ar.name);
-						bufLog.append("  is defined as Set or Reset in a repeatedly action and is also defined in states or transitions. This is allowed, however dangerous...\n");
+						bufLogWarning.append("Warning: Actions ");
+						bufLogWarning.append(ar.name);
+						bufLogWarning
+								.append("  is defined as Set or Reset in a repeatedly action and is also defined in states or transitions. This is allowed, however dangerous...\n");
 					} else {
-						bufLog.append("Error: Actions ");
-						bufLog.append(ar.name);
-						bufLog.append("  is defined as a repeatedly action and also on states or transitions. This is forbidden.\n");
+						bufLogError.append("Error: Actions ");
+						bufLogError.append(ar.name);
+						bufLogError.append("  is defined as a repeatedly action and also on states or transitions. This is forbidden.\n");
 					}
 					modelOk = false;
 				}
@@ -857,11 +891,11 @@ public class FsmProcess {
 		for (int m = 0; m < numberOfActionsTotal; m++) {
 			Action a = fsm.actions.get(m);
 			if (a.type.equals("M") && (a.expression.equals(""))) {
-				bufLog.append("Critical error: The M action ");
-				bufLog.append(a.name);
-				bufLog.append(" has no expression.");
-				bufLog.append(a.expression);
-				bufLog.append(" \n");
+				bufLogError.append("Critical Error: The M action ");
+				bufLogError.append(a.name);
+				bufLogError.append(" has no expression.");
+				bufLogError.append(a.expression);
+				bufLogError.append(" \n");
 				modelOk = false;
 			}
 		}
@@ -897,18 +931,19 @@ public class FsmProcess {
 				Transition t1 = fsm.states.get(m).transitionsFromThisState.get(n - 1);
 				Transition t2 = fsm.states.get(m).transitionsFromThisState.get(n);
 				if (t1.priorityOrder == t2.priorityOrder) {
-					bufLog.append("Warning: Some  transitions from State: ");
-					bufLog.append(fsm.states.get(m).name);
-					bufLog.append(" have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
+					bufLogWarning.append("Warning: Some  transitions from State: ");
+					bufLogWarning.append(fsm.states.get(m).name);
+					bufLogWarning
+							.append(" have the same priority.\n     Check that the expressions are mutually exclusive or add priorities in the model\n");
 				} else {// compute t2.conditionWithPriorities from the t1 one
-					bufLog.append("Info: Transition to state ");
-					bufLog.append(t2.destination);
-					bufLog.append(" with condition: ");
-					bufLog.append(t2.conditionWithPriorities);
-					bufLog.append(" has been upgraded to condition: ");
+					bufLogInfo.append("Info: Transition to state ");
+					bufLogInfo.append(t2.destination);
+					bufLogInfo.append(" with condition: ");
+					bufLogInfo.append(t2.conditionWithPriorities);
+					bufLogInfo.append(" has been upgraded to condition: ");
 					t2.conditionWithPriorities += " AND NOT " + t1.conditionWithPriorities + " ";
-					bufLog.append(t2.conditionWithPriorities);
-					bufLog.append(" because of higher priority transition(s) to the same state\n");
+					bufLogInfo.append(t2.conditionWithPriorities);
+					bufLogInfo.append(" because of higher priority transition(s) to the same state\n");
 				}
 			}
 		}
@@ -931,16 +966,17 @@ public class FsmProcess {
 			ResetTransition rt1 = fsm.resetTransitions.get(n - 1);
 			ResetTransition rt2 = fsm.resetTransitions.get(n);
 			if (rt1.priorityOrder == rt2.priorityOrder) {
-				bufLog.append("Warning: Some reset transitions have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
+				bufLogWarning
+						.append("Warning: Some reset transitions have the same priority, check that the expressions are mutually exclusive or add priorities in the model\n");
 			} else {// compute rt2.conditionWithPriorities from the rt1 one
-				bufLog.append("Info: Reset transition to state ");
-				bufLog.append(rt2.destination);
-				bufLog.append(" with condition: ");
-				bufLog.append(rt2.conditionWithPriorities);
-				bufLog.append(" has been upgraded to condition: ");
+				bufLogInfo.append("Info: Reset transition to state ");
+				bufLogInfo.append(rt2.destination);
+				bufLogInfo.append(" with condition: ");
+				bufLogInfo.append(rt2.conditionWithPriorities);
+				bufLogInfo.append(" has been upgraded to condition: ");
 				rt2.conditionWithPriorities += " AND NOT " + rt1.conditionWithPriorities + " ";
-				bufLog.append(rt2.conditionWithPriorities);
-				bufLog.append(" because of higher priority reset transition(s) to the same state\n");
+				bufLogInfo.append(rt2.conditionWithPriorities);
+				bufLogInfo.append(" because of higher priority reset transition(s) to the same state\n");
 			}
 		}
 		// add a post processing such that reset transitions have to
@@ -967,17 +1003,17 @@ public class FsmProcess {
 							int numberOfActionsInThisTransition = t.attachedActions.size();
 							for (int n = 0; n < numberOfActionsInThisTransition; n++) {
 								Action a = t.attachedActions.get(n);
-								bufLog.append("Info: Action on Transition from state ");
-								bufLog.append(t.origin);
-								bufLog.append(" to state ");
-								bufLog.append(t.destination);
-								bufLog.append(" with condition: ");
-								bufLog.append(t.conditionWithPriorities);
-								bufLog.append(" and with expression: ");
-								bufLog.append(a.expression);
-								bufLog.append(" has been upgraded with supplementary condition: ");
-								bufLog.append(fsm.resetConditionComplement);
-								bufLog.append(" because of a reset transition(s)\n");
+								bufLogInfo.append("Info: Action on Transition from state ");
+								bufLogInfo.append(t.origin);
+								bufLogInfo.append(" to state ");
+								bufLogInfo.append(t.destination);
+								bufLogInfo.append(" with condition: ");
+								bufLogInfo.append(t.conditionWithPriorities);
+								bufLogInfo.append(" and with expression: ");
+								bufLogInfo.append(a.expression);
+								bufLogInfo.append(" has been upgraded with supplementary condition: ");
+								bufLogInfo.append(fsm.resetConditionComplement);
+								bufLogInfo.append(" because of a reset transition(s)\n");
 								a.condition = " AND (not_any_s_reset_internal = '1' ) ";
 							}
 						}
@@ -988,13 +1024,13 @@ public class FsmProcess {
 						int numberOfActionsInThisState = s.attachedActions.size();
 						for (int m = 0; m < numberOfActionsInThisState; m++) {
 							Action a = s.attachedActions.get(m);
-							bufLog.append("Info: Action on state ");
-							bufLog.append(s.name);
-							bufLog.append(" with expression: ");
-							bufLog.append(a.expression);
-							bufLog.append(" has been upgraded with supplementary condition: ");
-							bufLog.append(fsm.resetConditionComplement);
-							bufLog.append(" because of a reset transition(s)\n");
+							bufLogInfo.append("Info: Action on state ");
+							bufLogInfo.append(s.name);
+							bufLogInfo.append(" with expression: ");
+							bufLogInfo.append(a.expression);
+							bufLogInfo.append(" has been upgraded with supplementary condition: ");
+							bufLogInfo.append(fsm.resetConditionComplement);
+							bufLogInfo.append(" because of a reset transition(s)\n");
 							a.condition = " AND (not_any_s_reset_internal = '1' ) ";
 						}
 					}
@@ -1003,9 +1039,9 @@ public class FsmProcess {
 		// cheat...
 		// modelOk = true;
 		if (modelOk)
-			bufLog.append("Info: No Critial error: Output files can be generated\n\n");
+			bufLogInfo.append("Info: No Critial error: Output files can be generated\n\n");
 		else
-			bufLog.append("Info: At least one Critial error: Output files canNOT be generated\n\n");
+			bufLogInfo.append("Info: At least one Critial error: Output files canNOT be generated\n\n");
 
 		return modelOk;
 	}
@@ -1787,32 +1823,32 @@ public class FsmProcess {
 		// http://www.csee.umbc.edu/portal/help/VHDL/reserved.html
 		public Boolean checkNameIsNotForbidden(String name, String type) {
 			if (forbiddenNamesVHDL.contains(name)) {
-				bufLog.append("Critical error: ");
-				bufLog.append(type);
-				bufLog.append(" ");
-				bufLog.append(name);
-				bufLog.append(" is a reserved VHDL word and should not be used.\n");
+				bufLogError.append("Critical Error: ");
+				bufLogError.append(type);
+				bufLogError.append(" ");
+				bufLogError.append(name);
+				bufLogError.append(" is a reserved VHDL word and should not be used.\n");
 				return false;
 			} else if (forbiddenNamesFSM.contains(name)) {
-				bufLog.append("Critical error: ");
-				bufLog.append(type);
-				bufLog.append(" ");
-				bufLog.append(name);
-				bufLog.append(" is a reserved FSM word and should not be used.\n");
+				bufLogError.append("Critical Error: ");
+				bufLogError.append(type);
+				bufLogError.append(" ");
+				bufLogError.append(name);
+				bufLogError.append(" is a reserved FSM word and should not be used.\n");
 				return false;
 			} else if (forbiddenNamesC.contains(name)) {
-				bufLog.append("Critical error: ");
-				bufLog.append(type);
-				bufLog.append(" ");
-				bufLog.append(name);
-				bufLog.append(" is a reserved C word and should not be used.\n");
+				bufLogError.append("Critical Error: ");
+				bufLogError.append(type);
+				bufLogError.append(" ");
+				bufLogError.append(name);
+				bufLogError.append(" is a reserved C word and should not be used.\n");
 				return false;
 			} else if (forbiddenNamesVerilog.contains(name)) {
-				bufLog.append("Critical error: ");
-				bufLog.append(type);
-				bufLog.append(" ");
-				bufLog.append(name);
-				bufLog.append(" is a reserved Verilog word and should not be used.\n");
+				bufLogError.append("Critical Error: ");
+				bufLogError.append(type);
+				bufLogError.append(" ");
+				bufLogError.append(name);
+				bufLogError.append(" is a reserved Verilog word and should not be used.\n");
 				return false;
 			} else
 				return true;
@@ -1820,11 +1856,11 @@ public class FsmProcess {
 
 		public Boolean checkIfNameNotAnInput(String name, String type) {
 			if (hmapInput.containsKey(name)) {
-				bufLog.append("Critical error: ");
-				bufLog.append(type);
-				bufLog.append(" ");
-				bufLog.append(name);
-				bufLog.append(" is already defined as an input.\n");
+				bufLogError.append("Critical Error: ");
+				bufLogError.append(type);
+				bufLogError.append(" ");
+				bufLogError.append(name);
+				bufLogError.append(" is already defined as an input.\n");
 				return false;
 			} else
 				return true;
@@ -1832,11 +1868,11 @@ public class FsmProcess {
 
 		public Boolean checkIfNameNotAnOutput(String name, String type) {
 			if (hmapOutput.containsKey(name)) {
-				bufLog.append("Critical error: ");
-				bufLog.append(type);
-				bufLog.append(" ");
-				bufLog.append(name);
-				bufLog.append(" is already defined as an output.\n");
+				bufLogError.append("Critical Error: ");
+				bufLogError.append(type);
+				bufLogError.append(" ");
+				bufLogError.append(name);
+				bufLogError.append(" is already defined as an output.\n");
 				return false;
 			} else
 				return true;
@@ -1844,11 +1880,11 @@ public class FsmProcess {
 
 		public Boolean checkIfNameIsAsynchronousReset(String name, String type) {
 			if (name.equals(aResetSignalName)) {
-				bufLog.append("Critical error: ");
-				bufLog.append(type);
-				bufLog.append(" ");
-				bufLog.append(name);
-				bufLog.append(" is already defined as the Asynchronous Reset input.\n");
+				bufLogError.append("Critical Error: ");
+				bufLogError.append(type);
+				bufLogError.append(" ");
+				bufLogError.append(name);
+				bufLogError.append(" is already defined as the Asynchronous Reset input.\n");
 				return false;
 			} else
 				return true;
@@ -1856,11 +1892,11 @@ public class FsmProcess {
 
 		public Boolean checkIfNameIsClock(String name, String type) {
 			if (name.equals(clkSignalName)) {
-				bufLog.append("Critical error: ");
-				bufLog.append(type);
-				bufLog.append(" ");
-				bufLog.append(name);
-				bufLog.append(" is already defined as the Clock input.\n");
+				bufLogError.append("Critical Error: ");
+				bufLogError.append(type);
+				bufLogError.append(" ");
+				bufLogError.append(name);
+				bufLogError.append(" is already defined as the Clock input.\n");
 				return false;
 			} else
 				return true;
@@ -1891,11 +1927,11 @@ public class FsmProcess {
 			// is there already a defined resetAsynchronousState
 			if (fsm.resetAsynchronousState != null) {
 				fsm.numberOfResetAsynchronousDefinitions++;
-				bufLog.append("Info: Previous asynchronous reset state ");
-				bufLog.append(fsm.resetAsynchronousState.name);
-				bufLog.append(" replaced by ");
-				bufLog.append(reset_asynchronous_state_new_name);
-				bufLog.append(" \n");
+				bufLogInfo.append("Info: Previous asynchronous reset state ");
+				bufLogInfo.append(fsm.resetAsynchronousState.name);
+				bufLogInfo.append(" replaced by ");
+				bufLogInfo.append(reset_asynchronous_state_new_name);
+				bufLogInfo.append(" \n");
 				// the previous fsm.resetAsynchronousState is not anymore
 				resetAsynchronousState.isInit = false;
 			}
@@ -1912,9 +1948,9 @@ public class FsmProcess {
 				s = new State();
 				s.name = name;
 				if (states.size() == 0) {
-					bufLog.append("Info: Asynchronous reset state is defined to ");
-					bufLog.append(name);
-					bufLog.append(" \n");
+					bufLogInfo.append("Info: Asynchronous reset state is defined to ");
+					bufLogInfo.append(name);
+					bufLogInfo.append(" \n");
 					s.isInit = true;
 					resetAsynchronousState = s;
 				} else
@@ -1999,13 +2035,13 @@ public class FsmProcess {
 		// ///////////////////////////////////////////////////////////////
 		public void enterClock_definition(FsmParser.Clock_definitionContext ctx) {
 			if (fsm.clkSignalNameSpecified) {
-				bufLog.append("Warning:   Clock signal has been redefined more than one time...\n");
+				bufLogWarning.append("Warning:   Clock signal has been redefined more than one time...\n");
 			}
 			fsm.clkSignalName = ctx.children.get(1).getText().toUpperCase();
 			fsm.clkSignalNameSpecified = true;
-			bufLog.append("Info:   Clock signal is defined as: ");
-			bufLog.append(fsm.clkSignalName);
-			bufLog.append("\n");
+			bufLogInfo.append("Info:   Clock signal is defined as: ");
+			bufLogInfo.append(fsm.clkSignalName);
+			bufLogInfo.append("\n");
 		}
 
 		// ///////////////////////////////////////////////////////////////
@@ -2094,7 +2130,8 @@ public class FsmProcess {
 		public void enterLevel_reset_asynchronous(FsmParser.Level_reset_asynchronousContext ctx) {
 			fsm.aResetSignalLevel = ctx.children.get(0).getText().toUpperCase();
 			if (!fsm.aResetSignalLevel.equals("0") && !fsm.aResetSignalLevel.equals("1")) {
-				bufLog.append("Warning:   Asynchronous reset level for input should be either O or 1 because modern FPGAs don't have circuitry to route another signal.\n");
+				bufLogWarning
+						.append("Warning:   Asynchronous reset level for input should be either O or 1 because modern FPGAs don't have circuitry to route another signal.\n");
 			}
 			fsm.numberOfResetAsynchronousDefinitions++;
 		}
@@ -2112,11 +2149,11 @@ public class FsmProcess {
 			}
 			// TODO: pour les bus???
 			if (!reconstructedExpression.equals("0") && !reconstructedExpression.equals("1")) {
-				bufLog.append("Warning:   Asynchronous reset value for output ");
-				bufLog.append(fsm.currentOutput.name);
-				bufLog.append(" should not be ");
-				bufLog.append(reconstructedExpression);
-				bufLog.append(" but either O or 1 because modern FPGAs don't have circuitry to route another signal.\n");
+				bufLogWarning.append("Warning:   Asynchronous reset value for output ");
+				bufLogWarning.append(fsm.currentOutput.name);
+				bufLogWarning.append(" should not be ");
+				bufLogWarning.append(reconstructedExpression);
+				bufLogWarning.append(" but either O or 1 because modern FPGAs don't have circuitry to route another signal.\n");
 			}
 			fsm.currentOutput.asyncResetExpression = reconstructedExpression;
 		}
@@ -2203,9 +2240,9 @@ public class FsmProcess {
 			State s = fsm.getStateOrCreateAndAdd(name);
 			s.nbTimeFoundInFSMFile++;
 			if (s.nbTimeFoundInFSMFile > 1) {
-				bufLog.append("Warning: State ");
-				bufLog.append(name);
-				bufLog.append(" has already been defined in the model when found in the fsm file.\n");
+				bufLogWarning.append("Warning: State ");
+				bufLogWarning.append(name);
+				bufLogWarning.append(" has already been defined in the model when found in the fsm file.\n");
 			}
 			fsm.currentState = s;
 		}
