@@ -677,20 +677,17 @@ public class FsmProcess {
 		for (int i = 0; i < numberOfOutputs; i++)
 			fsm.outputs.get(i).paddedName = fillStringWithSpace2(fsm.outputs.get(i).name, Output.longestName);
 		// TODO: continue
-
 		if (numberOfStates == 0) {
-			bufLogWarning.append("Critical Warning: The model contains no state... \n");
-			modelOk = false;
+			bufLogWarning.append("Warning:   The model contains no state... \n");
 		}
-
 		if (fsm.outputs.size() == 0) {
-			bufLogError.append("Critical Error: The model contains no outputs... \n");
-			modelOk = false; // its allowed to have no inputs
+			bufLogWarning.append("Warning:   The model contains no output... \n");
 		}
-
+		if (fsm.inputs.size() == 0) {
+			bufLogWarning.append("Warning:   The model contains no input... \n");
+		}
 		if (fsm.numberOfResetAsynchronousDefinitions > 1)
 			bufLogWarning.append("Warning:   Asynchronous reset has been redefined more than one time...\n");
-
 		// check if inputs/outputs/states names are allowed, "in" and "out" are
 		// forbidden as they are reserved keyword of vhdl
 		// also other verifications that there could not be misleading between
@@ -724,7 +721,7 @@ public class FsmProcess {
 		for (int n = 0; n < numberOfTransitions; n++) {
 			Transition t1 = fsm.transitions.get(n);
 			if (t1.origin.equals(t1.destination)) {
-				bufLogWarning.append("Warning: There is a transition between state ");
+				bufLogWarning.append("Warning:   There is a transition between state ");
 				bufLogWarning.append(t1.origin);
 				bufLogWarning.append(" and itself ");
 				if (t1.attachedActions.size() == 0) {
@@ -785,14 +782,11 @@ public class FsmProcess {
 						m++; // only if the transition has not been erased
 				}
 				n++;
-
 			}
 		}
-
 		// TO STOP AT CRITICAL ERRORS!!!!
 		// if (modelOk == false)
 		// return false; // go no further
-
 		// check if all states have a (reset) transition or asynchronous reset
 		// to them, only the initial state can have no transition to it
 		for (int m = 0; m < numberOfStates; m++) {
@@ -855,7 +849,6 @@ public class FsmProcess {
 				}
 			}
 		}
-
 		// Check repeatedly action are compatible with state and
 		// transition actions (they are exclusive, except for R and S)
 		for (int m = 0; m < numberOfRepeatedlyActions; m++) {
@@ -878,7 +871,6 @@ public class FsmProcess {
 				}
 			}
 		}
-
 		// enforce that a M action have to have an expression (it memorizes
 		// an input!!!!)
 		for (int m = 0; m < numberOfActionsTotal; m++) {
@@ -1029,13 +1021,10 @@ public class FsmProcess {
 					}
 			}
 		}
-		// cheat...
-		// modelOk = true;
 		if (modelOk)
 			bufLogInfo.append("Info:   No Critial error: Output files can be generated\n\n");
 		else
-			bufLogInfo.append("Info:   At least one Critial error: Output files canNOT be generated\n\n");
-
+			bufLogInfo.append("Info:   At least one Critial error: Output files canNOT be generated correctly\n\n");
 		return modelOk;
 	}
 
@@ -1052,30 +1041,34 @@ public class FsmProcess {
 		bufVhdl.append(" : in  std_logic;\n");
 		bufVhdl.append("		");
 		bufVhdl.append(fillStringWithSpace2(fsm.aResetSignalName, Input.longestName));
-		bufVhdl.append(" : in  std_logic;\n");
+		bufVhdl.append(" : in  std_logic");
+		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
+			bufVhdl.append(";\n");
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
 			bufVhdl.append("		");
 			bufVhdl.append(fillStringWithSpace2("STATE_NUMBER", Input.longestName));
 			bufVhdl.append(" : out std_logic_vector( ");
 			bufVhdl.append(fsm.numberOfBitsForStates - 1);
-			bufVhdl.append(" downto 0);\n");
+			bufVhdl.append(" downto 0)");
+			if ((fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
+				bufVhdl.append(";\n");
 		}
 		// ////////////////listing of inputs/outputs//////////////////
 		for (int n = 0; n < fsm.hmapInput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.inputs.get(n).paddedName);
-			bufVhdl.append(" : in  std_logic;\n");
+			bufVhdl.append(" : in  std_logic");
+			if ((n != fsm.hmapInput.size() - 1) || ((fsm.hmapOutput.size() > 0)))
+				bufVhdl.append(";\n");
 		}
-
 		for (int n = 0; n < fsm.hmapOutput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.outputs.get(n).paddedName);
 			bufVhdl.append(" : out  std_logic");
 			if (n != fsm.hmapOutput.size() - 1)
 				bufVhdl.append(";\n");
-			else
-				bufVhdl.append(");\n");
 		}
+		bufVhdl.append(");\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
@@ -1115,17 +1108,23 @@ public class FsmProcess {
 		bufVhdl.append(fsm.aResetSignalName);
 		bufVhdl.append(" => ");
 		bufVhdl.append(fsm.aResetSignalName);
-		bufVhdl.append(",\n");
+		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
+			bufVhdl.append(",\n");
 		// ////////////////listing of inputs/outputs//////////////////
+		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
+			bufVhdl.append("		state_number =>  state_number");
+			if ((fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
+				bufVhdl.append(",\n");
+
+		}
 		for (int n = 0; n < fsm.hmapInput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.inputs.get(n).name);
 			bufVhdl.append(" => ");
 			bufVhdl.append(fsm.inputs.get(n).name);
-			bufVhdl.append(",\n");
+			if ((n != fsm.hmapInput.size() - 1) || ((fsm.hmapOutput.size() > 0)))
+				bufVhdl.append(",\n");
 		}
-		if (fsm.GenerateNumberOfStateOutput)
-			bufVhdl.append("		state_number =>  state_number,\n");
 		for (int n = 0; n < fsm.hmapOutput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.outputs.get(n).name);
@@ -1133,9 +1132,9 @@ public class FsmProcess {
 			bufVhdl.append(fsm.outputs.get(n).name);
 			if (n != fsm.hmapOutput.size() - 1)
 				bufVhdl.append(",\n");
-			else
-				bufVhdl.append(");\n");
 		}
+		bufVhdl.append(");\n");
+
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
@@ -1952,7 +1951,7 @@ public class FsmProcess {
 				s = new State();
 				s.name = name;
 				if (states.size() == 0) {
-					bufLogInfo.append("Info: Asynchronous reset state is defined to ");
+					bufLogInfo.append("Info:   Asynchronous reset state is defined to ");
 					bufLogInfo.append(name);
 					bufLogInfo.append(" \n");
 					s.isInit = true;
