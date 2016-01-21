@@ -463,7 +463,7 @@ public class FsmProcess {
 					bufDot.append("[ ");
 					// show the priority order if its not the default value
 					if (t.priorityOrder != 1000000) {
-						bufDot.append("taillabel= <<font color=\"red\">");
+						bufDot.append("taillabel= <<font color=\"green\">");
 						bufDot.append(t.priorityOrder);
 						bufDot.append("</font>>, ");
 					}
@@ -568,6 +568,9 @@ public class FsmProcess {
 
 		// EASY TODOS:
 
+		// TODO: promouvoir des sorties mémorisée en BUFFER si besoin pour
+		// pouvoir utiliser leur valeur en tant que condition
+
 		// TODO: catch error from the parser:
 		// and stop here if error!!!!
 
@@ -656,8 +659,18 @@ public class FsmProcess {
 		// compute the number of bits to define the state in binary coding
 		// generate STATE_NUMBER: out std_logic_vector( 0 downto 0); for 1 or 2
 		// states but it is working
-		fsm.numberOfBitsForStates = Integer.toBinaryString(numberOfStates - 1).length();
 
+		// compute the number of bits that are really required to code the state
+		fsm.numberOfBitsForStatesMax = Integer.toBinaryString(numberOfStates - 1).length();
+		if (fsm.numberOfBitsForStates == 0) { // not given in the fsm file
+			fsm.numberOfBitsForStates = fsm.numberOfBitsForStatesMax;
+		} else {
+			fsm.numberOfBitsForStatesMax = fsm.numberOfBitsForStates;
+			if (fsm.numberOfBitsForStates < fsm.numberOfBitsForStatesMax) {
+				bufLogWarning
+						.append("Warning:   The specified size for STATE_NUMBER is not high enough to represent all its possible values\n");
+			}
+		}
 		// Do padding
 		for (int i = 0; i < numberOfStates; i++)
 			fsm.states.get(i).paddedName = fillStringWithSpace2(fsm.states.get(i).name, State.longestName);
@@ -1040,8 +1053,11 @@ public class FsmProcess {
 					bufVhdl.append("--");
 				bufVhdl.append("                   else \"");
 			}
-			bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(i)).replace(" ",
-					"0"));
+			String code = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(i)).replace(" ",
+					"0");
+			if (fsm.numberOfBitsForStatesMax > fsm.numberOfBitsForStates)
+				code = code.substring(fsm.numberOfBitsForStatesMax - fsm.numberOfBitsForStates, fsm.numberOfBitsForStatesMax);
+			bufVhdl.append(code);
 			// bufVhdl.append( Integer.toBinaryString(i));
 			bufVhdl.append("\" when ( current_state = ");
 			bufVhdl.append("state_");
@@ -1051,8 +1067,11 @@ public class FsmProcess {
 		if (comment)
 			bufVhdl.append("--");
 		bufVhdl.append("                   else \"");
-		bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(fsm.states.size()))
-				.replace(" ", "1").replace("0", "1")); // all at '1'
+		String code = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(1))
+				.replace(" ", "1").replace("0", "1");
+		if (fsm.numberOfBitsForStatesMax > fsm.numberOfBitsForStates)
+			code = code.substring(fsm.numberOfBitsForStatesMax - fsm.numberOfBitsForStates, fsm.numberOfBitsForStatesMax);
+		bufVhdl.append(code); // all at '1'
 		bufVhdl.append("\";   -- coding for error\n");
 	}
 
@@ -1785,7 +1804,12 @@ public class FsmProcess {
 		// HashMap<String,Transition>();
 
 		public Boolean GenerateNumberOfStateOutput = true;
-		public int numberOfBitsForStates;
+		public int numberOfBitsForStates = 0; // default value if not given in
+												// the fsm file
+		public int numberOfBitsForStatesMax; // value computed from the actual
+												// number of state or the given
+												// numberOfBitsForStates it is
+												// bigger
 		// member variables for parsing
 		int numberOfResetAsynchronousDefinitions = 0;
 
