@@ -29,10 +29,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 // sudo apt-get install libgetopt-java
 //et ajouter dans referenced Libraries /usr/share/gnu-getopt-1.0.13.jar
 
-//TODO: move src files in src to avoir .git in jar file
-
-//add an arg to the app to set Boolean ignoreErrors -> getopt
-
 //To generate the jar using eclipse:
 //F5 to refresh eclipse project
 //File->export->Java->Runnable JAR file
@@ -349,98 +345,101 @@ public class FsmProcess {
 		bufDot.append(fsm.name);
 		bufDot.append("\n");
 		bufDot.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
-		bufDot.append("//////////////////display  states//////////////////\n");
-		// bufDot.append("splines=line;\n"); //
-		// http://www.graphviz.org/content/attrs#kstyle it is a property of the
-		// whole graph... not individual edges
 		int cptResetStates = 0;
-		for (int n = 0; n < fsm.states.size(); n++) {
-			int nbAttachedActions = fsm.states.get(n).attachedActions.size();
-			// add states to the dot file
-			bufDot.append("    	//---------State:   ");
-			bufDot.append(fsm.states.get(n).name);
-			bufDot.append("    -----------------\n");
-			bufDot.append(" {");
-			// very important, thanks to this, the state and action nodes are on
-			// the same line or column, orthogonally of the rankdir
-			bufDot.append(" rank = same;\n");
-			bufDot.append("    	");
-			bufDot.append(fsm.states.get(n).name);
-			if (fsm.states.get(n).isInit) {
-				bufDot.append(" [shape=doublecircle, fixedsize=true, width=");
-				bufDot.append(nodeWidth);
-				bufDot.append(" ];\n");
-			} else {
-				bufDot.append(" [shape=circle,fixedsize=true,width=");
-				bufDot.append(nodeWidth);
-				bufDot.append(" ];\n");
-			}
-			// add actions states to the dot file if necessary
-			if (nbAttachedActions != 0) {
-				bufDot.append("    	//Action on state:\n");
-				bufDot.append("    	stateaction");
+		if (fsm.states.size() != 0) {
+			bufDot.append("//////////////////display  states//////////////////\n");
+			// bufDot.append("splines=line;\n"); //
+			// http://www.graphviz.org/content/attrs#kstyle it is a property of
+			// the whole graph... not individual edges
+			for (int n = 0; n < fsm.states.size(); n++) {
+				int nbAttachedActions = fsm.states.get(n).attachedActions.size();
+				// add states to the dot file
+				bufDot.append("    	//---------State:   ");
 				bufDot.append(fsm.states.get(n).name);
-				bufDot.append("  [shape=box,label=  ");
-				bufDot.append(" <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
-				for (int m = 0; m < nbAttachedActions; m++)
-					GenerateDotForAction(fsm.states.get(n).attachedActions.get(m));
-				bufDot.append("    	    	</TABLE>>  ];\n");
-				bufDot.append("    	//attach the action on the state\n    	");
+				bufDot.append("    -----------------\n");
+				bufDot.append(" {");
+				// very important, thanks to this, the state and action nodes
+				// are on
+				// the same line or column, orthogonally of the rankdir
+				bufDot.append(" rank = same;\n");
+				bufDot.append("    	");
 				bufDot.append(fsm.states.get(n).name);
-				bufDot.append(" ->");
-				bufDot.append("stateaction");
-				bufDot.append(fsm.states.get(n).name);
-				// bufDot.append("  [arrowhead=none, len=0.01,weight=100 ]     ;\n");
-				bufDot.append("  [arrowhead=none ]     ;\n");
-			}
-			int nbResetTransitions = fsm.resetTransitions.size();
-			for (int k = 0; k < nbResetTransitions; k++) {
-				ResetTransition rt = fsm.resetTransitions.get(k);
-				if (rt.destination.equals(fsm.states.get(n).name)) {
-					bufDot.append("    	//display reset transition to that state\n    	");
-					bufDot.append("    	r");
-					cptResetStates++;
-					bufDot.append(cptResetStates);
-					bufDot.append("[style=\"dashed\", shape=box, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
-					bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
-					int nbActionsInResetTransitions = rt.attachedActions.size();
-					if (nbActionsInResetTransitions == 0)
-						bufDot.append("1");
-					else
-						bufDot.append("2");
-					bufDot.append("\">");
-					bufDot.append(rt.condition);
-					bufDot.append("</TD> </TR>\n");
-					for (int l = 0; l < nbActionsInResetTransitions; l++) {
-						bufDot.append("    	    	<TR><TD>");
-						bufDot.append(rt.attachedActions.get(l).type);
-						bufDot.append("</TD><TD>");
-						bufDot.append(rt.attachedActions.get(l).name);
-						if (rt.attachedActions.size() != 0)
-							if (!rt.attachedActions.get(l).expression.equals("")) {
-								bufDot.append("=");
-								bufDot.append(rt.attachedActions.get(l).expression);
-							}
-						bufDot.append("</TD> </TR>\n");
-					}
-					bufDot.append("    	    	</TABLE>>  ];\n");
-					bufDot.append("    	//attach the reset transition to the state\n    	");
-					bufDot.append("    	r");
-					bufDot.append(cptResetStates);
-					bufDot.append(" -> ");
-					bufDot.append(rt.destination);
-					bufDot.append("  ");
-					bufDot.append(" [ ");
-					// show the priority order if its not the default value
-					if (rt.priorityOrder != 1000000) {
-						bufDot.append("headlabel= <<font color=\"red\">");
-						bufDot.append(rt.priorityOrder);
-						bufDot.append("</font>>, ");
-					}
-					bufDot.append("style=\"dashed\"];\n");
+				if (fsm.states.get(n).isInit) {
+					bufDot.append(" [shape=doublecircle, fixedsize=true, width=");
+					bufDot.append(nodeWidth);
+					bufDot.append(" ];\n");
+				} else {
+					bufDot.append(" [shape=circle,fixedsize=true,width=");
+					bufDot.append(nodeWidth);
+					bufDot.append(" ];\n");
 				}
+				// add actions states to the dot file if necessary
+				if (nbAttachedActions != 0) {
+					bufDot.append("    	//Action on state:\n");
+					bufDot.append("    	stateaction");
+					bufDot.append(fsm.states.get(n).name);
+					bufDot.append("  [shape=box,label=  ");
+					bufDot.append(" <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
+					for (int m = 0; m < nbAttachedActions; m++)
+						GenerateDotForAction(fsm.states.get(n).attachedActions.get(m));
+					bufDot.append("    	    	</TABLE>>  ];\n");
+					bufDot.append("    	//attach the action on the state\n    	");
+					bufDot.append(fsm.states.get(n).name);
+					bufDot.append(" ->");
+					bufDot.append("stateaction");
+					bufDot.append(fsm.states.get(n).name);
+					// bufDot.append("  [arrowhead=none, len=0.01,weight=100 ]     ;\n");
+					bufDot.append("  [arrowhead=none ]     ;\n");
+				}
+				int nbResetTransitions = fsm.resetTransitions.size();
+				for (int k = 0; k < nbResetTransitions; k++) {
+					ResetTransition rt = fsm.resetTransitions.get(k);
+					if (rt.destination.equals(fsm.states.get(n).name)) {
+						bufDot.append("    	//display reset transition to that state\n    	");
+						bufDot.append("    	r");
+						cptResetStates++;
+						bufDot.append(cptResetStates);
+						bufDot.append("[style=\"dashed\", shape=box, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
+						bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
+						int nbActionsInResetTransitions = rt.attachedActions.size();
+						if (nbActionsInResetTransitions == 0)
+							bufDot.append("1");
+						else
+							bufDot.append("2");
+						bufDot.append("\">");
+						bufDot.append(rt.condition);
+						bufDot.append("</TD> </TR>\n");
+						for (int l = 0; l < nbActionsInResetTransitions; l++) {
+							bufDot.append("    	    	<TR><TD>");
+							bufDot.append(rt.attachedActions.get(l).type);
+							bufDot.append("</TD><TD>");
+							bufDot.append(rt.attachedActions.get(l).name);
+							if (rt.attachedActions.size() != 0)
+								if (!rt.attachedActions.get(l).expression.equals("")) {
+									bufDot.append("=");
+									bufDot.append(rt.attachedActions.get(l).expression);
+								}
+							bufDot.append("</TD> </TR>\n");
+						}
+						bufDot.append("    	    	</TABLE>>  ];\n");
+						bufDot.append("    	//attach the reset transition to the state\n    	");
+						bufDot.append("    	r");
+						bufDot.append(cptResetStates);
+						bufDot.append(" -> ");
+						bufDot.append(rt.destination);
+						bufDot.append("  ");
+						bufDot.append(" [ ");
+						// show the priority order if its not the default value
+						if (rt.priorityOrder != 1000000) {
+							bufDot.append("headlabel= <<font color=\"red\">");
+							bufDot.append(rt.priorityOrder);
+							bufDot.append("</font>>, ");
+						}
+						bufDot.append("style=\"dashed\"];\n");
+					}
+				}
+				bufDot.append(" }; \n"); // close rank...
 			}
-			bufDot.append(" }; \n"); // close rank...
 		}
 		bufDot.append("//////////////////display  transitions//////////////////\n");
 		for (int n = 0; n < fsm.states.size(); n++) {
@@ -565,7 +564,7 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////
 	static public Boolean checkModel() {
 		// this method returns false and exit as soon as there is a critical
-		// error
+		// error for which it is not possible to continue
 
 		// EASY TODOS:
 
@@ -595,10 +594,6 @@ public class FsmProcess {
 
 		// TODO: indiquer dans le fichier package le codage utilisé pour les
 		// sorties state number
-
-		// TODO Add an option to generate dot and vhdl even if there is some
-		// errors (separate critials) to be able to get some wrong drawings or
-		// code
 
 		// TODO: modifier pour avoir des actions à 1 par defaut
 
@@ -681,11 +676,10 @@ public class FsmProcess {
 			fsm.inputs.get(i).paddedName = fillStringWithSpace2(fsm.inputs.get(i).name, Input.longestName);
 		for (int i = 0; i < numberOfOutputs; i++)
 			fsm.outputs.get(i).paddedName = fillStringWithSpace2(fsm.outputs.get(i).name, Output.longestName);
-
 		// TODO: continue
 
 		if (numberOfStates == 0) {
-			bufLogError.append("Critical Error: The model contains no state... \n");
+			bufLogWarning.append("Critical Warning: The model contains no state... \n");
 			modelOk = false;
 		}
 
@@ -1038,9 +1032,9 @@ public class FsmProcess {
 		// cheat...
 		// modelOk = true;
 		if (modelOk)
-			bufLogInfo.append("Info: No Critial error: Output files can be generated\n\n");
+			bufLogInfo.append("Info:   No Critial error: Output files can be generated\n\n");
 		else
-			bufLogInfo.append("Info: At least one Critial error: Output files canNOT be generated\n\n");
+			bufLogInfo.append("Info:   At least one Critial error: Output files canNOT be generated\n\n");
 
 		return modelOk;
 	}
@@ -1059,7 +1053,7 @@ public class FsmProcess {
 		bufVhdl.append("		");
 		bufVhdl.append(fillStringWithSpace2(fsm.aResetSignalName, Input.longestName));
 		bufVhdl.append(" : in  std_logic;\n");
-		if (fsm.GenerateNumberOfStateOutput) {
+		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
 			bufVhdl.append("		");
 			bufVhdl.append(fillStringWithSpace2("STATE_NUMBER", Input.longestName));
 			bufVhdl.append(" : out std_logic_vector( ");
@@ -1161,18 +1155,20 @@ public class FsmProcess {
 		bufVhdl.append("architecture ar of ");
 		bufVhdl.append(fsm.name);
 		bufVhdl.append(" is \n");
-		// ////////////////listing of possible values for state
-		// names//////////////////
-		bufVhdl.append("type fsm_state is (");
-		for (int n = 0; n < numberOfStates; n++) {
-			// prefix state name with state_
-			bufVhdl.append("state_");
-			bufVhdl.append(fsm.states.get(n).name);
-			if (n != numberOfStates - 1)
-				bufVhdl.append(", ");
+		if (fsm.states.size() != 0) {
+			// ////////////////listing of possible values for state
+			// names//////////////////
+			bufVhdl.append("type fsm_state is (");
+			for (int n = 0; n < numberOfStates; n++) {
+				// prefix state name with state_
+				bufVhdl.append("state_");
+				bufVhdl.append(fsm.states.get(n).name);
+				if (n != numberOfStates - 1)
+					bufVhdl.append(", ");
+			}
+			bufVhdl.append(");\n");
+			bufVhdl.append("signal current_state, next_state : fsm_state;\n");
 		}
-		bufVhdl.append(");\n");
-		bufVhdl.append("signal current_state, next_state : fsm_state;\n");
 		// ////////////////listing of internal signals for memorized
 		// outputs//////////////////
 		for (int n = 0; n < fsm.outputs.size(); n++) {
@@ -1208,131 +1204,138 @@ public class FsmProcess {
 				bufVhdl.append(" else\n                           '0';\n");
 			}
 		}
-		bufVhdl.append("------------------------Process for the memorization of the state----------------------\n");
-		bufVhdl.append("process (");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append(", ");
-		bufVhdl.append(fsm.aResetSignalName);
-		bufVhdl.append(")\nbegin\n    if (");
-		bufVhdl.append(fsm.aResetSignalName);
-		bufVhdl.append("='");
-		bufVhdl.append(fsm.aResetSignalLevel);
-		bufVhdl.append("') then current_state <=");
-		bufVhdl.append("state_");
-		bufVhdl.append(fsm.resetAsynchronousState.name);
-		bufVhdl.append(";\n");
-		bufVhdl.append("    elsif ");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append("'event and ");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append("='1' then current_state<=next_state;\n");
-		bufVhdl.append("    end if;\n");
-		bufVhdl.append("end process;\n\n");
-		bufVhdl.append("-------------------Combinatorial process for the evolution of the state------------------\n");
-		bufVhdl.append("process (current_state");
-		for (int n = 0; n < fsm.inputs.size(); n++) {
+		if (fsm.states.size() != 0) {
+			bufVhdl.append("------------------------Process for the memorization of the state----------------------\n");
+			bufVhdl.append("process (");
+			bufVhdl.append(fsm.clkSignalName);
 			bufVhdl.append(", ");
-			bufVhdl.append(fsm.inputs.get(n).name);
-		}
-		bufVhdl.append(")\n");
-		bufVhdl.append("begin\n");
-
-		int nbResetTransitions = fsm.resetTransitions.size();
-		if (nbResetTransitions != 0) {
-			bufVhdl.append("-----------Synchronous RESETs has higher priority than standard transitions\n");
-			for (int m = 0; m < nbResetTransitions; m++) {
-				if (m == 0)
-					bufVhdl.append("   if    ( ");
-				else
-					bufVhdl.append("   elsif ( ");
-
-				if (fsm.resetTransitions.get(m).condition.equals("1"))
-					bufVhdl.append(" true "); // that would be dumb because the
-												// system should always be
-												// resetted, but if it is asked,
-												// I do it...
-				else {
-					bufVhdl.append(" ( ");
-					bufVhdl.append(fsm.resetTransitions.get(m).condition);
-					bufVhdl.append(" ) ");
-					bufVhdl.append(" = '1' ");
-				}
-				bufVhdl.append(")\n    then next_state <= state_");
-				bufVhdl.append(fsm.resetTransitions.get(m).destination);
-				bufVhdl.append(";");
-				// show the priority order if its not the default value
-				if (fsm.resetTransitions.get(m).priorityOrder != 1000000) {
-					bufVhdl.append(" -- priority order set to: ");
-					bufVhdl.append(fsm.resetTransitions.get(m).priorityOrder);
-				}
-				bufVhdl.append("\n");
-			}
-			// bufVhdl.append("   end if; --no else, so next_state is not modified here if there is no synchronous reset\n");
-			bufVhdl.append("   else \n");
-		}
-		// else
-		// bufVhdl.append("   if ( ");
-		bufVhdl.append("------------------------------standard transitions---------------------\n");
-
-		bufVhdl.append("    case current_state is\n");
-		// pour chaque état, il peut y avoir plusieurs transitions, la première
-		// if, les suivantes elsif et finalement en plus le maintien dans l'état
-		// courant
-		for (int n = 0; n < numberOfStates; n++) {
-			bufVhdl.append("      when state_"); // prefix state name with
-													// state_
-			bufVhdl.append(fsm.states.get(n).paddedName);
-			int transitionFromThisStateNumber = fsm.states.get(n).transitionsFromThisState.size();
-			bufVhdl.append(" => "); // if (transitionFromThisStateNumber==0)
-									// //stay always in that state
-			for (int m = 0; m < transitionFromThisStateNumber; m++) {
-				if (m == 0)
-					bufVhdl.append(" if ( ");
-				else {
-					bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
-					bufVhdl.append("elsif ( ");
-				}
-				if (fsm.states.get(n).transitionsFromThisState.get(m).condition.equals("1"))
-					bufVhdl.append(" true ");
-				else {
-					bufVhdl.append(" ( ");
-
-					bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
-					bufVhdl.append(" ) ");
-
-					bufVhdl.append(" = '1' ");
-				}
-				bufVhdl.append(") then next_state <= state_");
-				bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
-				bufVhdl.append(";");
-				// show the priority order if its not the default value
-				if (fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder != 1000000) {
-					bufVhdl.append(" -- priority order set to: ");
-					bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder);
-				}
-				bufVhdl.append("\n");
-			}
-			if (transitionFromThisStateNumber != 0) {
-				bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
-				bufVhdl.append("else	");
-			}
-			bufVhdl.append("next_state <= state_");
-			bufVhdl.append(fsm.states.get(n).name);
+			bufVhdl.append(fsm.aResetSignalName);
+			bufVhdl.append(")\nbegin\n    if (");
+			bufVhdl.append(fsm.aResetSignalName);
+			bufVhdl.append("='");
+			bufVhdl.append(fsm.aResetSignalLevel);
+			bufVhdl.append("') then current_state <=");
+			bufVhdl.append("state_");
+			bufVhdl.append(fsm.resetAsynchronousState.name);
 			bufVhdl.append(";\n");
-			if (transitionFromThisStateNumber != 0) {
-				bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
-				bufVhdl.append("end if;\n");
+			bufVhdl.append("    elsif ");
+			bufVhdl.append(fsm.clkSignalName);
+			bufVhdl.append("'event and ");
+			bufVhdl.append(fsm.clkSignalName);
+			bufVhdl.append("='1' then current_state<=next_state;\n");
+			bufVhdl.append("    end if;\n");
+			bufVhdl.append("end process;\n\n");
+			bufVhdl.append("-------------------Combinatorial process for the evolution of the state------------------\n");
+			bufVhdl.append("process (current_state");
+			for (int n = 0; n < fsm.inputs.size(); n++) {
+				bufVhdl.append(", ");
+				bufVhdl.append(fsm.inputs.get(n).name);
 			}
-		}
-		bufVhdl.append("--    when others => next_state <= state_");
-		bufVhdl.append(fsm.states.get(0).name);
-		bufVhdl.append(";\n    end case;\n");
-		// if there has been some synchronous reset transition, end if should be
-		// added
-		if (nbResetTransitions != 0)
-			bufVhdl.append("   end if;\n");
+			bufVhdl.append(")\n");
+			bufVhdl.append("begin\n");
 
-		bufVhdl.append("end process;\n");
+			int nbResetTransitions = fsm.resetTransitions.size();
+			if (nbResetTransitions != 0) {
+				bufVhdl.append("-----------Synchronous RESETs has higher priority than standard transitions\n");
+				for (int m = 0; m < nbResetTransitions; m++) {
+					if (m == 0)
+						bufVhdl.append("   if    ( ");
+					else
+						bufVhdl.append("   elsif ( ");
+
+					if (fsm.resetTransitions.get(m).condition.equals("1"))
+						bufVhdl.append(" true "); // that would be dumb because
+													// the
+													// system should always be
+													// resetted, but if it is
+													// asked,
+													// I do it...
+					else {
+						bufVhdl.append(" ( ");
+						bufVhdl.append(fsm.resetTransitions.get(m).condition);
+						bufVhdl.append(" ) ");
+						bufVhdl.append(" = '1' ");
+					}
+					bufVhdl.append(")\n    then next_state <= state_");
+					bufVhdl.append(fsm.resetTransitions.get(m).destination);
+					bufVhdl.append(";");
+					// show the priority order if its not the default value
+					if (fsm.resetTransitions.get(m).priorityOrder != 1000000) {
+						bufVhdl.append(" -- priority order set to: ");
+						bufVhdl.append(fsm.resetTransitions.get(m).priorityOrder);
+					}
+					bufVhdl.append("\n");
+				}
+				// bufVhdl.append("   end if; --no else, so next_state is not modified here if there is no synchronous reset\n");
+				bufVhdl.append("   else \n");
+			}
+			// else
+			// bufVhdl.append("   if ( ");
+			bufVhdl.append("------------------------------standard transitions---------------------\n");
+
+			bufVhdl.append("    case current_state is\n");
+			// pour chaque état, il peut y avoir plusieurs transitions, la
+			// première
+			// if, les suivantes elsif et finalement en plus le maintien dans
+			// l'état
+			// courant
+			for (int n = 0; n < numberOfStates; n++) {
+				bufVhdl.append("      when state_"); // prefix state name with
+														// state_
+				bufVhdl.append(fsm.states.get(n).paddedName);
+				int transitionFromThisStateNumber = fsm.states.get(n).transitionsFromThisState.size();
+				bufVhdl.append(" => "); // if (transitionFromThisStateNumber==0)
+										// //stay always in that state
+				for (int m = 0; m < transitionFromThisStateNumber; m++) {
+					if (m == 0)
+						bufVhdl.append(" if ( ");
+					else {
+						bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
+						bufVhdl.append("elsif ( ");
+					}
+					if (fsm.states.get(n).transitionsFromThisState.get(m).condition.equals("1"))
+						bufVhdl.append(" true ");
+					else {
+						bufVhdl.append(" ( ");
+
+						bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
+						bufVhdl.append(" ) ");
+
+						bufVhdl.append(" = '1' ");
+					}
+					bufVhdl.append(") then next_state <= state_");
+					bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
+					bufVhdl.append(";");
+					// show the priority order if its not the default value
+					if (fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder != 1000000) {
+						bufVhdl.append(" -- priority order set to: ");
+						bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder);
+					}
+					bufVhdl.append("\n");
+				}
+				if (transitionFromThisStateNumber != 0) {
+					bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
+					bufVhdl.append("else	");
+				}
+				bufVhdl.append("next_state <= state_");
+				bufVhdl.append(fsm.states.get(n).name);
+				bufVhdl.append(";\n");
+				if (transitionFromThisStateNumber != 0) {
+					bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
+					bufVhdl.append("end if;\n");
+				}
+			}
+			bufVhdl.append("--    when others => next_state <= state_");
+			bufVhdl.append(fsm.states.get(0).name);
+			bufVhdl.append(";\n    end case;\n");
+			// if there has been some synchronous reset transition, end if
+			// should be
+			// added
+			if (nbResetTransitions != 0)
+				bufVhdl.append("   end if;\n");
+
+			bufVhdl.append("end process;\n");
+		}
 		bufVhdl.append("------------------FLIP FLOPS FOR MEMORIZED OUTPUTS ------------\n");
 		for (int n = 0; n < fsm.outputs.size(); n++) {
 			Output out = fsm.outputs.get(n);
@@ -1577,7 +1580,7 @@ public class FsmProcess {
 					// TODO: deal with a generic value here
 				}
 		}
-		if (fsm.GenerateNumberOfStateOutput) {
+		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
 			bufVhdl.append("------------------  OUTPUTS FOR CURRENT STATE VISUALIZATION ------------\n");
 			bufVhdl.append("	state_number <= \"");
 			for (int i = 0; i < numberOfStates; i++) {
@@ -1594,9 +1597,9 @@ public class FsmProcess {
 			bufVhdl.append("                   else \"");
 			bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(0)).replace(" ",
 					"0"));
-
 			bufVhdl.append("\";\n");
 		}
+
 		bufVhdl.append("end ar;\n");
 
 	} // ///////////////////////////////////////////////////////////////

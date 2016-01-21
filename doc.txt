@@ -69,7 +69,14 @@ Possibilité de générer le code décrivant le modèle à partir d'un programme
 Possibilité d'inclure du code du langage cible directement dans le fichier décrivant le modèle.
 
 
-Et pour rendre à Caesar ce qui lui appartient:
+
+===Les différents fichiers générés===
+
+.log pour les infos,etc ...
+vhd
+...
+
+===Pour rendre à Caesar ce qui lui appartient===
 
 Outils utilisant 
   -Ant LR pour la lecture des fichiers d'entrée (lien) 
@@ -80,7 +87,7 @@ inspiré de mon expérience avec les langages SHDL et MAC  (...) http://diabeto.
 Utilise le modèle de A. Nketsa.
 
 
-référence à l'outils de Clément pour WYSIWYG
+référence à l'outils de Clément pour WYSIWYG: http://sourceforge.net/projects/states/
 
 =====Le langage FSM=====
   
@@ -149,6 +156,9 @@ etat_1;     //dans cet état, le système fait...
 etat_2;     //dans cet état, le système fait...
 etat_1;     //dans cet état, le système fait aussi...
 <</FSM>>
+
+
+Taille des cercles représentant les états s'adapte au nom d'état le plus long.
 
 ===Définition des transitions entre états===
 
@@ -279,6 +289,11 @@ inhibe les actions sur état et sur transition quand la condition de reset est v
 
 ===Réinitialisation asynchrone===
 
+
+
+===Actions toujours vraies===
+
+et machine à état sans état!
 
 
 ===Spécifications via Pragma===
