@@ -591,9 +591,7 @@ public class FsmProcess {
 		 * 
 		 * Whitespace : [ \t]+ -> skip ;
 		 */
-
-		// TODO: indiquer dans le fichier package le codage utilisé pour les
-		// sorties state number
+ 
 
 		// TODO: modifier pour avoir des actions à 1 par defaut
 
@@ -601,10 +599,6 @@ public class FsmProcess {
 		// une syntaxe particulière (ajouter à la grammaire) puis générer dans
 		// le vhdl un signal qui prendra la valeur 1 quand la condition est
 		// vraie
-
-		// TODO: show infos, warnings errors etc in a buffer instead of
-		// system...
-		// to speed up and so it can be logged and hidden if necessary (pipe?)
 
 		// TODO; regler les problèmes de fichier unix/windows pour ne pas avoir
 		// à utiliser unix2dos
@@ -1034,6 +1028,35 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
+
+	static public void generateStateCodingVhdl(Boolean comment) {
+		bufVhdl.append("------------------  OUTPUTS FOR CURRENT STATE VISUALIZATION ------------\n");
+		if (comment)
+			bufVhdl.append("--");
+		bufVhdl.append("	state_number <= \"");
+		int numberOfStates = fsm.states.size();
+		for (int i = 0; i < numberOfStates; i++) {
+			if (i != 0) {
+				if (comment)
+					bufVhdl.append("--");
+				bufVhdl.append("                   else \"");
+			}
+			bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(i)).replace(" ",
+					"0"));
+			// bufVhdl.append( Integer.toBinaryString(i));
+			bufVhdl.append("\" when ( current_state = ");
+			bufVhdl.append("state_");
+			bufVhdl.append(fsm.states.get(i).name);
+			bufVhdl.append(")\n");
+		}
+		if (comment)
+			bufVhdl.append("--");
+		bufVhdl.append("                   else \"");
+		bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(fsm.states.size())).replace(" ", "1")); //all at '1'
+		bufVhdl.append("\";\n");
+	}
+
+	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateInterfaceVhdl() {
 		bufVhdl.append("port (\n");
 		bufVhdl.append("		");
@@ -1083,6 +1106,8 @@ public class FsmProcess {
 		bufVhdl.append("\n");
 		generateInterfaceVhdl();
 		bufVhdl.append("end component;\n");
+		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0))
+			generateStateCodingVhdl(true);
 		bufVhdl.append("end \n");
 		bufVhdl.append(fsm.name);
 		bufVhdl.append("_pack;\n");
@@ -1580,25 +1605,8 @@ public class FsmProcess {
 				}
 		}
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
-			bufVhdl.append("------------------  OUTPUTS FOR CURRENT STATE VISUALIZATION ------------\n");
-			bufVhdl.append("	state_number <= \"");
-			for (int i = 0; i < numberOfStates; i++) {
-				if (i != 0)
-					bufVhdl.append("                   else \"");
-				bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(i)).replace(
-						" ", "0"));
-				// bufVhdl.append( Integer.toBinaryString(i));
-				bufVhdl.append("\" when ( current_state = ");
-				bufVhdl.append("state_");
-				bufVhdl.append(fsm.states.get(i).name);
-				bufVhdl.append(")\n");
-			}
-			bufVhdl.append("                   else \"");
-			bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(0)).replace(" ",
-					"0"));
-			bufVhdl.append("\";\n");
+			generateStateCodingVhdl(false);
 		}
-
 		bufVhdl.append("end ar;\n");
 
 	} // ///////////////////////////////////////////////////////////////
