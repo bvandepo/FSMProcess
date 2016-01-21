@@ -3,6 +3,9 @@
  @author Bertrand VANDEPORTAELE LAAS/CNRS 2016
  *  ***/
 //import java.io.BufferedReader;
+import gnu.getopt.Getopt;
+//import gnu.getopt.LongOpt;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,9 +26,12 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
+// sudo apt-get install libgetopt-java
+//et ajouter dans referenced Libraries /usr/share/gnu-getopt-1.0.13.jar
+
 //TODO: move src files in src to avoir .git in jar file
 
-//add an arg to the app to set Boolean ignoreErrors
+//add an arg to the app to set Boolean ignoreErrors -> getopt
 
 //To generate the jar using eclipse:
 //F5 to refresh eclipse project
@@ -90,6 +96,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //////////////////////////////////////////////////////////
 public class FsmProcess {
 
+	static String fsmInputName;
 	static StringBuilder bufDot;
 	static StringBuilder bufVhdl;
 	static StringBuilder bufLogInfo;
@@ -102,7 +109,7 @@ public class FsmProcess {
 
 	// ///////////////////////////////////////////////
 
-	static public void GenerateFiles(String fsmInputName, Boolean ignoreErrors) {
+	static public void GenerateFiles(String fsmInputName) {
 		// by default, the input stream is System.in
 		InputStream is = System.in;
 		if (fsmInputName != null)
@@ -152,8 +159,8 @@ public class FsmProcess {
 		bufLogError = new StringBuilder();
 
 		walker.walk(collector, tree);
-		if (checkModel() || ignoreErrors) // if ignoreErrors, then display and
-											// generate fsm that have errors
+		if (checkModel() || fsm.optionsIgnoreErrors)
+		// if ignoreErrors, then display and generate fsm that have errors
 		{
 			generateDot();
 			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot")); //
@@ -600,15 +607,6 @@ public class FsmProcess {
 		// le vhdl un signal qui prendra la valeur 1 quand la condition est
 		// vraie
 
-		// TODO; add default value for asynchronous reset in process sensitivity
-		// list
-		// NOT EASY BECAUSE I HAVE ONLY THE EXPRESSION, NOT A LIST OF INPUTS
-		/*------ FLIP FLOPS FOR SORTIE4 ------
-		process (CLICK, ARAZB)  -- should also contain IN2
-		begin
-		   if (ARAZB='0') then SORTIE4<=IN2;
-		 */
-
 		// TODO: show infos, warnings errors etc in a buffer instead of
 		// system...
 		// to speed up and so it can be logged and hidden if necessary (pipe?)
@@ -685,6 +683,7 @@ public class FsmProcess {
 			fsm.outputs.get(i).paddedName = fillStringWithSpace2(fsm.outputs.get(i).name, Output.longestName);
 
 		// TODO: continue
+
 		if (numberOfStates == 0) {
 			bufLogError.append("Critical Error: The model contains no state... \n");
 			modelOk = false;
@@ -1574,11 +1573,9 @@ public class FsmProcess {
 					// this is the default value for all outputs.
 					// A S action is automatically added when there is no
 					// corresponding R action and vice versa
-					bufVhdl.append(" \'0\'; \n"); // TODO: deal with a generic
-													// value here
+					bufVhdl.append(" \'0\'; \n");
+					// TODO: deal with a generic value here
 				}
-			// TODO utiliser String.format(longest..) pour avoir un affichage
-			// aligné
 		}
 		if (fsm.GenerateNumberOfStateOutput) {
 			bufVhdl.append("------------------  OUTPUTS FOR CURRENT STATE VISUALIZATION ------------\n");
@@ -1806,6 +1803,8 @@ public class FsmProcess {
 		public ArrayList<String> inputsOrderedNamesList = new ArrayList<String>();
 		public ArrayList<String> outputsOrderedNamesList = new ArrayList<String>();
 
+		public Boolean optionsIgnoreErrors = false;
+
 		List<String> forbiddenNamesVHDL = Arrays.asList("ABS", "ACCESS", "AFTER", "ALIAS", "ALL", "AND", "ARCHITECTURE", "ARRAY", "ASSERT",
 				"ATTRIBUTE", "BEGIN", "BLOCK", "BODY", "BUFFER", "BUS", "CASE", "COMPONENT", "CONFIGURATION", "CONSTANT", "DISCONNECT",
 				"DOWNTO", "ELSE", "ELSIF", "END", "ENTITY", "EXIT", "FILE", "FOR", "FUNCTION", "GENERATE", "GENERIC", "GROUP", "GUARDED",
@@ -1815,6 +1814,8 @@ public class FsmProcess {
 				"SEVERITY", "SIGNAL", "SHARED", "SLA", "SLL", "SRA", "SRL", "SUBTYPE", "THEN", "TO", "TRANSPORT", "TYPE", "UNAFFECTED",
 				"UNITS", "UNTIL", "USE", "VARIABLE", "WAIT", "WHEN", "WHILE", "WITH", "XNOR", "XOR");
 		// TODO complete lists
+		// TODO: add methods to generate string that lists the words for the
+		// documentation
 		List<String> forbiddenNamesFSM = Arrays.asList("value_one_internal", "not_any_s_reset_internal", "STATE_NUMBER");
 		List<String> forbiddenNamesC = Arrays.asList();
 		List<String> forbiddenNamesVerilog = Arrays.asList();
@@ -2154,6 +2155,8 @@ public class FsmProcess {
 				bufLogWarning.append(" should not be ");
 				bufLogWarning.append(reconstructedExpression);
 				bufLogWarning.append(" but either O or 1 because modern FPGAs don't have circuitry to route another signal.\n");
+				bufLogWarning
+						.append("     Moreover, the inputs in the expression will not be added automatically to the process sensitivity list, probably resulting in errors or warnings.\n");
 			}
 			fsm.currentOutput.asyncResetExpression = reconstructedExpression;
 		}
@@ -2250,6 +2253,49 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////////////////////
+	public static void parseArgs(String[] args) {
+		// look at~/antlr/getopts/gnu/getopt/Getopt.java
+
+		// https://en.wikipedia.org/wiki/Getopt
+		// There is no implementation of getopt in the Java standard library.
+		// Several open source modules exist, including gnu.getopt.Getopt, which
+		// is ported from GNU getopt,[3] and Apache Commons CLI.[4]
+
+		// ftp://ftp.urbanophile.com/pub/arenn/software/sources/java-getopt-1.0.13.tar.gz
+		// http://pkgs.fedoraproject.org/repo/pkgs/gnu-getopt/java-getopt-1.0.13.tar.gz/46336d9bc055900f0320e5c378d7bfb2/
+
+		// http://www.urbanophile.com/arenn/hacking/getopt/
+		// http://www.urbanophile.com/arenn/hacking/download.html
+
+		// https://www.gnu.org/software/gnuprologjava/api/gnu/getopt/Getopt.html
+
+		// http://www.java2s.com/Code/Java/Development-Class/HandlesprogramargumentslikeUnixgetopt.htm
+		// moins bien
+
+		int c;
+		String arg;
+		Getopt g = new Getopt("FsmProcess", args, "if:");
+		g.setOpterr(false); // We'll do our own error handling
+		while ((c = g.getopt()) != -1)
+			switch (c) {
+			case 'i':
+				System.out.print("Ignore Errors\n");
+				fsm.optionsIgnoreErrors = true;
+				break;
+			case 'f':
+				arg = g.getOptarg();
+				System.out.print("Input file: ");
+				System.out.print(arg);
+				System.out.print("\n");
+				fsmInputName = arg;
+				break;
+			default:
+				System.out.println("getopt() returned " + c);
+				break;
+			}
+	}
+
+	// ///////////////////////////////////////////////////////////////
 	public static void main(String[] args) throws Exception {
 
 		/*
@@ -2260,7 +2306,8 @@ public class FsmProcess {
 		System.out.println("usage: FsmProcess fichier.fsm\n\n");
 
 		// generateCounter(10);
-		String fsmInputName = args[0];
+
+		parseArgs(args);
 
 		// TODO: check the file exists:
 		/*
@@ -2271,7 +2318,7 @@ public class FsmProcess {
 		 */
 
 		if (fsmInputName.endsWith(".fsm"))
-			GenerateFiles(fsmInputName, true);
+			GenerateFiles(fsmInputName);
 		else if (fsmInputName.endsWith("doc.txt"))
 			processTheDoc();
 		else {
