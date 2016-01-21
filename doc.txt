@@ -115,6 +115,17 @@ utilisable pour la commande
 
 ====Utilisation Basique====
 
+
+===Commentaires===
+Les commentaires sont définis comme en langage C. Il peuvent être définis sur une ligne avec // ou sur plusieurs lignes avec /* en début et */ en fin.
+Syntaxe:  // Ceci est un commentaire
+Syntaxe:   ceci est du code utile  /* à partir d'ici c'est du commentaire
+              fin du commentaire */
+
+
+L'utilisation de commentaire est vivement conseillée et le langage FSM permet d'inclure des commentaires à des endroits significatifs du modèle, il faut donc en profiter!
+
+
 ===Définition des états===
 
 Le premier état définit est l'état initial par défaut de la machine à état. 
@@ -158,7 +169,7 @@ etat_1;     //dans cet état, le système fait aussi...
 <</FSM>>
 
 
-Taille des cercles représentant les états s'adapte au nom d'état le plus long.
+La taille des cercles représentant les états s'adapte au nom d'état le plus long.
 
 ===Définition des transitions entre états===
 
@@ -214,86 +225,304 @@ Le modèle suivant est donc ambigue: dans l'état 1, que se passe-t il si IN1 et
 etat_1->etat_2?IN1;
 etat_1->etat_0?IN2;
 etat_0->etat_1?NOT IN1;
-etat_2;     //dans cet état, le système fait...
+etat_2;     
 etat_2->etat_0?IN2;
 <</FSM>>
 
 Pour pallier à ce problème, il est possible de rendre non ambigu à la main le modèle, en ajoutant une priorité. Si l'on souhaite rendre la transition de etat_1 vers etat_2 plus prioritaire, il suffit d'inhiber la transition de etat_1 vers etat_0 de la façon suivante:
 
-<<FSM ex_transition_condition3.fsm>>
-etat_1->etat_2?IN1;
-etat_1->etat_0?IN2 AND NOT IN1;
+
+<<FSM ex_transition_priority1.fsm>>
+etat_1->etat_2?IN1;                        //cette transition depuis l'état 1 est plus prioritaire 
+etat_1->etat_0?IN2 AND NOT IN1;            //que celle-ci
 etat_0->etat_1?NOT IN1;
 etat_2;     //dans cet état, le système fait...
 etat_2->etat_0?IN2;
 <</FSM>>
 
+=== Priorités entre transitions===
+Ce mécanisme est automatisé par l'outils grâce à la syntaxe suivante, 
 
-Ce mécanisme est automatisé par l'outils comme présenté plus loins dans la partie === Priorités=== k
+
+Syntaxe: nom_etat_initial -> nom_etat_destination*priorite?condition;
+
+Un niveau de priorité est un entier non signé. Une valeur faible est plus prioritaire qu'une valeur forte. Dans le cas ou la valeur de priorité n'est pas spécifiée, elle vaut 1000 par défaut.
+
+La définition de la priorité permet d'alléger la description du modèle. Ainsi, ce modèle aura le même comportement que le modèle précédent:
+
+<<FSM ex_transition_priority1.fsm>>
+etat_1->etat_2*1?IN1;                      //cette transition depuis l'état 1 est plus prioritaire (niveau 1)
+etat_1->etat_0*2?IN2;                      //que celle-ci (niveau 2)
+etat_0->etat_1?NOT IN1;
+etat_2;     
+etat_2->etat_0?IN2;
+<</FSM>>
+
 
 
 ===Définition des actions===
-Action AMZI pour commencer
-=0 si l'action n'est pas indiquée
+ 
+===Actions sur état===
 
-=1 par défaut
-éventuellement avec condition sous forme d'expression
+==Actions non memorisées==
+actions non mémorisées et non conditionnées 
 
+syntaxe :NOM_ACTION
+permet d'indiquer que dans un état une action est active (valeur 1 par défaut)
+Une action non mémorisée est inactive partout ou elle n'est pas définie comme étant active.
+
+
+Plusieurs actions peuvent être effectuées sur un même état en les séparant par :
+ 
+<<FSM ex_action1.fsm>>
+//définition de 3 états et des actions correspondantes
+etat_0:ACTION_1;     		//dans cet état, ACTION_1 est active
+etat_1;                         //dans cet état, rien
+etat_2:ACTION_2:ACTION_1;       //dans cet état, ACTION_1 et ACTION_2 sont actives
+etat_0->etat_1;
+etat_1->etat_2;
+etat_2->etat_0;
+<</FSM>>
+
+==actions conditionnées==
+
+syntaxe :NOM_ACTION=CONDITION
+permet d'indiquer que dans un état une action est active (valeur 1 par défaut) si la condition est vérifiée
+
+<<FSM ex_action2.fsm>>
+//définition de 3 états et des actions correspondantes
+etat_0:ACTION_1=ENTREE_1 AND ENTREE_2;     //dans cet état, ACTION_1 est active si (ENTREE_1 AND ENTREE_2)=1. ACTION_2 est inactive.
+etat_1;    				   //dans cet état, rien: ACTION_1 et ACTION_2 sont inactives
+etat_2:ACTION_2=ENTREE2:I,ACTION_1;        //dans cet état, ACTION_2 recopie ENTREE2 et ACTION_1 est active.
+etat_0->etat_1;
+etat_1->etat_2;
+etat_2->etat_0;
+<</FSM>>
+
+Pour bien différencier les actions non mémorisées des actions mémorisées présentées dans la suite, utilisation d'un I (optionnel) devant le nom de l'action, suivi d'une virgule:
+syntaxe :I,NOM_ACTION=CONDITION
+
+
+==Actions mémorisées==
+
+Action pouvant être mise à 1 (SET), à 0 (RESET), ou à la valeur d'une expression (MEMORISATION)
+
+Reset inconditionnel d'une action mémorisée:
+syntaxe :R,NOM_ACTION
+
+Reset conditionné d'une action mémorisée:
+syntaxe :R,NOM_ACTION=CONDITION 
+
+Set inconditionnel d'une action mémorisée:
+syntaxe :S,NOM_ACTION
+
+Set conditionné d'une action mémorisée:
+syntaxe :S,NOM_ACTION=CONDITION 
+
+Mémorisation d'une action mémorisée:
+syntaxe :M,NOM_ACTION=EXPRESSION_A_MEMORISER
+
+
+Il est bien sûr possible d'intégrer des actions mémorisées et des actions non mémorisées dans la même machine à état, mais une action doit toujours être utilisée de la même manière (soit mémorisée soit non mémorisée).
+
+
+<<FSM ex_action3.fsm>>
+etat_0:R_ACTION_1=ENTREE_1 AND ENTREE_2;        //   ACTION_1 mis à 0 si (ENTREE_1 AND ENTREE_2)==1
+etat_1:M,ACTION_2=ENTREE3 OR ENTREE4;           //   ACTION_2 mémorise la valeur de (ENTREE3 OR ENTREE4)
+etat_2:ACTION_NON_MEMORISEE=ENTREE2:S,ACTION_1; //   ACTION_NON_MEMORISEE recopie la valeur de l'entrée 2 et vaudra 0 hors de cet état
+                                                //   ACTION_1 est mis à 1    
+etat_3:R,ACTION_1=ENTREE_1;                     //   ACTION_1 est mis à 0 si ENTREE_1==1
+etat_4;                                         //   rien... les actions mémorisées ne change pas et les actions non mémorisée sont à 0 par défaut
+etat_5:S,ACTION_1=ENTREE2:R,ACTION_2=ENTREE_2;  //   ACTION_1 est mis à 1 si ENTREE_2==1
+                                                //   ACTION_2 est mis à 0 si ENTREE_2==1
+etat_0->etat_1;
+etat_1->etat_2;
+etat_2->etat_3;
+etat_3->etat_4;
+etat_4->etat_5;
+etat_5->etat_0;
+<</FSM>>
+
+
+
+
+La valeur par défaut au démarrage d'une action mémorisée est 0 mais celle-ci peut être réglée par un état transitoire d'initialisation ou reset synchrone ou asynchrone (décrits plus loin).
+
+
+===Actions sur transition===
+
+Les différentes actions peuvent aussi être effectuées sur transition, ainsi le modèle précédent peut être complété:
+
+
+<<FSM ex_action_transition.fsm>>
+etat_0;
+etat_1:M,ACTION_2=ENTREE3 OR ENTREE4;           //   ACTION_2 mémorise la valeur de (ENTREE3 OR ENTREE4)
+etat_2:ACTION_NON_MEMORISEE=ENTREE2:S,ACTION_1; //   ACTION_NON_MEMORISEE recopie la valeur de l'entrée 2 et vaudra 0 hors de cet 
+etat_3:R,ACTION_1=ENTREE_1;                     //   ACTION_1 est mis à 0 si ENTREE_1==1
+etat_4;                                         //   rien... les actions mémorisées ne change pas et les actions non mémorisée sont à 0 par défaut
+etat_5;
+etat_0->etat_1;                                                     //transition inconditionnelle
+etat_1->etat_2?IN2 AND NOT IN1:R_ACTION_1=ENTREE_1 AND ENTREE_2;    //transition si (IN2 AND NOT IN1)==1, alors ACTION_1 mis à 0 si (ENTREE_1 AND ENTREE_2)==1
+etat_2->etat_3;
+etat_3->etat_4:S,ACTION_1=ENTREE2;                                  //   ACTION_1 est mis à 1 si ENTREE_2==1;
+etat_4->etat_5;
+etat_5->etat_0;
+<</FSM>>
+  
+
+===NOTABENE sur les actions===
 
 Mauvaise façon de faire: action sur transition -> warning
+
 <<FSM ex_action_condition_bad.fsm>>
 1->1?INPUT:OUTPUT;
 <</FSM>>
 
 Bonne facon 
 <<FSM ex_action_condition_good.fsm>>
-1:INPUT=OUTPUT;
+1:OUTPUT=INPUT;
 <</FSM>>
-
-
- 
-===Actions sur état===
-<<FSM ex_etat2.fsm
-//définition de 3 états
-etat_0;     //dans cet état, le système fait...
-etat_1;     //dans cet état, le système fait...
-etat_2;     //dans cet état, le système fait...
-<</FSM>>
-
-
-===Actions sur transition===
 
 
 
 ====Utilisation Avancée====
-===Notion de priorité entre les transitions===
+
+==Remise à zéro synchrone ou transition indifférenciée==
+
+permet d'imposer l'activation d'un certain état sans condition sur l'état actuellement actif de la machine à état.
+
+condition obligatoire, entrée ou expression d'entrées
+ 
 
 
-sreset> t
+syntaxe : -> nom_etat_destination?condition;
 
-inhibition
+Avec action:
+syntaxe : -> nom_etat_destination?condition: ACTION;
 
 
-===Actions mémorisées===
-M , S et R
+Il peut y avoir plusieurs de ces transitions, éventuellement vers un même état. Dans le cas de plusieurs de ces transitions vers un même état, la priorité peut être définie comme pour les transitions standard. Ceci peut être mis à profit pour effectuer des actions différentes en fonction de différentes conditions.
 
-sur état et sur tansition
+syntaxe : -> nom_etat_destination*priorite?condition: ACTION;
 
-valeur par défaut au démarrage =0 peut être réglée par un état transitoire d'init ou reset asynchrone (plus bas)
 
-===Réinitialisation synchrone===
+<<FSM ex_sreset.fsm>>
+//définition de 3 états et des actions correspondantes
+etat_0;     
+etat_1;        
+etat_2;   
+etat_0->etat_1;
+etat_1->etat_2;
+etat_2->etat_3; 
+->etat_0?SRESET_1;                         	//Retour à etat_0 dès lors que SRESET_1 est active, pas d'action
+->etat_2*1?SRESET_2=ENTREE_1:ACTION_1;          //Retour à etat_2 dès lors que SRESET2=ENTREE_1, en réalisant l'action ACTION_1
+->etat_2*2?SRESET_3:M,ACTION_2=ENTREE_2;	//Retour à etat_2 dès lors que SRESET3, en mémorisant sur l'action ACTION_2 la valeur de ENTREE_2 UNIQUEMENT SI SRESET2 différent de ENTREE_1
+<</FSM>>
 
-Condition et action
+
+
 ==Notion de priorité sur les transitions standard==
+Les transitions indifférenciées sont TOUJOURS plus prioritaire que les transitions standard (même si des niveaux de priorités indiquant le contraires sont spécifiés dans le modèle, raison pour laquelle les couleurs utilisées pour indiquer les niveaux de priorité sont différentes). 
+Donc non seulement, à 
 inhibe les actions sur état et sur transition quand la condition de reset est valide
 
 ===Réinitialisation asynchrone===
 
+Par défaut, l'entrée de réinitialisation asynchrone est ARAZB active à 0.
+
+L'état initial par défaut de la machine à état peut être redefinit ainsi:. 
+Syntaxe:  =>etat?ENTREE,VAL;
+
+avec ENTREE le nom d'une entrée et VAL la valeur de l'entrée pour déclencher la remise à 0 asynchrone (ne pas utiliser d'expression complexe mais uniquement 0 ou 1).
+
+Il doit n'y avoir qu'une seule condition de réinitialisation asynchrone vers un unique état.
+
+Il est possible de définir la valeur des sorties mémorisées lors d'une réinitialisation asynchrone en utilisant la syntaxe suivante 
+Syntaxe:  =>etat?ENTREE,VAL: NOM_SORTIE1=VAL_1...;
+
+
+<<FSM ex_areset.fsm>>
+etat_0;     
+etat_1;        
+etat_2;   
+etat_0->etat_1;
+etat_1->etat_2;
+etat_2->etat_0; 
+=>etat_1?CLR,1: sortie4=1:sortie1=IN3; //redéfinit l'entree de réinitialisation asynchrone à CLR, active à 1, qui ramène la machine à état dans l'état_1 
+                                       //sortie4 prend la valeur 1 lors de la réinitialisation asynchrone
+                                       //sortie1 prend la valeur de l'entrée IN3 lors de la réinitialisation asynchrone (peut poser problème sur certaines architecture de FPGA, vérifier le résultat de la synthèse)
+<</FSM>>
+
+===Redéfinition de l'horloge===
+Le nom du signal d'horloge utilisé pour cadencer la machine à états peut être redéfini avec la syntaxe
+Syntaxe: /NOM_SIGNAL;
+
+
+<<FSM ex_clock.fsm>>
+etat_0->etat_1; 
+/HORLOGE;          //redéfinit le nom du signal d'horloge à HORLOGE
+<</FSM>>
+
+Si l'on souhaite horloge active sur front descendant sur FPGA, il faudra connecter l'entrée d'horloge du composant machine à état à un signal déphasé de 180° issus d'un bloc générateur d'horloge. Ce paramètre n'est donc pas pris en compte dans le modèle de machine à état lui même.
 
 
 ===Actions toujours vraies===
+Il est possible en plus des actions sur état et sur transition de définir des actions toujours vraies
 
-et machine à état sans état!
+Syntaxe:  %ACTION...;
+
+attention si action également utilisé dans des états ou des conditions
+
+
+
+TODO: non il y a un probleme avec la sortie 7///
+<<FSM ex_regularly.fsm>>
+etat_0;  
+%I,sortie7=entree2;         //   sortie7 active si entree2 vrai
+etat_1: sortie7;            //   mais sortie 7 active aussi dans etat_1 sans avoir besoin d'entree2
+etat_2;   
+etat_0->etat_1;
+etat_1->etat_2: R, sortie8; //   mise à 0 de sortie8 sur cette transition
+etat_2->etat_3; 
+%I,sortie6;                 //   sortie6 active toujours
+%S,sortie8=entree3;         //   Mise à 1 de la sortie 8 conditionnée par entree3 (voir plus bas les règles de priorité du set sur le reset)
+%M,sortie5=entree4;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
+<</FSM>>
+ 	
+
+===Machine à état sans état===
+
+Il est possible de définir un modèle sans aucun état, uniquement composée d'actions toujours vraies:
+
+<<FSM ex_regularly_only.fsm>>
+%I,sortie6;                 //   sortie6 active toujours
+%I,sortie2=entree1;         //   sortie 2 recopie entree1  
+%S,sortie5=entree2;         //   Mise à 1 de la sortie 5 conditionnée par entree2 (voir plus bas les règles de priorité du set sur le reset)
+%R,sortie5=entree3;         //   Sinon mise à 0 de la sortie 5 conditionnée par entree3 (voir plus bas les règles de priorité du set sur la mémorisation)
+%M,sortie5=entree4;         //   Sinon mémorisation de la valeur de entree4 sur la sortie 5
+<</FSM>>
+
+===Sortie STATE_NUMBER===
+Une sortie STATE_NUMBER est automatiquement générée afin de permettre le débogage de la machine à état. Cette sortie reflette à chaque instant l'état courant de la machine à état. La sortie est représentée sur une taille de bus adaptée au codage en code binaire naturel des différents états (dans l'ordre alphanumérique de leurs noms)
+
+
+TODO: définir une taille de bus fixe
+
+===Ordre de priorités pour les actions===
+
+priority= regularly > reset transition >  transition > state
+
+pour les actions mémorisées, ordre de priorité plus fort que le classement précédent (qui reste valide pour un même type d'opération)
+asychrone >  set > reset > mémorisation
+
+
+
+===utilisation des sorties mémorisées comme entrées===
+TODO:
+réalisation de registre à décalage?
+%M,sortie5=entree4;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
+%M,sortie6=entree5;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
+///
 
 
 ===Spécifications via Pragma===
@@ -317,6 +546,7 @@ récupérer des listes dans le fichier FsmProcesss.java....
 ===Contraintes sur le modèle===
 récupérer de toutes les vérifications que je fais dans le code.
 
+====génération des différents fichiers====
 
 
 ====Paramètres de l'exécutable====
