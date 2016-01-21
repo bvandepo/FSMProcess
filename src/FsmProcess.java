@@ -593,7 +593,7 @@ public class FsmProcess {
 		 */
  
 
-		// TODO: modifier pour avoir des actions à 1 par defaut
+	
 
 		// TODO: pour les comparaisons de valeurs sur des bus d'entrée, utiliser
 		// une syntaxe particulière (ajouter à la grammaire) puis générer dans
@@ -860,8 +860,8 @@ public class FsmProcess {
 						bufLogError.append("Error: Actions ");
 						bufLogError.append(ar.name);
 						bufLogError.append("  is defined as a repeatedly action and also on states or transitions. This is forbidden.\n");
+						modelOk = false;
 					}
-					modelOk = false;
 				}
 			}
 		}
@@ -1052,8 +1052,8 @@ public class FsmProcess {
 		if (comment)
 			bufVhdl.append("--");
 		bufVhdl.append("                   else \"");
-		bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(fsm.states.size())).replace(" ", "1")); //all at '1'
-		bufVhdl.append("\";\n");
+		bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(fsm.states.size())).replace(" ", "1").replace("0", "1")); //all at '1'
+		bufVhdl.append("\";   -- coding for error\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
@@ -1061,16 +1061,16 @@ public class FsmProcess {
 		bufVhdl.append("port (\n");
 		bufVhdl.append("		");
 		bufVhdl.append(fillStringWithSpace2(fsm.clkSignalName, Input.longestName));
-		bufVhdl.append(" : in  std_logic;\n");
+		bufVhdl.append(" : in   std_logic;\n");
 		bufVhdl.append("		");
 		bufVhdl.append(fillStringWithSpace2(fsm.aResetSignalName, Input.longestName));
-		bufVhdl.append(" : in  std_logic");
+		bufVhdl.append(" : in   std_logic");
 		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
 			bufVhdl.append(";\n");
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
 			bufVhdl.append("		");
 			bufVhdl.append(fillStringWithSpace2("STATE_NUMBER", Input.longestName));
-			bufVhdl.append(" : out std_logic_vector( ");
+			bufVhdl.append(" : out  std_logic_vector( ");
 			bufVhdl.append(fsm.numberOfBitsForStates - 1);
 			bufVhdl.append(" downto 0)");
 			if ((fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
@@ -1080,7 +1080,7 @@ public class FsmProcess {
 		for (int n = 0; n < fsm.hmapInput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.inputs.get(n).paddedName);
-			bufVhdl.append(" : in  std_logic");
+			bufVhdl.append(" : in   std_logic");
 			if ((n != fsm.hmapInput.size() - 1) || ((fsm.hmapOutput.size() > 0)))
 				bufVhdl.append(";\n");
 		}
