@@ -48,7 +48,7 @@ transition_action :  (action_type ',')? action_id ('=' action_expression)? ;
 action_type : 'R' | 'S' | 'M' | 'I' | 'F';
 
 transition   	  :  id '->' id ('*'transition_priority)? ('?' condition)? (':' transition_action)* ';'   ;         	//transition (with  action(s)) 
-reset_transition  :   '->' id ('*'reset_transition_priority)? ('?' condition)? (':' transition_action)* ';'   ;         	//transition (with  action(s)) 
+reset_transition  :   '->' id ('*'reset_transition_priority)? ('?' condition) (':' transition_action)* ';'   ;         	//transition (with  action(s)), the condition is mandatory for reset transition
 
 
 transition_priority: NUMBER;

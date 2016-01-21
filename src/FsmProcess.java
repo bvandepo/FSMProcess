@@ -568,6 +568,9 @@ public class FsmProcess {
 
 		// EASY TODOS:
 
+		// TODO: catch error from the parser:
+		// and stop here if error!!!!
+
 		// DOC DOT: http://www.graphviz.org/Documentation/dotguide.pdf
 		// graphviz.org/Documentation.php
 		// http://www.graphviz.org/doc/info/lang.html
@@ -591,9 +594,6 @@ public class FsmProcess {
 		 * 
 		 * Whitespace : [ \t]+ -> skip ;
 		 */
- 
-
-	
 
 		// TODO: pour les comparaisons de valeurs sur des bus d'entrée, utiliser
 		// une syntaxe particulière (ajouter à la grammaire) puis générer dans
@@ -620,11 +620,10 @@ public class FsmProcess {
 		// configurable through pragma
 
 		// TODO: que faire quand une action sur état est incompatible avec une
-		// action sur une transition émanant de cet état???
-
-		// TODO: passer l'expression pour les sorties I et M à gauche du when
-		// (permettra gestion de bus) et regler la valeur par defaut à others 0
-		// si bus..
+		// action sur une transition émanant de cet état??? -> afficher erreur
+		// ou warning
+		// -->in this release, priority= regularly > reset transition >
+		// transition > state
 
 		// TODODOC: dans la doc sur les (reset) transitions, bien indiquer que
 		// l'ordre de définition ne définit en rien les priorités (pour les
@@ -1052,7 +1051,8 @@ public class FsmProcess {
 		if (comment)
 			bufVhdl.append("--");
 		bufVhdl.append("                   else \"");
-		bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(fsm.states.size())).replace(" ", "1").replace("0", "1")); //all at '1'
+		bufVhdl.append(String.format("%" + Integer.toString(fsm.numberOfBitsForStates) + "s", Integer.toBinaryString(fsm.states.size()))
+				.replace(" ", "1").replace("0", "1")); // all at '1'
 		bufVhdl.append("\";   -- coding for error\n");
 	}
 
@@ -1296,7 +1296,6 @@ public class FsmProcess {
 			// else
 			// bufVhdl.append("   if ( ");
 			bufVhdl.append("------------------------------standard transitions---------------------\n");
-
 			bufVhdl.append("    case current_state is\n");
 			// pour chaque état, il peut y avoir plusieurs transitions, la
 			// première
@@ -1464,37 +1463,62 @@ public class FsmProcess {
 					bufVhdl.append(fillStringWithSpace2("", Output.longestName - fsm.outputs.get(n).name.length()));
 					bufVhdl.append("  <=  ");
 					// look for actions in the fsm that deals with this output
-					for (int m = 0; m < fsm.states.size(); m++) {
-						// ////////////////////action on
-						// state//////////////////////
-						int nbActionInThatState = fsm.states.get(m).attachedActions.size();
-						if (nbActionInThatState != 0) {
-							for (int l = 0; l < nbActionInThatState; l++) {
-								Action a = fsm.states.get(m).attachedActions.get(l);
+					// ////////////////////repeatedly action from any
+					// state//////////////////////
+					int nbRepeatedlyAction = fsm.repeatedlyActions.size();
+					for (int j = 0; j < nbRepeatedlyAction; j++) {
+						Action a = fsm.repeatedlyActions.get(j);
+						if (a != null) {
+							if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
+								if ((!a.expression.equals("")) && (cptActionType != 3)) {
+									// if there is an expression
+									bufVhdl.append(" ( ");
+									bufVhdl.append(a.expression);
+									bufVhdl.append(" ) ");
+								} else {
+									bufVhdl.append(" '1' ");
+								}
+								// this action is always true
+								bufVhdl.append("when ( true)   else  \n");
+								bufVhdl.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
+							}
+						}
+					}
+					// ////////////////////action on reset transition from any
+					// state//////////////////////
+					int nbResetTransition = fsm.resetTransitions.size();
+					for (int j = 0; j < nbResetTransition; j++) {
+						ResetTransition rt = fsm.resetTransitions.get(j);
+						int nbActionInThatResetTransition = rt.attachedActions.size();
+						if (nbActionInThatResetTransition != 0) {
+							for (int l = 0; l < nbActionInThatResetTransition; l++) {
+								Action a = rt.attachedActions.get(l);
 								if (a != null) {
 									if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
-										// if there is an expression
 										if ((!a.expression.equals("")) && (cptActionType != 3)) {
+											// if there is an expression
 											bufVhdl.append(" ( ");
 											bufVhdl.append(a.expression);
 											bufVhdl.append(" ) ");
 										} else {
 											bufVhdl.append(" '1' ");
 										}
-										bufVhdl.append("when ( (current_state = ");
-										bufVhdl.append("state_");
-										bufVhdl.append(fsm.states.get(m).name);
-										bufVhdl.append(") ");
-										if (fsm.resetTransitionInhibatesActionsOnStates == true)
-											bufVhdl.append(a.condition);
-										bufVhdl.append(")   else  --action on state ");
-										bufVhdl.append(fsm.states.get(m).name);
-										bufVhdl.append("\n");
+										// rt.conditionWithPriorities should
+										// be!='1' by
+										// construction
+										bufVhdl.append("when ( ( ");
+										bufVhdl.append(rt.conditionWithPriorities);
+										bufVhdl.append(") = \'1\' )");
+										bufVhdl.append("   else --action on reset transition to state ");
+										bufVhdl.append(rt.destination);
+										bufVhdl.append(" \n");
 										bufVhdl.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
 									}
 								}
 							}
 						}
+					}
+					for (int m = 0; m < fsm.states.size(); m++) {
 						// ////////////////////action on transition from this
 						// state//////////////////////
 						int nbTransitionInThatState = fsm.states.get(m).transitionsFromThisState.size();
@@ -1541,59 +1565,34 @@ public class FsmProcess {
 								}
 							}
 						}
-					}
-					// ////////////////////action on reset transition from any
-					// state//////////////////////
-					int nbResetTransition = fsm.resetTransitions.size();
-					for (int j = 0; j < nbResetTransition; j++) {
-						ResetTransition rt = fsm.resetTransitions.get(j);
-						int nbActionInThatResetTransition = rt.attachedActions.size();
-						if (nbActionInThatResetTransition != 0) {
-							for (int l = 0; l < nbActionInThatResetTransition; l++) {
-								Action a = rt.attachedActions.get(l);
+						// ////////////////////action on
+						// state//////////////////////
+						int nbActionInThatState = fsm.states.get(m).attachedActions.size();
+						if (nbActionInThatState != 0) {
+							for (int l = 0; l < nbActionInThatState; l++) {
+								Action a = fsm.states.get(m).attachedActions.get(l);
 								if (a != null) {
 									if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
+										// if there is an expression
 										if ((!a.expression.equals("")) && (cptActionType != 3)) {
-											// if there is an expression
 											bufVhdl.append(" ( ");
 											bufVhdl.append(a.expression);
 											bufVhdl.append(" ) ");
 										} else {
 											bufVhdl.append(" '1' ");
 										}
-										// rt.conditionWithPriorities should
-										// be!='1' by
-										// construction
-										bufVhdl.append("when ( ( ");
-										bufVhdl.append(rt.conditionWithPriorities);
-										bufVhdl.append(") = \'1\' )");
-										bufVhdl.append("   else --action on reset transition to state ");
-										bufVhdl.append(rt.destination);
-										bufVhdl.append(" \n");
+										bufVhdl.append("when ( (current_state = ");
+										bufVhdl.append("state_");
+										bufVhdl.append(fsm.states.get(m).name);
+										bufVhdl.append(") ");
+										if (fsm.resetTransitionInhibatesActionsOnStates == true)
+											bufVhdl.append(a.condition);
+										bufVhdl.append(")   else  --action on state ");
+										bufVhdl.append(fsm.states.get(m).name);
+										bufVhdl.append("\n");
 										bufVhdl.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
 									}
 								}
-							}
-						}
-					}
-					// ////////////////////repeatedly action from any
-					// state//////////////////////
-					int nbRepeatedlyAction = fsm.repeatedlyActions.size();
-					for (int j = 0; j < nbRepeatedlyAction; j++) {
-						Action a = fsm.repeatedlyActions.get(j);
-						if (a != null) {
-							if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
-								if ((!a.expression.equals("")) && (cptActionType != 3)) {
-									// if there is an expression
-									bufVhdl.append(" ( ");
-									bufVhdl.append(a.expression);
-									bufVhdl.append(" ) ");
-								} else {
-									bufVhdl.append(" '1' ");
-								}
-								// this action is always true
-								bufVhdl.append("when ( true)   else  \n");
-								bufVhdl.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
 							}
 						}
 					}
