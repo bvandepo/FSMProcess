@@ -389,15 +389,13 @@ Bonne facon
 
 ==Remise à zéro synchrone ou transition indifférenciée==
 
-permet d'imposer l'activation d'un certain état sans condition sur l'état actuellement actif de la machine à état.
+Cette fonctionnalité permet d'imposer l'activation d'un certain état sans condition sur l'état précédemment actif de la machine à état.
 
-condition obligatoire, entrée ou expression d'entrées
+La présence d'un condition est obligatoire pour une telle transition, elle peut être basée sur une entrée ou une expression d'entrées
  
-
-
 syntaxe : -> nom_etat_destination?condition;
 
-Avec action:
+Il es bien sûr possible d'attacher des actions sur une telle transition:
 syntaxe : -> nom_etat_destination?condition: ACTION;
 
 
@@ -524,10 +522,20 @@ réalisation de registre à décalage?
 %M,sortie6=entree5;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
 ///
 
+seulement sur des sorties mémorisées
+
+<<FSM ex_buffered_output.fsm>>
+2->3:S,BUFFER1=ENTREE2;
+3->1?BUFFER1 :OUT2;
+1->2:R,BUFFER1=ENTREE1;
+<</FSM>>
 
 ===Spécifications via Pragma===
 ==Indiquer taille de bus==
 
+==Autoriser l'utilisation de sorties dans les conditions==
+
+ optionnel; permet de passer de ou à buffer
 
 ===Inclusions de code via Pragma===
 
@@ -551,11 +559,14 @@ récupérer de toutes les vérifications que je fais dans le code.
 
 ====Paramètres de l'exécutable====
 
-choix compacité du graphe
 
-arret sur erreur critique ou non
+-i : ignore les erreurs critiques liées à la compilation du modèle et continue la génération des fichiers
 
-choix des simplifications de modele par le checker
+-f nom_fichier  : indique le nom du fichier d'entrée
+
+TODO: choix compacité du graphe
+
+TODO: choix des simplifications de modele par le checker
  
 
 
