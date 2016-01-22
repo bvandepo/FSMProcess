@@ -395,7 +395,7 @@ La présence d'un condition est obligatoire pour une telle transition, elle peut
  
 syntaxe : -> nom_etat_destination?condition;
 
-Il es bien sûr possible d'attacher des actions sur une telle transition:
+Il est bien sûr possible d'attacher des actions sur une telle transition:
 syntaxe : -> nom_etat_destination?condition: ACTION;
 
 
@@ -530,6 +530,8 @@ seulement sur des sorties mémorisées
 1->2:R,BUFFER1=ENTREE1;
 <</FSM>>
 
+
+
 ===Spécifications via Pragma===
 ==Indiquer taille de bus==
 
@@ -544,6 +546,17 @@ seulement sur des sorties mémorisées
 ===Génération de modèle par programme===
 
 ====Exemples d'applications====
+tiré de exam_AS: 
+
+<<FSM ex_counter_command.fsm>>
+0:encpt;
+2:encpt:udcpt;
+0->1?entree1;
+1->0?entree2;
+1->2?not entree2:sloadcpt:ecpt3:ecpt2:ecpt1:ecpt0;
+2->0?(NOT QCPT3) AND (NOT QCPT2) AND (NOT QCPT1) AND (NOT QCPT0):FIN;
+<</FSM>>
+
 
 ====Mots réservés====
 
