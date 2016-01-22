@@ -67,8 +67,10 @@ action_expression:  element ( element)*  ;
 
 operators :  'and' | 'or' | 'xor' | 'not' | 'xnor' |  'AND' | 'OR' | 'XOR' | 'NOT' | 'XNOR' | '+' | '-' | '*' | '/' | '==' | '!=' ; //to complete with all needed operators 
 
-element: operators  | constant | input;
+element: operators  | constant | input | parenthesis;
 
+parenthesis : '(' | ')' ;
+	 
 constant: NUMBER ;
 
 input: id;
