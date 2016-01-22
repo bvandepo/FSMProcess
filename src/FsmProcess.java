@@ -568,6 +568,21 @@ public class FsmProcess {
 
 		// EASY TODOS:
 
+		// TODO: add xilinx synthesis in command line to test the generated vhd
+		// files automatically
+
+		// TODO: check buffered output:
+		/*
+		 * Optimizing unit <test> ... WARNING:Xst:1710 - FF/Latch <BUFFER1>
+		 * (without init value) has a constant value of 0 in block <test>. This
+		 * FF/Latch will be trimmed during the optimization process.
+		 * WARNING:Xst:1896 - Due to other FF/Latch trimming, FF/Latch
+		 * <current_state_FSM_FFd1> has a constant value of 0 in block <test>.
+		 * This FF/Latch will be trimmed during the optimization process.
+		 * INFO:Xst:3203 - The FF/Latch <current_state_FSM_FFd2> in Unit <test>
+		 * is the opposite to the following FF/Latch, which will be removed :
+		 * <current_state_FSM_FFd3>
+		 */
 		// TODO: effacer les fichiers de sortie en début du programme pour qu'en
 		// cas d'échec, on ne pense pas à tort que les anciens fichiers sont les
 		// nouveaux
@@ -1250,12 +1265,21 @@ public class FsmProcess {
 			// ////////////////listing of possible values for state
 			// names//////////////////
 			bufVhdl.append("type fsm_state is (");
+			// print the asynchronous reset first, ISE needs it to code it state
+			// 0 and not emit a warning about it.
+			bufVhdl.append("state_");
+			bufVhdl.append(fsm.resetAsynchronousState.name);
+			if (numberOfStates > 1)
+				bufVhdl.append(", ");
+			// print the others states names
 			for (int n = 0; n < numberOfStates; n++) {
-				// prefix state name with state_
-				bufVhdl.append("state_");
-				bufVhdl.append(fsm.states.get(n).name);
-				if (n != numberOfStates - 1)
-					bufVhdl.append(", ");
+				if (!fsm.states.get(n).name.equalsIgnoreCase(fsm.resetAsynchronousState.name)) {
+					// prefix state name with state_
+					bufVhdl.append("state_");
+					bufVhdl.append(fsm.states.get(n).name);
+					if (n != numberOfStates - 1)
+						bufVhdl.append(", ");
+				}
 			}
 			bufVhdl.append(");\n");
 			bufVhdl.append("signal current_state, next_state : fsm_state;\n");
