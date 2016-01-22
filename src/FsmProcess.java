@@ -568,11 +568,20 @@ public class FsmProcess {
 
 		// EASY TODOS:
 
+		// TODO: effacer les fichiers de sortie en début du programme pour qu'en
+		// cas d'échec, on ne pense pas à tort que les anciens fichiers sont les
+		// nouveaux
+
 		// TODO: promouvoir des sorties mémorisée en BUFFER si besoin pour
 		// pouvoir utiliser leur valeur en tant que condition
 
 		// TODO: catch error from the parser:
 		// and stop here if error!!!!
+
+		// TODO: definition de constante (bit/valeurs)
+
+		// TODO: utilisation de sorties dans les conditions et expressions
+		// (buffer)
 
 		// DOC DOT: http://www.graphviz.org/Documentation/dotguide.pdf
 		// graphviz.org/Documentation.php
@@ -694,6 +703,73 @@ public class FsmProcess {
 		}
 		if (fsm.numberOfResetAsynchronousDefinitions > 1)
 			bufLogWarning.append("Warning:   Asynchronous reset has been redefined more than one time...\n");
+
+		// check that the action on a same output are all compatible and update
+		// the memorized field of outputs
+		for (int k = 0; k < numberOfActionsTotal; k++) {
+			Action a = fsm.actions.get(k);
+			if (!a.type.equals("F")) // don't care about function call, that are
+										// not relevant here
+			{
+				Output out = fsm.getOutputFromName(a.name);
+				// is it the first time this output is encountered?
+				if (out.type == null) {
+					out.type = a.type;
+					if (a.type.equals("I"))
+						out.memorized = false;
+					else if ((a.type.equals("R")) || (a.type.equals("S")) || (a.type.equals("M")))
+						out.memorized = true;
+				} else // check that the action is compatible with the output
+				{
+					if ((a.type.equals("I") && out.memorized) || (a.type.equals("R") && !out.memorized)
+							|| (a.type.equals("S") && !out.memorized) || (a.type.equals("M") && !out.memorized)) {
+						bufLogError.append("Error: Incompatible actions on ");
+						bufLogError.append(a.name);
+						bufLogError.append("   type: ");
+						bufLogError.append(a.type);
+						bufLogError.append("    expression: ");
+						bufLogError.append(a.expression);
+						bufLogError.append("    has already been detected as ");
+						if (out.memorized == false)
+							bufLogError.append("non ");
+						bufLogError.append("memorized\n");
+						modelOk = false;
+					}
+				}
+			}
+		}
+		// Promote outputs to buffered if they appears also as input, then
+		// remove them from the input list
+		// //////////////////////////////
+
+		// TODO make fsm.bufferedOutputsAllowed configurable through pragma
+		fsm.bufferedOutputsAllowed = true;
+		if (fsm.bufferedOutputsAllowed) {
+			for (int m = 0; m < numberOfOutputs; m++) {
+				Output o = fsm.outputs.get(m);
+				String name = o.name;
+				if (fsm.hmapInput.containsKey(name)) {
+					if (o.memorized == false) {
+						bufLogError.append("Critical Error :   The use of the NON memorized output ");
+						bufLogError.append(name);
+						bufLogError.append(" is forbidden in conditions or expression.\n");
+						modelOk = false;
+					} else {
+						Input i = fsm.hmapInput.get(name);
+						fsm.inputs.remove(i);
+						fsm.hmapInput.remove(i.name);
+						numberOfInputs--;
+						o.isBuffer = true;
+						bufLogInfo.append("Info:   Memorized output ");
+						bufLogInfo.append(name);
+						bufLogInfo
+								.append(" has been promoted to buffer because it is used in conditions or expression. So it is also removed from the list of inputs.\n");
+					}
+				}
+			}
+		}
+		// //////////////////////////////
+
 		// check if inputs/outputs/states names are allowed, "in" and "out" are
 		// forbidden as they are reserved keyword of vhdl
 		// also other verifications that there could not be misleading between
@@ -723,7 +799,7 @@ public class FsmProcess {
 			modelOk &= fsm.checkIfNameIsClock(name, type);
 		}
 
-		// Detect transitions from same a state to itself
+		// Detect transitions from a state to itself
 		for (int n = 0; n < numberOfTransitions; n++) {
 			Transition t1 = fsm.transitions.get(n);
 			if (t1.origin.equals(t1.destination)) {
@@ -820,39 +896,6 @@ public class FsmProcess {
 				bufLogWarning.append("Warning: State ");
 				bufLogWarning.append(s.name);
 				bufLogWarning.append(" is not accessible, a transition to that state should be added\n");
-			}
-		}
-		// check that the action on a same output are all compatible
-		for (int k = 0; k < numberOfActionsTotal; k++) {
-			Action a = fsm.actions.get(k);
-			if (!a.type.equals("F")) // don't care about function call, that are
-										// not relevant here
-			{
-				Output out = fsm.getOutputFromName(a.name);
-				// is it the first time this output is encountered?
-				if (out.type == null) {
-					out.type = a.type;
-					if (a.type.equals("I"))
-						out.memorized = false;
-					else if ((a.type.equals("R")) || (a.type.equals("S")) || (a.type.equals("M")))
-						out.memorized = true;
-				} else // check that the action is compatible with the output
-				{
-					if ((a.type.equals("I") && out.memorized) || (a.type.equals("R") && !out.memorized)
-							|| (a.type.equals("S") && !out.memorized) || (a.type.equals("M") && !out.memorized)) {
-						bufLogError.append("Error: Incompatible actions on ");
-						bufLogError.append(a.name);
-						bufLogError.append("   type: ");
-						bufLogError.append(a.type);
-						bufLogError.append("    expression: ");
-						bufLogError.append(a.expression);
-						bufLogError.append("    has already been detected as ");
-						if (out.memorized == false)
-							bufLogError.append("non ");
-						bufLogError.append("memorized\n");
-						modelOk = false;
-					}
-				}
 			}
 		}
 		// Check repeatedly action are compatible with state and
@@ -1080,16 +1123,16 @@ public class FsmProcess {
 		bufVhdl.append("port (\n");
 		bufVhdl.append("		");
 		bufVhdl.append(fillStringWithSpace2(fsm.clkSignalName, Input.longestName));
-		bufVhdl.append(" : in   std_logic;\n");
+		bufVhdl.append(" : in     std_logic;\n");
 		bufVhdl.append("		");
 		bufVhdl.append(fillStringWithSpace2(fsm.aResetSignalName, Input.longestName));
-		bufVhdl.append(" : in   std_logic");
+		bufVhdl.append(" : in     std_logic");
 		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
 			bufVhdl.append(";\n");
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
 			bufVhdl.append("		");
 			bufVhdl.append(fillStringWithSpace2("STATE_NUMBER", Input.longestName));
-			bufVhdl.append(" : out  std_logic_vector( ");
+			bufVhdl.append(" : out    std_logic_vector( ");
 			bufVhdl.append(fsm.numberOfBitsForStates - 1);
 			bufVhdl.append(" downto 0)");
 			if ((fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
@@ -1099,14 +1142,19 @@ public class FsmProcess {
 		for (int n = 0; n < fsm.hmapInput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.inputs.get(n).paddedName);
-			bufVhdl.append(" : in   std_logic");
+			bufVhdl.append(" : in     std_logic");
 			if ((n != fsm.hmapInput.size() - 1) || ((fsm.hmapOutput.size() > 0)))
 				bufVhdl.append(";\n");
 		}
 		for (int n = 0; n < fsm.hmapOutput.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.outputs.get(n).paddedName);
-			bufVhdl.append(" : out  std_logic");
+			bufVhdl.append(" : ");
+			if (fsm.outputs.get(n).isBuffer)
+				bufVhdl.append("buffer");
+			else
+				bufVhdl.append("out   ");
+			bufVhdl.append(" std_logic");
 			if (n != fsm.hmapOutput.size() - 1)
 				bufVhdl.append(";\n");
 		}
@@ -1229,7 +1277,7 @@ public class FsmProcess {
 				bufVhdl.append("_mem_value : std_logic;\n");
 			}
 		}
-		bufVhdl.append("signal value_one_internal: std_logic := '1';  --signal used internally to ease operation on conditions, to have a std_logic type '1' value\n");
+		bufVhdl.append("signal value_one_internal: std_logic;  --signal used internally to ease operation on conditions, to have a std_logic type '1' value\n");
 		int numberOfResetTransitions = fsm.resetTransitions.size();
 		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
 			if (numberOfResetTransitions > 0) {
@@ -1239,6 +1287,7 @@ public class FsmProcess {
 		// ////////////////let's animate all that stuff...//////////////////
 		bufVhdl.append("---------------------------------------------------------------------------------------\n");
 		bufVhdl.append("begin\n");
+		bufVhdl.append("value_one_internal <='1';\n");
 		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
 			if (numberOfResetTransitions > 0) {
 				bufVhdl.append("-----------------------Combination of sreset signal(s) to inhibate actions on states and/or transitions--------------\n");
@@ -1273,6 +1322,14 @@ public class FsmProcess {
 			for (int n = 0; n < fsm.inputs.size(); n++) {
 				bufVhdl.append(", ");
 				bufVhdl.append(fsm.inputs.get(n).name);
+			}
+			if (fsm.bufferedOutputsAllowed) {
+				for (int n = 0; n < fsm.outputs.size(); n++) {
+					if (fsm.outputs.get(n).isBuffer) {
+						bufVhdl.append(", ");
+						bufVhdl.append(fsm.outputs.get(n).name);
+					}
+				}
 			}
 			bufVhdl.append(")\n");
 			bufVhdl.append("begin\n");
@@ -1699,11 +1756,13 @@ public class FsmProcess {
 	static class Output implements Comparable<Output> {
 		// to store the longest names
 		static int longestName = 12; // to be at least as long as "STATE_NUMBER"
-		String type;
+		String type = "I";
 		String name;
 		String paddedName;
-		Boolean memorized;
+		Boolean memorized = false;
 		String asyncResetExpression = null;
+		Boolean isBuffer = false;// to allow the reuse of memorized outputs as
+									// inputs in conditions and expressions
 
 		public int compareTo(Output o) {
 			Output a = (Output) o;
@@ -1780,6 +1839,10 @@ public class FsmProcess {
 		public String aResetSignalName = "ARAZB"; // caps to be compared with
 													// parsed names
 		public String aResetSignalLevel = "0";
+
+		// global flag to allow the reuse of memorized outputs as inputs in
+		// conditions and expressions
+		public Boolean bufferedOutputsAllowed = false;
 
 		ArrayList<ResetTransition> resetTransitions = new ArrayList<ResetTransition>();
 		ArrayList<State> states = new ArrayList<State>();
@@ -2218,11 +2281,15 @@ public class FsmProcess {
 			String outputName = ctx.children.get(0).getText().toUpperCase();
 			fsm.currentAction.name = outputName;
 			fsm.currentOutput = fsm.getOutputFromName(outputName);
+			// Create the output corresponding to the action if it does not yet
+			// exist
 			if (fsm.currentOutput == null) {
 				Output o = new Output();
-				o.memorized = null; // default, will be defined later in the
-				// analysis
 				o.name = outputName;
+				if (fsm.currentAction.type.equals("M") || fsm.currentAction.type.equals("R") || fsm.currentAction.type.equals("S"))
+					o.memorized = true;
+				else
+					o.memorized = false;
 				fsm.addOutput(outputName, o);
 				fsm.currentOutput = o;
 			}
