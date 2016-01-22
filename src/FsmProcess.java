@@ -570,21 +570,15 @@ public class FsmProcess {
 
 		// TODO: add xilinx synthesis in command line to test the generated vhd
 		// files automatically
- 
+
 		// TODO: effacer les fichiers de sortie en début du programme pour qu'en
 		// cas d'échec, on ne pense pas à tort que les anciens fichiers sont les
 		// nouveaux
-
-		// TODO: promouvoir des sorties mémorisée en BUFFER si besoin pour
-		// pouvoir utiliser leur valeur en tant que condition
 
 		// TODO: catch error from the parser:
 		// and stop here if error!!!!
 
 		// TODO: definition de constante (bit/valeurs)
-
-		// TODO: utilisation de sorties dans les conditions et expressions
-		// (buffer)
 
 		// DOC DOT: http://www.graphviz.org/Documentation/dotguide.pdf
 		// graphviz.org/Documentation.php
@@ -1287,6 +1281,13 @@ public class FsmProcess {
 				bufVhdl.append("signal ");
 				bufVhdl.append(out.name);
 				bufVhdl.append("_mem_value : std_logic;\n");
+				// if the signal is buffered, add the corresponding signal
+				/*
+				 * if (fsm.bufferedOutputsAllowed) { if
+				 * (fsm.outputs.get(n).isBuffer) { bufVhdl.append("signal ");
+				 * bufVhdl.append(fsm.outputs.get(n).name);
+				 * bufVhdl.append("_signal_buffered : std_logic;\n"); } }
+				 */
 			}
 		}
 		bufVhdl.append("signal value_one_internal: std_logic;  --signal used internally to ease operation on conditions, to have a std_logic type '1' value\n");
@@ -1339,6 +1340,7 @@ public class FsmProcess {
 				for (int n = 0; n < fsm.outputs.size(); n++) {
 					if (fsm.outputs.get(n).isBuffer) {
 						bufVhdl.append(", ");
+						//bufVhdl.append("signal_buffered_");
 						bufVhdl.append(fsm.outputs.get(n).name);
 					}
 				}
