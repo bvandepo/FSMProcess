@@ -102,6 +102,18 @@ public class FsmProcess {
 	static FiniteStateMachine fsm = new FiniteStateMachine();
 
 	// static public void processASingleFSM(String fsmBaseName) {}
+	static public void EraseFile(String name) {
+		try {
+			File file = new File(name);
+			if (file.delete()) {
+				System.out.println(file.getName() + " is deleted!");
+			} else {
+				System.out.println("Delete operation is failed.");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 	// ///////////////////////////////////////////////
 
@@ -115,12 +127,8 @@ public class FsmProcess {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4); // file
-																					// location
-																					// and
-																					// name
-																					// without
-																					// extension
+		// file location and name without extension
+		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4); 
 		// extract fsm.name from the fsmInputName file name
 		if (fsmInputName.contains("/")) // it contains a unix based
 										// directory name
@@ -141,6 +149,15 @@ public class FsmProcess {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		// erase old files
+		EraseFile(fsmBaseName.concat(".dot"));
+		EraseFile(fsmBaseName.concat("_pack.vhd"));
+		EraseFile(fsmBaseName.concat(".vhd"));
+		EraseFile(fsmBaseName.concat("_portmap.vhd"));
+		EraseFile(fsmBaseName.concat(".log"));
+		EraseFile(fsmBaseName.concat(".png"));
+
 		FsmLexer lexer = new FsmLexer(input);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		FsmParser parser = new FsmParser(tokens);
@@ -1340,7 +1357,7 @@ public class FsmProcess {
 				for (int n = 0; n < fsm.outputs.size(); n++) {
 					if (fsm.outputs.get(n).isBuffer) {
 						bufVhdl.append(", ");
-						//bufVhdl.append("signal_buffered_");
+						// bufVhdl.append("	signal_buffered_");
 						bufVhdl.append(fsm.outputs.get(n).name);
 					}
 				}
