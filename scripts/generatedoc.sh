@@ -5,7 +5,7 @@ echo ---------------------------------------------------------------
 echo Processing doc.txt
 echo ---------------------------------------------------------------
 echo ----------------------COMPUTING FILE NAMES----------------------
-../bin/FsmProcess.jar ../doc.txt
+../bin/FsmProcess.jar -i -f ../doc.txt
 
 for filename in `ls ../doc_generated/*.fsm`
 do
@@ -25,7 +25,7 @@ echo $pngfile
 echo ----------------------DELETING OLD FILES----------------------
 rm $dotfile $vhdfile
 echo ----------------------RUNNING THE PARSER----------------------
-../bin/FsmProcess.jar $filename
+../bin/FsmProcess.jar -i -f $filename
 echo ----------------------DISPLAY THE DOT CODE----------------------
 cat $dotfile
 echo ----------------------GENERATE THE DOT GRAPH IN PNG----------------------
