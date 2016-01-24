@@ -17,15 +17,18 @@ DOUBLEARROW          : '=>'  ;
 STAR                 : '*'   ;
 
 
-AND         :  'and';
-OR          :  'or' ;
-XNOR        :  'xnor' ;
-XOR         :  'xor' ;
-NOT         : 'not';
-PLUS        : '+' ; 
-MINUS       : '-'; 
-DOUBLEEQUAL : '==';
-NOTEQUAL    : '!=';
+AND         :  'and'  | 'AND';
+OR          :  'or'   | 'OR' ;
+XNOR        :  'xnor' | 'XNOR' ;
+XOR         :  'xor'  | 'XOR';
+NOT         :  'not'  | 'NOT';
+PLUS        :  '+' ; 
+MINUS       :  '-'; 
+DOUBLEEQUAL :  '==';
+NOTEQUAL    :  '!=';
+
+//TODO: TO COMPLETE WITH C AND VHDL OPERATORS, ALSO IN THE PARSER GRAMMAR 
+
 
 R: 'R';
 S: 'S';
