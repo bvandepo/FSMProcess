@@ -624,10 +624,6 @@ public class FsmProcess {
 		// TODO: add xilinx synthesis in command line to test the generated vhd
 		// files automatically
 
-		// TODO: effacer les fichiers de sortie en début du programme pour qu'en
-		// cas d'échec, on ne pense pas à tort que les anciens fichiers sont les
-		// nouveaux
-
 		// TODO: catch error from the parser:
 		// and stop here if error!!!!
 
@@ -673,10 +669,6 @@ public class FsmProcess {
 		// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
 		// et
 		// pour spécifier que des E ou S sont des bus de n bits
-		// TODO: in pragma, allow to fix the number of bits for state_number, so
-		// the interface doesn't change when states are added. Add a check that
-		// the pragma is set high enough...
-
 		// TODO: make Boolean ResetTransitionInhibatesTransitionActions = true;
 		// and Boolean ResetTransitionInhibatesActionsOnStates = true
 		// configurable through pragma
@@ -724,10 +716,10 @@ public class FsmProcess {
 		if (fsm.numberOfBitsForStates == 0) { // not given in the fsm file
 			fsm.numberOfBitsForStates = fsm.numberOfBitsForStatesMax;
 		} else {
-			fsm.numberOfBitsForStatesMax = fsm.numberOfBitsForStates;
 			if (fsm.numberOfBitsForStates < fsm.numberOfBitsForStatesMax) {
 				bufLogWarning
-						.append("Warning:   The specified size for STATE_NUMBER is not high enough to represent all its possible values\n");
+						.append("Warning:   The specified size for STATE_NUMBER is not high enough to represent all its possible values. The value will be truncated to the specified number of bits\n");
+				fsm.numberOfBitsForStatesMax = fsm.numberOfBitsForStates;
 			}
 		}
 		// Do padding
@@ -1987,7 +1979,8 @@ public class FsmProcess {
 
 		public Boolean GenerateNumberOfStateOutput = true;
 		public int numberOfBitsForStates = 0; // default value if not given in
-												// the fsm file
+												// the fsm file, can be set
+												// through pragma
 		public int numberOfBitsForStatesMax; // value computed from the actual
 												// number of state or the given
 												// numberOfBitsForStates it is
@@ -2036,7 +2029,8 @@ public class FsmProcess {
 		// documentation
 		List<String> forbiddenNamesFSM = Arrays.asList("value_one_internal", "not_any_s_reset_internal", "STATE_NUMBER",
 				"#pragma_vhdl_pre_entity{", "#pragma_vhdl_entity{", "#pragma_vhdl_architecture_pre_begin{",
-				"#pragma_vhdl_architecture_post_begin{", "#pragma_vhdl_promote_buffered{", "#pragma_vhdl_demote_to_signal{", "#pragma_vhdl_allow_automatic_buffering", "}#pragma");
+				"#pragma_vhdl_architecture_post_begin{", "#pragma_vhdl_promote_buffered{", "#pragma_vhdl_demote_to_signal{",
+				"#pragma_vhdl_allow_automatic_buffering", "#pragma_vhdl_set_bit_size_for_output_state_number{" , "}#pragma");
 		List<String> forbiddenNamesC = Arrays.asList();
 		List<String> forbiddenNamesVerilog = Arrays.asList();
 
@@ -2576,6 +2570,20 @@ public class FsmProcess {
 		public void enterPragma_vhdl_allow_automatic_buffering(FsmParser.Pragma_vhdl_allow_automatic_bufferingContext ctx) {
 			fsm.bufferedOutputsAllowed = true;
 			bufLogInfo.append("Info: Automatic buffering of outputs used as inputs have been granted through pragma directive.\n");
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterBit_size_for_output_state_number(FsmParser.Bit_size_for_output_state_numberContext ctx) {
+			int value = Integer.parseInt(ctx.children.get(0).getText());
+			if (value > 0 && value < 1000) {
+				fsm.numberOfBitsForStates = value;
+				bufLogInfo.append("Info: The number of bits for current state number visualization has been set to ");
+				bufLogInfo.append(fsm.numberOfBitsForStates);
+				bufLogInfo.append(" through pragma  directive\n");
+			} else {
+				bufLogWarning
+						.append("Warning: The number of bits for current state number visualization set through pragma  directive should be between 1 and 1000\n");
+			}
 		}
 		// ///////////////////////////////////////////////////////////////
 

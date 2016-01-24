@@ -516,9 +516,22 @@ asychrone >  set > reset > mémorisation
 
 
 ===Spécifications via Pragma===
-==Indiquer taille de bus==
+==Indiquer taille du bus pour la visualisation du numéro de l'état en cours==
+Par défaut la  taille du buspour la sortie codant le numéro de l'état en cours est réglée automatiquement mais il est possible d'imposer une valeur fixe, par exemple pour contrôler un afficheur prenant des mots de 4 bits pour afficher en hexadécimal. Ceci est réalisé à l'aide de la commande pragma: 
+Syntaxe: #pragma_vhdl_set_bit_size_for_output_state_number{ NOMBRE_DE_BITS }#pragma 
+ avec NOMBRE_DE_BITS une valeur entre 0 et 1000
 
+En cas de valeur trop faible pour représenter toutes les valeurs nécessaires, un warning sera généré.
+
+
+<<FSM ex_pragma_bit_size_for_output_state_number.fsm>>
+2->3:OUT1;
+3->1?OUT2;
+1->2:OUT3;
+#pragma_vhdl_set_bit_size_for_output_state_number{ 8 }#pragma 
+<</FSM>>
  
+
 
 ==Promotion automatique d'une sortie en buffer==
 Il est possible d'autoriser globalement le fait que dès qu'un terme apparaît en tant qu'entrée et sortie, il puisse être automatiquement combiné en une sortie dite bufferisée, dont la valeur peut être réutilisée en interne.
