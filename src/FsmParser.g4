@@ -14,7 +14,8 @@ line : state
      | repeatedly_action
      | reset_asynchronous
      | clock_definition
-     | pragma_directive
+| pragma_vhdl_pre_entity_directive
+ //    | pragma_directive
      ;
 
 state   :  id ( COLON state_action)* SEMICOLON    ;         	//state (with  action(s))
@@ -78,7 +79,14 @@ id : ID  | NUMBER
 //   ;
 
 
-pragma_directive   : PRAGMA;
+//pragma_directive   : PRAGMA;
+
+
+pragma_vhdl_pre_entity_directive   : PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE 
+				     PRAGMA_WITH_BEGINING_AND_ENDING;
+
+
+
 //pragma_directive   : BEGIN_PRAGMA  END_PRAGMA ; 
 //pragma_directive   : BEGIN_PRAGMA PRAGMADATA END_PRAGMA ; 
 

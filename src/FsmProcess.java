@@ -30,6 +30,9 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 // sudo apt-get install libgetopt-java
 //et ajouter dans referenced Libraries /usr/share/gnu-getopt-1.0.13.jar
 
+//WHEN CHANGES ARE MADE TO THE LEXER OR PARSER GRAMMAR, CALL ant.sh script and 
+//in eclipse press Project -> clean. Then go to Package Explorer->Fsm->fsm  (no its another location....) and press F5 to refresh
+
 //To generate the jar using eclipse:
 //F5 to refresh eclipse project
 //File->export->Java->Runnable JAR file
@@ -2417,34 +2420,38 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 
-		public void exitPragma_directive(FsmParser.Pragma_directiveContext ctx) {
+		public void enterPragma_vhdl_pre_entity_directive(FsmParser.Pragma_vhdl_pre_entity_directiveContext ctx) {
+
 			// simple way to get the pragma
-			String name = ctx.children.get(0).getText();
-			System.out.println(name);
+			String pragma = ctx.children.get(1).getText();
+			if (false) {
+				System.out.println(pragma);
 
-			// DEBUG harder way
-			Token semi = ctx.getStop();
-			int i = semi.getTokenIndex();
-			System.out.print("detected a Pragma_directive at token ");
-			System.out.println(i);
+				// DEBUG harder way
+				Token semi = ctx.getStop();
+				int i = semi.getTokenIndex();
+				System.out.print("detected a Pragma_directive at token ");
+				System.out.println(i);
 
-			// intégralité des tokens
-			// System.out.println(tokens.getText());
-			// the pragma token
-			System.out.println(tokens.get(i));
+				// intégralité des tokens
+				// System.out.println(tokens.getText());
+				// the pragma token
+				System.out.println(tokens.get(i));
 
-			// to localize in the input file for errors
-			System.out.println(tokens.get(i).getLine());
-			System.out.println(tokens.get(i).getCharPositionInLine());
+				// to localize in the input file for errors
+				System.out.println(tokens.get(i).getLine());
+				System.out.println(tokens.get(i).getCharPositionInLine());
 
-			// whats inside token
-			System.out.println(tokens.get(i).getText());
+				// whats inside token
+				System.out.println(tokens.get(i).getText());
 
-			// whats inside token without #pragma{ and #pragma}
-			String pragma = tokens.get(i).getText();
-			String pragmaCleaned = pragma.substring(8, pragma.length() - 8);
+				// whats inside token without #pragma{ and #pragma}
+				pragma = tokens.get(i).getText();
+			}
+			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
 			System.out.println(pragmaCleaned);
 		}
+
 		// ///////////////////////////////////////////////////////////////
 
 	}

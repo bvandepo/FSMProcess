@@ -82,7 +82,14 @@ fragment TAG
    : '<' .*? '>'
    ;
 
-PRAGMA: '#pragma{' SOMECARS  '#pragma}' ; 
+
+PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE:  '#pragma_vhdl_pre_entity' ;
+
+
+PRAGMA_WITH_BEGINING_AND_ENDING: '{' SOMECARS  '}#pragma' ; 
+
+
+// PRAGMA: '#pragma{' SOMECARS  '#pragma}' ; 
 
 //the same rule, but displays pragma mode when matched
 //PRAGMA: '#pragma{' SOMECARS  '#pragma}' {System.out.println(" pragma mode");} ; 
@@ -105,7 +112,7 @@ SOMECARS: ANYCAR  -> channel(PRAGMAS_CHANNEL) ;
 //SOMECARS is a token that contains all the pragma
 //Impossible to attach  action to a fragment
 
-fragment ANYCAR : .*? ;   
+fragment ANYCAR : (.)+? ;   
 //fragment ANYCAR : ('a'..'z' | '\n' | 'r' | ' ' | '0'..'9')* ;
 
 //I need a fragment in order to avoid error "non-fragment lexer rule 'ANYCHARS' can match the empty string"
