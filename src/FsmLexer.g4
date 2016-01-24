@@ -79,8 +79,10 @@ fragment TAG
    : '<' .*? '>'
    ;
 
-PRAGMA: '#pragma{' SOMECARS  '#pragma}' {System.out.println(" pragma mode");} ; 
+PRAGMA: '#pragma{' SOMECARS  '#pragma}' ; 
 
+//the same rule, but displays pragma mode when matched
+//PRAGMA: '#pragma{' SOMECARS  '#pragma}' {System.out.println(" pragma mode");} ; 
 
 Whitespace   :   [ \t]+            -> channel(WHITESPACE_CHANNEL) ;
 WS 	     :[ \t\n\r]+           -> channel(WHITESPACE_CHANNEL) ;
