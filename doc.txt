@@ -555,6 +555,18 @@ Il est possible d'utiliser ce mécanisme pour décrire des comportements plus co
 
  optionnel; permet de passer de ou à buffer
 
+==Promotion automatique d'une sortie en buffer==
+
+
+==Promotion manuelle d'une sortie en buffer==
+
+<<FSM ex_buffered_output_pragma.fsm>>
+1 :OUT2;
+#pragma_vhdl_promote_buffered{ OUT2 , OUT3}#pragma 
+2 : OUT3;
+1->2;
+<</FSM>>
+
 ===Inclusions de code via Pragma===
 
 à l'intérieur des balises, on peut utiliser les mots réservés

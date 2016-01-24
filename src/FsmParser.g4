@@ -18,13 +18,15 @@ line : state
      | pragma_vhdl_entity_directive
      | pragma_vhdl_architecture_pre_begin_directive
      | pragma_vhdl_architecture_post_begin_directive
+     | pragma_vhdl_promote_buffered_directive
+ //    | pragma_vhdl_demote_signal_directive
      ;
 
  
 state   :  id ( COLON state_action)* SEMICOLON    ;         	//state (with  action(s))
 clock_definition: SLASH  input_clock SEMICOLON ;
 input_clock:  id;
-reset_asynchronous:   DOUBLEARROW id (CONDITION condition_reset_asynchronous)? ( SEPARATOR level_reset_asynchronous)?  (COLON action_reset_asynchronous)* SEMICOLON  ;        
+reset_asynchronous:   DOUBLEARROW id (CONDITION condition_reset_asynchronous)? ( COMMA level_reset_asynchronous)?  (COLON action_reset_asynchronous)* SEMICOLON  ;        
 
 level_reset_asynchronous : NUMBER ;
 
@@ -38,10 +40,10 @@ action_reset_asynchronous : action_id_reset_asynchronous  ( EQUAL  action_expres
 action_expression_reset_asynchronous : element ( element)*  ;
  
 
-repeatedly_action : REPEATACTION   (action_type SEPARATOR)? action_id ( EQUAL action_expression)? SEMICOLON ;
+repeatedly_action : REPEATACTION   (action_type COMMA)? action_id ( EQUAL action_expression)? SEMICOLON ;
 
-state_action :  (action_type SEPARATOR)? action_id (EQUAL action_expression)? ;
-transition_action :  (action_type SEPARATOR)? action_id (EQUAL action_expression)? ;
+state_action :  (action_type COMMA)? action_id (EQUAL action_expression)? ;
+transition_action :  (action_type COMMA)? action_id (EQUAL action_expression)? ;
  
 action_type : R|S|M|I|F;
 
@@ -85,14 +87,24 @@ id : ID  | NUMBER
 //pragma_directive   : PRAGMA;
 
 
-pragma_vhdl_pre_entity_directive   : PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE 
-				     PRAGMA_WITH_BEGINING_AND_ENDING;
-pragma_vhdl_entity_directive   : PRAGMA_VHDL_ENTITY_DIRECTIVE 
-				     PRAGMA_WITH_BEGINING_AND_ENDING;
-pragma_vhdl_architecture_pre_begin_directive   : PRAGMA_VHDL_ARCHITECTURE_PRE_BEGIN_DIRECTIVE 
-				     PRAGMA_WITH_BEGINING_AND_ENDING;
-pragma_vhdl_architecture_post_begin_directive   : PRAGMA_VHDL_ARCHITECTURE_POST_BEGIN_DIRECTIVE 
-				     PRAGMA_WITH_BEGINING_AND_ENDING;
+pragma_vhdl_pre_entity_directive              : PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE 
+				                PRAGMA_WITH_BEGINING_AND_ENDING;
+pragma_vhdl_entity_directive                  : PRAGMA_VHDL_ENTITY_DIRECTIVE 
+				                PRAGMA_WITH_BEGINING_AND_ENDING;
+pragma_vhdl_architecture_pre_begin_directive  : PRAGMA_VHDL_ARCHITECTURE_PRE_BEGIN_DIRECTIVE 
+				                PRAGMA_WITH_BEGINING_AND_ENDING;
+pragma_vhdl_architecture_post_begin_directive : PRAGMA_VHDL_ARCHITECTURE_POST_BEGIN_DIRECTIVE 
+				                PRAGMA_WITH_BEGINING_AND_ENDING;
+pragma_vhdl_promote_buffered_directive        : PRAGMA_VHDL_PROMOTE_BUFFERED_DIRECTIVE 
+//                                                LEFT_CURLY_BRACE
+						output_to_promote_buffered (COMMA output_to_promote_buffered)?
+				                PRAGMA_ENDING;
+//  pragma_vhdl_demote_signal_directive           : PRAGMA_VHDL_DEMOTE_SIGNAL_DIRECTIVE 
+//				                PRAGMA_ENDING;
+
+
+
+output_to_promote_buffered: ID   ;
 
 
 

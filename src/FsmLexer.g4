@@ -9,7 +9,7 @@ SEMICOLON            : ';'   ;
 COLON                : ':'   ;
 SLASH                : '/'   ; 
 CONDITION            : '?'   ;
-SEPARATOR            : ','   ;
+COMMA                : ','   ;
 EQUAL                : '='   ;
 REPEATACTION         : '%'   ;
 ARROW                : '->'  ;
@@ -83,13 +83,23 @@ fragment TAG
    ;
 
 
-PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE:  '#pragma_vhdl_pre_entity' ;
-PRAGMA_VHDL_ENTITY_DIRECTIVE :  '#pragma_vhdl_entity' ;
-PRAGMA_VHDL_ARCHITECTURE_PRE_BEGIN_DIRECTIVE :  '#pragma_vhdl_architecture_pre_begin' ;
+PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE               :  '#pragma_vhdl_pre_entity' ;
+PRAGMA_VHDL_ENTITY_DIRECTIVE                   :  '#pragma_vhdl_entity' ;
+PRAGMA_VHDL_ARCHITECTURE_PRE_BEGIN_DIRECTIVE   :  '#pragma_vhdl_architecture_pre_begin' ;
 PRAGMA_VHDL_ARCHITECTURE_POST_BEGIN_DIRECTIVE  :  '#pragma_vhdl_architecture_post_begin' ;
+PRAGMA_VHDL_PROMOTE_BUFFERED_DIRECTIVE         :  '#pragma_vhdl_promote_buffered{' ;
+PRAGMA_VHDL_DEMOTE_SIGNAL_DIRECTIVE            :  '#pragma_vhdl_demote_signal{' ;
 
 
 PRAGMA_WITH_BEGINING_AND_ENDING: '{' SOMECARS  '}#pragma' ; 
+
+
+//LEFT_CURLY_BRACE: '{';
+//RIGHT_CURLY_BRACE: '}';
+
+PRAGMA_ENDING: '}#pragma' ; 
+
+
 
 
 // PRAGMA: '#pragma{' SOMECARS  '#pragma}' ; 

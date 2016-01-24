@@ -618,6 +618,8 @@ public class FsmProcess {
 		// error for which it is not possible to continue
 
 		// EASY TODOS:
+		// TODO: add pragma for dot to colorize some node or arcs and make
+		// animations in gif
 
 		// TODO: add xilinx synthesis in command line to test the generated vhd
 		// files automatically
@@ -662,7 +664,7 @@ public class FsmProcess {
 
 		// TODO; regler les problèmes de fichier unix/windows pour ne pas avoir
 		// à utiliser unix2dos
- 
+
 		// HARD TODOS:
 
 		// TODO: pragma pour enlever des entrees/sorties, changer leur taille
@@ -2514,6 +2516,18 @@ public class FsmProcess {
 			// }
 		}
 
+		// ///////////////////////////////////////////////////////////////
+		public void enterOutput_to_promote_buffered(FsmParser.Output_to_promote_bufferedContext ctx) {
+			String outputName = ctx.children.get(0).getText().toUpperCase();
+			fsm.currentOutput = fsm.getOutputFromName(outputName);
+			if (fsm.currentOutput == null) {
+				Output o = new Output();
+				o.name = outputName;
+				fsm.addOutput(outputName, o);
+				fsm.currentOutput = o;
+				o.isBuffer = true;
+			}
+		}
 		// ///////////////////////////////////////////////////////////////
 
 	}
