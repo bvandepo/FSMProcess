@@ -4,7 +4,6 @@
  *  ***/
 //import java.io.BufferedReader;
 import gnu.getopt.Getopt;
-//import gnu.getopt.LongOpt;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,6 +22,8 @@ import java.util.List;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
@@ -128,7 +129,7 @@ public class FsmProcess {
 				e.printStackTrace();
 			}
 		// file location and name without extension
-		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4); 
+		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4);
 		// extract fsm.name from the fsmInputName file name
 		if (fsmInputName.contains("/")) // it contains a unix based
 										// directory name
@@ -159,11 +160,13 @@ public class FsmProcess {
 		EraseFile(fsmBaseName.concat(".png"));
 
 		FsmLexer lexer = new FsmLexer(input);
+
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		FsmParser parser = new FsmParser(tokens);
 		parser.setBuildParseTree(true);
-		ParseTree tree = parser.file();
+		ParseTree tree = parser.fsmfile();
 		ParseTreeWalker walker = new ParseTreeWalker();
+
 		FunctionListener collector = new FunctionListener();
 		bufVhdl = new StringBuilder();
 		bufDot = new StringBuilder();
@@ -172,12 +175,13 @@ public class FsmProcess {
 		bufLogError = new StringBuilder();
 
 		walker.walk(collector, tree);
+
 		if (checkModel() || fsm.optionsIgnoreErrors)
 		// if ignoreErrors, then display and generate fsm that have errors
 		{
 			generateDot();
 			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot")); //
-			System.out.println(bufDot.toString());
+			// System.out.println(bufDot.toString());
 			generateVhdl();
 			saveToFile(bufVhdl.toString(), fsmBaseName.concat(".vhd"));
 			bufVhdl.setLength(0);
@@ -188,6 +192,7 @@ public class FsmProcess {
 			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_portmap.vhd"));
 			saveToFile(bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n" + bufLogInfo.toString(),
 					fsmBaseName.concat(".log"));
+
 		}
 	}
 
@@ -2148,7 +2153,7 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////////////////////
-	static class FunctionListener extends FsmBaseListener {
+	static class FunctionListener extends FsmParserBaseListener {
 		// ///////////////////////////////////////////////////////////////
 		public void enterReset_asynchronous(FsmParser.Reset_asynchronousContext ctx) {
 			String reset_asynchronous_state_new_name = ctx.children.get(1).getText().toUpperCase();
@@ -2227,6 +2232,13 @@ public class FsmProcess {
 			so.transitionsFromThisState.add(t);
 			fsm.transitions.add(t); // also add it to the global transitions
 									// list
+
+			// DEBUG
+			Token semi = ctx.getStop();
+			int i = semi.getTokenIndex();
+			System.out.print("detected a transition at token ");
+			System.out.println(i);
+
 		}
 
 		// //////////////////////////////////////////////////////////////
@@ -2380,7 +2392,9 @@ public class FsmProcess {
 			}
 			fsm.currentState = s;
 		}
+
 		// ///////////////////////////////////////////////////////////////
+
 	}
 
 	// ///////////////////////////////////////////////////////////////
