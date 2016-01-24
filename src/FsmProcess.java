@@ -193,7 +193,28 @@ public class FsmProcess {
 			saveToFile(bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n" + bufLogInfo.toString(),
 					fsmBaseName.concat(".log"));
 
+			// Execute external program to compute png and display it
+			// http://ydisanto.developpez.com/tutoriels/java/runtime-exec/
+			String cmd = "dot -Tpng " + fsmBaseName.concat(".dot") + " -o " + fsmBaseName.concat(".png");
+			try {
+				Runtime r = Runtime.getRuntime();
+				Process p = r.exec(cmd);
+				p.waitFor();// si l'application doit attendre a ce que ce
+							// process fini
+			} catch (Exception e) {
+				System.out.println("erreur d'execution " + cmd + e.toString());
+			}
+			cmd = "display " + fsmBaseName.concat(".png") + " & ";
+			try {
+				Runtime r = Runtime.getRuntime();
+				Process p = r.exec(cmd);
+				p.waitFor();// si l'application doit attendre a ce que ce
+							// process fini
+			} catch (Exception e) {
+				System.out.println("erreur d'execution " + cmd + e.toString());
+			}
 		}
+
 	}
 
 	// ///////////////////////////////////////////////
