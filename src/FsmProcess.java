@@ -23,7 +23,6 @@ import java.util.List;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
@@ -160,7 +159,8 @@ public class FsmProcess {
 		EraseFile(fsmBaseName.concat(".vhd"));
 		EraseFile(fsmBaseName.concat("_portmap.vhd"));
 		EraseFile(fsmBaseName.concat(".log"));
-		EraseFile(fsmBaseName.concat(".png"));
+		String imageFileName = fsmBaseName.concat(".").concat(fsm.imageFileExtension);
+		EraseFile(imageFileName);
 
 		FsmLexer lexer = new FsmLexer(input);
 
@@ -196,25 +196,30 @@ public class FsmProcess {
 			saveToFile(bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n" + bufLogInfo.toString(),
 					fsmBaseName.concat(".log"));
 
-			// Execute external program to compute png and display it
-			// http://ydisanto.developpez.com/tutoriels/java/runtime-exec/
-			String cmd = "dot -Tpng " + fsmBaseName.concat(".dot") + " -o " + fsmBaseName.concat(".png");
-			try {
-				Runtime r = Runtime.getRuntime();
-				Process p = r.exec(cmd);
-				p.waitFor();// si l'application doit attendre a ce que ce
-							// process fini
-			} catch (Exception e) {
-				System.out.println("erreur d'execution " + cmd + e.toString());
-			}
-			cmd = "display " + fsmBaseName.concat(".png") + " & ";
-			try {
-				Runtime r = Runtime.getRuntime();
-				Process p = r.exec(cmd);
-				p.waitFor();// si l'application doit attendre a ce que ce
-							// process fini
-			} catch (Exception e) {
-				System.out.println("erreur d'execution " + cmd + e.toString());
+			if (fsm.optionsComputeResultImage) {
+				// Execute external program to compute png and display it
+				// http://ydisanto.developpez.com/tutoriels/java/runtime-exec/
+				String cmd = "dot -T" + fsm.imageFileExtension + " " + fsmBaseName.concat(".dot") + " -o " + imageFileName;
+				try {
+					Runtime r = Runtime.getRuntime();
+					Process p = r.exec(cmd);
+					p.waitFor();// si l'application doit attendre a ce que ce
+								// process fini
+				} catch (Exception e) {
+					System.out.println("erreur d'execution " + cmd + e.toString());
+				}
+				if (fsm.optionsDisplayResultImage) {
+					cmd = "display " + imageFileName + " & ";
+					try {
+						Runtime r = Runtime.getRuntime();
+						Process p = r.exec(cmd);
+						p.waitFor();// si l'application doit attendre a ce que
+									// ce
+									// process fini
+					} catch (Exception e) {
+						System.out.println("erreur d'execution " + cmd + e.toString());
+					}
+				}
 			}
 		}
 
@@ -657,7 +662,7 @@ public class FsmProcess {
 
 		// TODO; regler les problèmes de fichier unix/windows pour ne pas avoir
 		// à utiliser unix2dos
-
+ 
 		// HARD TODOS:
 
 		// TODO: pragma pour enlever des entrees/sorties, changer leur taille
@@ -1988,6 +1993,9 @@ public class FsmProcess {
 		public ArrayList<String> outputsOrderedNamesList = new ArrayList<String>();
 
 		public Boolean optionsIgnoreErrors = false;
+		public Boolean optionsDisplayResultImage = false;
+		public Boolean optionsComputeResultImage = false;
+		public String imageFileExtension = "gif";
 
 		List<String> forbiddenNamesVHDL = Arrays.asList("ABS", "ACCESS", "AFTER", "ALIAS", "ALL", "AND", "ARCHITECTURE", "ARRAY", "ASSERT",
 				"ATTRIBUTE", "BEGIN", "BLOCK", "BODY", "BUFFER", "BUS", "CASE", "COMPONENT", "CONFIGURATION", "CONSTANT", "DISCONNECT",
@@ -2000,7 +2008,9 @@ public class FsmProcess {
 		// TODO complete lists
 		// TODO: add methods to generate string that lists the words for the
 		// documentation
-		List<String> forbiddenNamesFSM = Arrays.asList("value_one_internal", "not_any_s_reset_internal", "STATE_NUMBER");
+		List<String> forbiddenNamesFSM = Arrays.asList("value_one_internal", "not_any_s_reset_internal", "STATE_NUMBER",
+				"#pragma_vhdl_pre_entity{", "#pragma_vhdl_entity{",
+				"#pragma_vhdl_architecture_pre_begin{#pragma_vhdl_architecture_post_begin{", "}#pragma");
 		List<String> forbiddenNamesC = Arrays.asList();
 		List<String> forbiddenNamesVerilog = Arrays.asList();
 
@@ -2530,13 +2540,22 @@ public class FsmProcess {
 
 		int c;
 		String arg;
-		Getopt g = new Getopt("FsmProcess", args, "if:");
+		Getopt g = new Getopt("FsmProcess", args, "if:cd");
 		g.setOpterr(false); // We'll do our own error handling
 		while ((c = g.getopt()) != -1)
 			switch (c) {
 			case 'i':
-				System.out.print("Ignore Errors\n");
+				System.out.print(" Option: Ignore Errors\n");
 				fsm.optionsIgnoreErrors = true;
+				break;
+			case 'c':
+				System.out.print(" Option: Compute result image\n");
+				fsm.optionsComputeResultImage = true;
+				break;
+			case 'd':
+				System.out.print(" Option: Compute and Display result image\n");
+				fsm.optionsDisplayResultImage = true;
+				fsm.optionsComputeResultImage = true;
 				break;
 			case 'f':
 				arg = g.getOptarg();
