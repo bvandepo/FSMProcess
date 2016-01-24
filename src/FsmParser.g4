@@ -14,12 +14,19 @@ line : state
      | repeatedly_action
      | reset_asynchronous
      | clock_definition
-     | pragma_vhdl_pre_entity_directive
+     | pragma_directive;
+
+pragma_directive:
+       pragma_vhdl_directive;
+
+pragma_vhdl_directive:
+       pragma_vhdl_pre_entity_directive
      | pragma_vhdl_entity_directive
      | pragma_vhdl_architecture_pre_begin_directive
      | pragma_vhdl_architecture_post_begin_directive
      | pragma_vhdl_promote_buffered_directive
      | pragma_vhdl_demote_to_signal_directive
+     | pragma_vhdl_allow_automatic_buffering
      ;
 
  
@@ -101,6 +108,8 @@ pragma_vhdl_promote_buffered_directive        : PRAGMA_VHDL_PROMOTE_BUFFERED_DIR
 pragma_vhdl_demote_to_signal_directive        : PRAGMA_VHDL_DEMOTE_TO_SIGNAL_DIRECTIVE 
 				        	output_to_demote_to_signal (COMMA output_to_demote_to_signal)?
 				                PRAGMA_ENDING;
+pragma_vhdl_allow_automatic_buffering         : PRAGMA_VHDL_ALLOW_AUTOMATIC_BUFFERING_DIRECTIVE ;
+
 
 output_to_promote_buffered: ID   ;
 output_to_demote_to_signal: ID   ;

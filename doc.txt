@@ -515,19 +515,22 @@ asychrone >  set > reset > mémorisation
 
 
 
-===utilisation des sorties mémorisées comme entrées===
-TODO:
-réalisation de registre à décalage?
-%M,sortie5=entree4;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
-%M,sortie6=entree5;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
-///
+===Spécifications via Pragma===
+==Indiquer taille de bus==
 
-seulement sur des sorties mémorisées
+ 
+
+==Promotion automatique d'une sortie en buffer==
+Il est possible d'autoriser globalement le fait que dès qu'un terme apparaît en tant qu'entrée et sortie, il puisse être automatiquement combiné en une sortie dite bufferisée, dont la valeur peut être réutilisée en interne.
+Ce mécanisme permet par exemple d'autoriser l'utilisation de sorties dans les conditions.
+L'autorisation se fait à l'aide de la commande pragma: #pragma_vhdl_allow_automatic_buffering
+Seulement Les sorties mémorisées peuvent être promue de la sorte.
 
 <<FSM ex_buffered_output.fsm>>
 2->3:S,BUFFER1=ENTREE2;
 3->1?BUFFER1 :OUT2;
 1->2:R,BUFFER1=ENTREE1;
+#pragma_vhdl_allow_automatic_buffering
 <</FSM>>
 
 Ceci peut être utilisé pour simplifier un modèle en mémorisant un évenement. Ainsi le modèle suivant évoluant en fonction des entrees ENTREE1 et ENTREE2:
@@ -537,6 +540,7 @@ Ceci peut être utilisé pour simplifier un modèle en mémorisant un évenement
 1->2?ENTREE1;
 2->3?BUFFER1;
 2->1?NOT BUFFER1;
+#pragma_vhdl_allow_automatic_buffering
 <</FSM>>
 
 Il est possible d'utiliser ce mécanisme pour décrire des comportements plus complexes. Dans cet exemple, la transition des états 2 à 3 se base sur une condition dépendant de la valeur de BUFFER 1 avant la mémorisation de la valeur de BUFFER1 XOR ENTREE3:
@@ -547,17 +551,11 @@ Il est possible d'utiliser ce mécanisme pour décrire des comportements plus co
 2->3?BUFFER1;
 2->1?NOT BUFFER1;
 2:M,BUFFER1=BUFFER1 XOR ENTREE3;
+#pragma_vhdl_allow_automatic_buffering
 <</FSM>>
-===Spécifications via Pragma===
-==Indiquer taille de bus==
-
-==Autoriser l'utilisation de sorties dans les conditions==
-
- optionnel; permet de passer de ou à buffer
-
-==Promotion automatique d'une sortie en buffer==
 
 
+ 
 ==Promotion manuelle d'une sortie en buffer==
 
 <<FSM ex_buffered_output_pragma.fsm>>
@@ -576,10 +574,6 @@ Il est possible d'utiliser ce mécanisme pour décrire des comportements plus co
 2 : OUT3;
 1->2;
 <</FSM>>
-
-
-
-
 
 
 ===Inclusions de code via Pragma===
@@ -656,6 +650,16 @@ TODO: choix compacité du graphe
 TODO: choix des simplifications de modele par le checker
  
 
+
+
+=====vrac=====
+
+===utilisation des sorties mémorisées comme entrées===
+TODO:
+réalisation de registre à décalage?
+%M,sortie5=entree4;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
+%M,sortie6=entree5;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
+///
 
 
 

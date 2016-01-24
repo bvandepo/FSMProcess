@@ -792,8 +792,6 @@ public class FsmProcess {
 		// remove them from the input list
 		// //////////////////////////////
 
-		// TODO make fsm.bufferedOutputsAllowed configurable through pragma
-		fsm.bufferedOutputsAllowed = true;
 		if (fsm.bufferedOutputsAllowed) {
 			for (int m = 0; m < numberOfOutputs; m++) {
 				Output o = fsm.outputs.get(m);
@@ -2037,8 +2035,8 @@ public class FsmProcess {
 		// TODO: add methods to generate string that lists the words for the
 		// documentation
 		List<String> forbiddenNamesFSM = Arrays.asList("value_one_internal", "not_any_s_reset_internal", "STATE_NUMBER",
-				"#pragma_vhdl_pre_entity{", "#pragma_vhdl_entity{",
-				"#pragma_vhdl_architecture_pre_begin{#pragma_vhdl_architecture_post_begin{", "}#pragma");
+				"#pragma_vhdl_pre_entity{", "#pragma_vhdl_entity{", "#pragma_vhdl_architecture_pre_begin{",
+				"#pragma_vhdl_architecture_post_begin{", "#pragma_vhdl_promote_buffered{", "#pragma_vhdl_demote_to_signal{", "#pragma_vhdl_allow_automatic_buffering", "}#pragma");
 		List<String> forbiddenNamesC = Arrays.asList();
 		List<String> forbiddenNamesVerilog = Arrays.asList();
 
@@ -2572,6 +2570,12 @@ public class FsmProcess {
 			bufLogInfo.append("Info: The output ");
 			bufLogInfo.append(fsm.currentOutput.name);
 			bufLogInfo.append(" has been demoted to an internal through pragma directive.\n");
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterPragma_vhdl_allow_automatic_buffering(FsmParser.Pragma_vhdl_allow_automatic_bufferingContext ctx) {
+			fsm.bufferedOutputsAllowed = true;
+			bufLogInfo.append("Info: Automatic buffering of outputs used as inputs have been granted through pragma directive.\n");
 		}
 		// ///////////////////////////////////////////////////////////////
 
