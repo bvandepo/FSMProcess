@@ -84,6 +84,9 @@ fragment TAG
 
 
 PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE:  '#pragma_vhdl_pre_entity' ;
+PRAGMA_VHDL_ENTITY_DIRECTIVE :  '#pragma_vhdl_entity' ;
+PRAGMA_VHDL_ARCHITECTURE_PRE_BEGIN_DIRECTIVE :  '#pragma_vhdl_architecture_pre_begin' ;
+PRAGMA_VHDL_ARCHITECTURE_POST_BEGIN_DIRECTIVE  :  '#pragma_vhdl_architecture_post_begin' ;
 
 
 PRAGMA_WITH_BEGINING_AND_ENDING: '{' SOMECARS  '}#pragma' ; 

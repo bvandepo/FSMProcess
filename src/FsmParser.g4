@@ -14,10 +14,13 @@ line : state
      | repeatedly_action
      | reset_asynchronous
      | clock_definition
-| pragma_vhdl_pre_entity_directive
- //    | pragma_directive
+     | pragma_vhdl_pre_entity_directive
+     | pragma_vhdl_entity_directive
+     | pragma_vhdl_architecture_pre_begin_directive
+     | pragma_vhdl_architecture_post_begin_directive
      ;
 
+ 
 state   :  id ( COLON state_action)* SEMICOLON    ;         	//state (with  action(s))
 clock_definition: SLASH  input_clock SEMICOLON ;
 input_clock:  id;
@@ -83,6 +86,12 @@ id : ID  | NUMBER
 
 
 pragma_vhdl_pre_entity_directive   : PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE 
+				     PRAGMA_WITH_BEGINING_AND_ENDING;
+pragma_vhdl_entity_directive   : PRAGMA_VHDL_ENTITY_DIRECTIVE 
+				     PRAGMA_WITH_BEGINING_AND_ENDING;
+pragma_vhdl_architecture_pre_begin_directive   : PRAGMA_VHDL_ARCHITECTURE_PRE_BEGIN_DIRECTIVE 
+				     PRAGMA_WITH_BEGINING_AND_ENDING;
+pragma_vhdl_architecture_post_begin_directive   : PRAGMA_VHDL_ARCHITECTURE_POST_BEGIN_DIRECTIVE 
 				     PRAGMA_WITH_BEGINING_AND_ENDING;
 
 

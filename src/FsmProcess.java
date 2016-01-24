@@ -1164,6 +1164,11 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateInterfaceVhdl() {
 		bufVhdl.append("port (\n");
+		if (!fsm.pragmaVhdlEntity.equals("")) {
+			bufVhdl.append("------------------------------pragma_vhdl_entity-----------------------------------------------------------\n");
+			bufVhdl.append(fsm.pragmaVhdlEntity);
+			bufVhdl.append("--------------------------end of pragma_vhdl_entity--------------------------------------------------------\n");
+		}
 		bufVhdl.append("		");
 		bufVhdl.append(fillStringWithSpace2(fsm.clkSignalName, Input.longestName));
 		bufVhdl.append(" : in     std_logic;\n");
@@ -1295,6 +1300,11 @@ public class FsmProcess {
 		bufVhdl.append("architecture ar of ");
 		bufVhdl.append(fsm.name);
 		bufVhdl.append(" is \n");
+		if (!fsm.pragmaVhdlArchitecturePreBegin.equals("")) {
+			bufVhdl.append("------------------------------pragma_vhdl_architecture_pre_begin-------------------------------------------\n");
+			bufVhdl.append(fsm.pragmaVhdlArchitecturePreBegin);
+			bufVhdl.append("--------------------------end of pragma_vhdl_architecture_pre_begin----------------------------------------\n");
+		}
 		if (fsm.states.size() != 0) {
 			// ////////////////listing of possible values for state
 			// names//////////////////
@@ -1352,6 +1362,12 @@ public class FsmProcess {
 		// ////////////////let's animate all that stuff...//////////////////
 		bufVhdl.append("---------------------------------------------------------------------------------------\n");
 		bufVhdl.append("begin\n");
+		if (!fsm.pragmaVhdlArchitecturePostBegin.equals("")) {
+			bufVhdl.append("------------------------------pragma_vhdl_architecture_post_begin-----------------------------------------\n");
+			bufVhdl.append(fsm.pragmaVhdlArchitecturePostBegin);
+			bufVhdl.append("--------------------------end of pragma_vhdl_architecture_post_begin--------------------------------------\n");
+		}
+
 		bufVhdl.append("value_one_internal <='1';\n");
 		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
 			if (numberOfResetTransitions > 0) {
@@ -1908,6 +1924,9 @@ public class FsmProcess {
 
 		// to contain added vhdl code
 		public String pragmaVhdlPreEntity = "";
+		public String pragmaVhdlEntity = "";
+		public String pragmaVhdlArchitecturePreBegin = "";
+		public String pragmaVhdlArchitecturePostBegin = "";
 
 		// global flag to allow the reuse of memorized outputs as inputs in
 		// conditions and expressions
@@ -2428,39 +2447,61 @@ public class FsmProcess {
 		}
 
 		// ///////////////////////////////////////////////////////////////
+		public void enterPragma_vhdl_entity_directive(FsmParser.Pragma_vhdl_entity_directiveContext ctx) {
+			String pragma = ctx.children.get(1).getText();
+			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
+			// System.out.println(pragmaCleaned);
+			fsm.pragmaVhdlEntity += pragmaCleaned;
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterPragma_vhdl_architecture_pre_begin_directive(FsmParser.Pragma_vhdl_architecture_pre_begin_directiveContext ctx) {
+			String pragma = ctx.children.get(1).getText();
+			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
+			// System.out.println(pragmaCleaned);
+			fsm.pragmaVhdlArchitecturePreBegin += pragmaCleaned;
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterPragma_vhdl_architecture_post_begin_directive(FsmParser.Pragma_vhdl_architecture_post_begin_directiveContext ctx) {
+			String pragma = ctx.children.get(1).getText();
+			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
+			// System.out.println(pragmaCleaned);
+			fsm.pragmaVhdlArchitecturePostBegin += pragmaCleaned;
+		}
+
+		// ///////////////////////////////////////////////////////////////
 
 		public void enterPragma_vhdl_pre_entity_directive(FsmParser.Pragma_vhdl_pre_entity_directiveContext ctx) {
-
 			// simple way to get the pragma
 			String pragma = ctx.children.get(1).getText();
-			if (false) {
-				System.out.println(pragma);
-
-				// DEBUG harder way
-				Token semi = ctx.getStop();
-				int i = semi.getTokenIndex();
-				System.out.print("detected a Pragma_directive at token ");
-				System.out.println(i);
-
-				// intégralité des tokens
-				// System.out.println(tokens.getText());
-				// the pragma token
-				System.out.println(tokens.get(i));
-
-				// to localize in the input file for errors
-				System.out.println(tokens.get(i).getLine());
-				System.out.println(tokens.get(i).getCharPositionInLine());
-
-				// whats inside token
-				System.out.println(tokens.get(i).getText());
-
-				// whats inside token without #pragma{ and #pragma}
-				pragma = tokens.get(i).getText();
-			}
 			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
-			System.out.println(pragmaCleaned);
-
+			// System.out.println(pragmaCleaned);
 			fsm.pragmaVhdlPreEntity += pragmaCleaned;
+			// if (false) {
+			// System.out.println(pragma);
+			//
+			// // DEBUG harder way
+			// Token semi = ctx.getStop();
+			// int i = semi.getTokenIndex();
+			// System.out.print("detected a Pragma_directive at token ");
+			// System.out.println(i);
+			//
+			// // intégralité des tokens
+			// // System.out.println(tokens.getText());
+			// // the pragma token
+			// System.out.println(tokens.get(i));
+			//
+			// // to localize in the input file for errors
+			// System.out.println(tokens.get(i).getLine());
+			// System.out.println(tokens.get(i).getCharPositionInLine());
+			//
+			// // whats inside token
+			// System.out.println(tokens.get(i).getText());
+			//
+			// // whats inside token without #pragma{ and #pragma}
+			// pragma = tokens.get(i).getText();
+			// }
 		}
 
 		// ///////////////////////////////////////////////////////////////

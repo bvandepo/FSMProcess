@@ -559,6 +559,37 @@ Il est possible d'utiliser ce mécanisme pour décrire des comportements plus co
 
 à l'intérieur des balises, on peut utiliser les mots réservés
 
+<<FSM ex_pragma_include_vhdl.fsm>>
+0:encpt;
+
+#pragma_vhdl_pre_entity{ 
+-- this a a pragma inserted before entity
+-- for instance to add libraries 
+-- //comments inside pragma are inserted in the vhdl file without modificationstata
+-- void function()
+-- {
+-- tata=3;
+-- }
+}#pragma
+#pragma_vhdl_entity{ 
+-- this a a pragma inserted inside entity
+-- for instance to add inputs /outputs
+added_output: out std_logic;
+}#pragma
+#pragma_vhdl_architecture_pre_begin{ 
+-- this a a pragma inserted inside architecture before the begin statement
+-- for instance to declare signals or types
+signal signal_added_output: std_logic;
+}#pragma
+#pragma_vhdl_architecture_post_begin{ 
+-- this a a pragma inserted inside architecture after the begin statement
+-- for instance to do anything
+signal_added_output <= '1';
+added_output<=signal_added_output;
+}#pragma
+<</FSM>>
+
+
 ===Génération de modèle par programme===
 
 ====Exemples d'applications====
