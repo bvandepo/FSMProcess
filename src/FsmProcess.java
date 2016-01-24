@@ -1120,6 +1120,14 @@ public class FsmProcess {
 					}
 			}
 		}
+		// generate lists of outputs that are demoted to signal through
+		// pragma
+		for (int i = 0; i < fsm.outputs.size(); i++)
+			if (fsm.outputs.get(i).isDemotedToSignal) {
+				fsm.demotedToSignalOutputs.add(fsm.outputs.get(i));
+			} else
+				fsm.realOutputs.add(fsm.outputs.get(i));
+
 		if (modelOk)
 			bufLogInfo.append("Info:   No Critial error: Output files can be generated\n\n");
 		else
@@ -1182,7 +1190,8 @@ public class FsmProcess {
 		bufVhdl.append("		");
 		bufVhdl.append(fillStringWithSpace2(fsm.aResetSignalName, Input.longestName));
 		bufVhdl.append(" : in     std_logic");
-		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
+
+		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.hmapInput.size() > 0) || (fsm.realOutputs.size() > 0))
 			bufVhdl.append(";\n");
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
 			bufVhdl.append("		");
@@ -1190,7 +1199,7 @@ public class FsmProcess {
 			bufVhdl.append(" : out    std_logic_vector( ");
 			bufVhdl.append(fsm.numberOfBitsForStates - 1);
 			bufVhdl.append(" downto 0)");
-			if ((fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
+			if ((fsm.hmapInput.size() > 0) || (fsm.realOutputs.size() > 0))
 				bufVhdl.append(";\n");
 		}
 		// ////////////////listing of inputs/outputs//////////////////
@@ -1198,19 +1207,19 @@ public class FsmProcess {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.inputs.get(n).paddedName);
 			bufVhdl.append(" : in     std_logic");
-			if ((n != fsm.hmapInput.size() - 1) || ((fsm.hmapOutput.size() > 0)))
+			if ((n != fsm.hmapInput.size() - 1) || ((fsm.realOutputs.size() > 0)))
 				bufVhdl.append(";\n");
 		}
-		for (int n = 0; n < fsm.hmapOutput.size(); n++) {
+		for (int n = 0; n < fsm.realOutputs.size(); n++) {
 			bufVhdl.append("		");
-			bufVhdl.append(fsm.outputs.get(n).paddedName);
+			bufVhdl.append(fsm.realOutputs.get(n).paddedName);
 			bufVhdl.append(" : ");
-			if (fsm.outputs.get(n).isBuffer)
+			if (fsm.realOutputs.get(n).isBuffer)
 				bufVhdl.append("buffer");
 			else
 				bufVhdl.append("out   ");
 			bufVhdl.append(" std_logic");
-			if (n != fsm.hmapOutput.size() - 1)
+			if (n != fsm.realOutputs.size() - 1)
 				bufVhdl.append(";\n");
 		}
 		bufVhdl.append(");\n");
@@ -1255,12 +1264,12 @@ public class FsmProcess {
 		bufVhdl.append(fsm.aResetSignalName);
 		bufVhdl.append(" => ");
 		bufVhdl.append(fsm.aResetSignalName);
-		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
+		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.hmapInput.size() > 0) || (fsm.realOutputs.size() > 0))
 			bufVhdl.append(",\n");
 		// ////////////////listing of inputs/outputs//////////////////
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
 			bufVhdl.append("		state_number =>  state_number");
-			if ((fsm.hmapInput.size() > 0) || (fsm.hmapOutput.size() > 0))
+			if ((fsm.hmapInput.size() > 0) || (fsm.realOutputs.size() > 0))
 				bufVhdl.append(",\n");
 
 		}
@@ -1269,19 +1278,18 @@ public class FsmProcess {
 			bufVhdl.append(fsm.inputs.get(n).name);
 			bufVhdl.append(" => ");
 			bufVhdl.append(fsm.inputs.get(n).name);
-			if ((n != fsm.hmapInput.size() - 1) || ((fsm.hmapOutput.size() > 0)))
+			if ((n != fsm.hmapInput.size() - 1) || ((fsm.realOutputs.size() > 0)))
 				bufVhdl.append(",\n");
 		}
-		for (int n = 0; n < fsm.hmapOutput.size(); n++) {
+		for (int n = 0; n < fsm.realOutputs.size(); n++) {
 			bufVhdl.append("		");
-			bufVhdl.append(fsm.outputs.get(n).name);
+			bufVhdl.append(fsm.realOutputs.get(n).name);
 			bufVhdl.append(" => ");
-			bufVhdl.append(fsm.outputs.get(n).name);
-			if (n != fsm.hmapOutput.size() - 1)
+			bufVhdl.append(fsm.realOutputs.get(n).name);
+			if (n != fsm.realOutputs.size() - 1)
 				bufVhdl.append(",\n");
 		}
 		bufVhdl.append(");\n");
-
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
@@ -1364,6 +1372,16 @@ public class FsmProcess {
 		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
 			if (numberOfResetTransitions > 0) {
 				bufVhdl.append("signal not_any_s_reset_internal: std_logic ;  --signal used internally to ease inhibition of actions when reset transitions occurs\n");
+			}
+		}
+		if (fsm.demotedToSignalOutputs.size() > 0) {
+			bufVhdl.append("-----------------outputs demoted to internal signals through pragma-------------------------------------\n");
+			for (int n = 0; n < fsm.demotedToSignalOutputs.size(); n++) {
+				bufVhdl.append("signal ");
+				bufVhdl.append(fsm.demotedToSignalOutputs.get(n).paddedName);
+				bufVhdl.append(" : ");
+				bufVhdl.append(" std_logic");
+				bufVhdl.append(";\n");
 			}
 		}
 		// ////////////////let's animate all that stuff...//////////////////
@@ -1852,6 +1870,10 @@ public class FsmProcess {
 		String asyncResetExpression = null;
 		Boolean isBuffer = false;// to allow the reuse of memorized outputs as
 									// inputs in conditions and expressions
+		Boolean isDemotedToSignal = false; // true if the output as been demoted
+											// to be only used internaly and not
+											// generate a real output in the
+											// entity
 
 		public int compareTo(Output o) {
 			Output a = (Output) o;
@@ -1955,6 +1977,10 @@ public class FsmProcess {
 		ArrayList<Action> noRepeatedlyActions = new ArrayList<Action>();
 
 		ArrayList<Output> outputsWithAsynchronousResetValue = new ArrayList<Output>();
+
+		// each output in outputs list is also located in one of this two lists
+		ArrayList<Output> realOutputs = new ArrayList<Output>();
+		ArrayList<Output> demotedToSignalOutputs = new ArrayList<Output>();
 
 		// on stocke juste la liste pour pouvoir balayer et verifier les
 		// compatibilités, pas besoin de hashtable
@@ -2525,8 +2551,27 @@ public class FsmProcess {
 				o.name = outputName;
 				fsm.addOutput(outputName, o);
 				fsm.currentOutput = o;
-				o.isBuffer = true;
 			}
+			fsm.currentOutput.isBuffer = true;
+			bufLogInfo.append("Info: The output ");
+			bufLogInfo.append(fsm.currentOutput.name);
+			bufLogInfo.append(" has been promoted to a buffered output through pragma directive.\n");
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterOutput_to_demote_to_signal(FsmParser.Output_to_demote_to_signalContext ctx) {
+			String outputName = ctx.children.get(0).getText().toUpperCase();
+			fsm.currentOutput = fsm.getOutputFromName(outputName);
+			if (fsm.currentOutput == null) {
+				Output o = new Output();
+				o.name = outputName;
+				fsm.addOutput(outputName, o);
+				fsm.currentOutput = o;
+			}
+			fsm.currentOutput.isDemotedToSignal = true;
+			bufLogInfo.append("Info: The output ");
+			bufLogInfo.append(fsm.currentOutput.name);
+			bufLogInfo.append(" has been demoted to an internal through pragma directive.\n");
 		}
 		// ///////////////////////////////////////////////////////////////
 
