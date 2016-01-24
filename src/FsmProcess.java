@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -167,7 +167,7 @@ public class FsmProcess {
 		ParseTree tree = parser.fsmfile();
 		ParseTreeWalker walker = new ParseTreeWalker();
 
-		FunctionListener collector = new FunctionListener();
+		FunctionListener collector = new FunctionListener(tokens);
 		bufVhdl = new StringBuilder();
 		bufDot = new StringBuilder();
 		bufLogInfo = new StringBuilder();
@@ -2175,6 +2175,14 @@ public class FsmProcess {
 
 	// ///////////////////////////////////////////////////////////////
 	static class FunctionListener extends FsmParserBaseListener {
+		// keep the tokens list availabe to get them and extract some info (such
+		// as line numbers for errors, pragmas etc...
+		BufferedTokenStream tokens;
+
+		public FunctionListener(BufferedTokenStream tokens) {
+			this.tokens = tokens;
+		}
+
 		// ///////////////////////////////////////////////////////////////
 		public void enterReset_asynchronous(FsmParser.Reset_asynchronousContext ctx) {
 			String reset_asynchronous_state_new_name = ctx.children.get(1).getText().toUpperCase();
@@ -2253,13 +2261,6 @@ public class FsmProcess {
 			so.transitionsFromThisState.add(t);
 			fsm.transitions.add(t); // also add it to the global transitions
 									// list
-
-			// DEBUG
-			Token semi = ctx.getStop();
-			int i = semi.getTokenIndex();
-			System.out.print("detected a transition at token ");
-			System.out.println(i);
-
 		}
 
 		// //////////////////////////////////////////////////////////////
@@ -2414,6 +2415,36 @@ public class FsmProcess {
 			fsm.currentState = s;
 		}
 
+		// ///////////////////////////////////////////////////////////////
+
+		public void exitPragma_directive(FsmParser.Pragma_directiveContext ctx) {
+			// simple way to get the pragma
+			String name = ctx.children.get(0).getText();
+			System.out.println(name);
+
+			// DEBUG harder way
+			Token semi = ctx.getStop();
+			int i = semi.getTokenIndex();
+			System.out.print("detected a Pragma_directive at token ");
+			System.out.println(i);
+
+			// intégralité des tokens
+			// System.out.println(tokens.getText());
+			// the pragma token
+			System.out.println(tokens.get(i));
+
+			// to localize in the input file for errors
+			System.out.println(tokens.get(i).getLine());
+			System.out.println(tokens.get(i).getCharPositionInLine());
+
+			// whats inside token
+			System.out.println(tokens.get(i).getText());
+
+			// whats inside token without #pragma{ and #pragma}
+			String pragma = tokens.get(i).getText();
+			String pragmaCleaned = pragma.substring(8, pragma.length() - 8);
+			System.out.println(pragmaCleaned);
+		}
 		// ///////////////////////////////////////////////////////////////
 
 	}
