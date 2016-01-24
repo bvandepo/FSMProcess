@@ -391,7 +391,7 @@ Bonne facon
 
 Cette fonctionnalité permet d'imposer l'activation d'un certain état sans condition sur l'état précédemment actif de la machine à état.
 
-La présence d'un condition est obligatoire pour une telle transition, elle peut être basée sur une entrée ou une expression d'entrées
+La présence d'un condition est obligatoire pour une telle transition, elle peut être basée sur une entrée ou une expression logique d'entrées
  
 syntaxe : -> nom_etat_destination?condition;
 
@@ -413,7 +413,7 @@ etat_0->etat_1;
 etat_1->etat_2;
 etat_2->etat_3; 
 ->etat_0?SRESET_1;                         	//Retour à etat_0 dès lors que SRESET_1 est active, pas d'action
-->etat_2*1?SRESET_2=ENTREE_1:ACTION_1;          //Retour à etat_2 dès lors que SRESET2=ENTREE_1, en réalisant l'action ACTION_1
+->etat_2*1?SRESET_2 XNOR ENTREE_1:ACTION_1;     //Retour à etat_2 dès lors que SRESET2=ENTREE_1, en réalisant l'action ACTION_1
 ->etat_2*2?SRESET_3:M,ACTION_2=ENTREE_2;	//Retour à etat_2 dès lors que SRESET3, en mémorisant sur l'action ACTION_2 la valeur de ENTREE_2 UNIQUEMENT SI SRESET2 différent de ENTREE_1
 <</FSM>>
 
