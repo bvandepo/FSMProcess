@@ -530,8 +530,24 @@ seulement sur des sorties mémorisées
 1->2:R,BUFFER1=ENTREE1;
 <</FSM>>
 
+Ceci peut être utilisé pour simplifier un modèle en mémorisant un évenement. Ainsi le modèle suivant évoluant en fonction des entrees ENTREE1 et ENTREE2:
 
+<<FSM ex_buffered_output_2.fsm>>
+1:S,BUFFER1=ENTREE2;
+1->2?ENTREE1;
+2->3?BUFFER1;
+2->1?NOT BUFFER1;
+<</FSM>>
 
+Il est possible d'utiliser ce mécanisme pour décrire des comportements plus complexes. Dans cet exemple, la transition des états 2 à 3 se base sur une condition dépendant de la valeur de BUFFER 1 avant la mémorisation de la valeur de BUFFER1 XOR ENTREE3:
+ 
+<<FSM ex_buffered_output_3.fsm>>
+1:S,BUFFER1=ENTREE2;
+1->2?ENTREE1: R,BUFFER1=ENTREE4;
+2->3?BUFFER1;
+2->1?NOT BUFFER1;
+2:M,BUFFER1=BUFFER1 XOR ENTREE3;
+<</FSM>>
 ===Spécifications via Pragma===
 ==Indiquer taille de bus==
 
