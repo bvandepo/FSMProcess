@@ -111,7 +111,7 @@ pragma_vhdl_demote_output_to_signal_directive : PRAGMA_VHDL_DEMOTE_OUTPUT_TO_SIG
 				        	output_to_demote_to_signal (COMMA output_to_demote_to_signal)?
 				                PRAGMA_ENDING;
 pragma_vhdl_demote_input_to_signal_directive  : PRAGMA_VHDL_DEMOTE_INPUT_TO_SIGNAL_DIRECTIVE 
-				        	input_to_demote_to_signal (COMMA output_to_demote_to_signal)?
+				        	input_to_demote_to_signal (COMMA input_to_demote_to_signal)?
 				                PRAGMA_ENDING;
 
 
