@@ -579,13 +579,14 @@ Il est possible d'utiliser ce mécanisme pour décrire des comportements plus co
 <</FSM>>
 
 
-==Destitution manuelle d'une sortie en signal interne==
+==Destitution manuelle d'une sortie ou d'une entrée en signal interne==
 
 <<FSM ex_demoted_output_pragma.fsm>>
 1 :OUT2:OUT4;
-#pragma_vhdl_demote_to_signal{ OUT4,OUT3}#pragma 
+#pragma_vhdl_demote_output_to_signal{ OUT4,OUT3}#pragma 
 2 : OUT3;
-1->2;
+1->2?IN1;
+#pragma_vhdl_demote_input_to_signal{ IN1}#pragma 
 <</FSM>>
 
 
@@ -657,6 +658,11 @@ récupérer de toutes les vérifications que je fais dans le code.
 -i : ignore les erreurs critiques liées à la compilation du modèle et continue la génération des fichiers
 
 -f nom_fichier  : indique le nom du fichier d'entrée
+
+-d
+
+-c 
+
 
 TODO: choix compacité du graphe
 
