@@ -109,13 +109,13 @@ pragma_vhdl_architecture_pre_begin_directive  : PRAGMA_VHDL_ARCHITECTURE_PRE_BEG
 pragma_vhdl_architecture_post_begin_directive : PRAGMA_VHDL_ARCHITECTURE_POST_BEGIN_DIRECTIVE 
 				                PRAGMA_WITH_BEGINING_AND_ENDING;
 pragma_vhdl_promote_buffered_directive        : PRAGMA_VHDL_PROMOTE_BUFFERED_DIRECTIVE 
-						output_to_promote_buffered (COMMA output_to_promote_buffered)?
+						output_to_promote_buffered (COMMA output_to_promote_buffered)*
 				                PRAGMA_ENDING;
 pragma_vhdl_demote_output_to_signal_directive : PRAGMA_VHDL_DEMOTE_OUTPUT_TO_SIGNAL_DIRECTIVE 
-				        	output_to_demote_to_signal (COMMA output_to_demote_to_signal)?
+				        	output_to_demote_to_signal (COMMA output_to_demote_to_signal)*
 				                PRAGMA_ENDING;
 pragma_vhdl_demote_input_to_signal_directive  : PRAGMA_VHDL_DEMOTE_INPUT_TO_SIGNAL_DIRECTIVE 
-				        	input_to_demote_to_signal (COMMA input_to_demote_to_signal)?
+				        	input_to_demote_to_signal (COMMA input_to_demote_to_signal)*
 				                PRAGMA_ENDING;
 
 

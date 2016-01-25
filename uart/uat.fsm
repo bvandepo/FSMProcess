@@ -7,8 +7,10 @@
 #pragma_vhdl_allow_automatic_buffering
 
 #pragma_vhdl_promote_buffered{sraz_cpt,en_cpt}#pragma 
-
+ 
 //#pragma_vhdl_demote_output_to_signal{en_reg_decal, sload_reg_decal , sload_prediv , en_cpt }#pragma
+
+//plutot tout passer en buffered pour les voir à la simu
 #pragma_vhdl_demote_output_to_signal{sraz_cpt}#pragma
 #pragma_vhdl_demote_output_to_signal{en_reg_decal}#pragma
 #pragma_vhdl_demote_output_to_signal{sload_reg_decal}#pragma
@@ -18,13 +20,16 @@
 
 #pragma_vhdl_demote_input_to_signal{END_FRAME, fin_prediv}#pragma
 
-#pragma_vhdl_entity{ 
-D : in std_logic_vector(7 downto 0);
-TX : out std_logic;
-BaudRATE_SELECTOR   : in std_logic_vector(1 downto 0);
-iq_cpt : buffer std_logic_vector(3 downto 0);
-iq_reg_decal : buffer std_logic_vector (10 downto 0);
-}#pragma
+
+//TODO: parser pour extraire les infos: nom : type (in out buffer integer??) std_logic/std_logic_vector....;
+//comme ça près il est possible de mieux faire le port map et surtout le testbench!!!!
+
+ 
+#pragma_vhdl_entity{ D : in std_logic_vector(7 downto 0);  }#pragma
+#pragma_vhdl_entity{ TX : out std_logic;}#pragma
+#pragma_vhdl_entity{ BaudRATE_SELECTOR   : in std_logic_vector(1 downto 0);}#pragma
+#pragma_vhdl_entity{ iq_cpt : buffer std_logic_vector(3 downto 0);}#pragma
+#pragma_vhdl_entity{ iq_reg_decal : buffer std_logic_vector (10 downto 0);}#pragma
 
 
 //peut être passer tous les sigaux en buffered outputs pour aider en simu
