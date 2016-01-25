@@ -2156,7 +2156,7 @@ public class FsmProcess {
 				"#pragma_vhdl_pre_entity{", "#pragma_vhdl_entity{", "#pragma_vhdl_architecture_pre_begin{",
 				"#pragma_vhdl_architecture_post_begin{", "#pragma_vhdl_promote_buffered{", "#pragma_vhdl_demote_output_to_signal{",
 				"#pragma_vhdl_demote_input_to_signal{", "#pragma_vhdl_allow_automatic_buffering",
-				"#pragma_vhdl_set_bit_size_for_output_state_number{", "}#pragma");
+				"#pragma_vhdl_set_bit_size_for_output_state_number{", "}#pragma", "i", "I", "r", "R", "s", "S", "m", "M", "f", "F");
 		List<String> forbiddenNamesC = Arrays.asList();
 		List<String> forbiddenNamesVerilog = Arrays.asList();
 
@@ -2549,7 +2549,7 @@ public class FsmProcess {
 
 		// //////////////////////////////////////////////////////////////
 		public void enterAction_type(FsmParser.Action_typeContext ctx) {
-			fsm.currentAction.type = ctx.children.get(0).getText().toUpperCase();
+			fsm.currentAction.type = ctx.children.get(0).getText().toUpperCase().toUpperCase();
 		}
 
 		// //////////////////////////////////////////////////////////////

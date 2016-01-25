@@ -54,7 +54,7 @@ repeatedly_action : REPEATACTION   (action_type COMMA)? action_id ( EQUAL action
 state_action :  (action_type COMMA)? action_id (EQUAL action_expression)? ;
 transition_action :  (action_type COMMA)? action_id (EQUAL action_expression)? ;
  
-action_type : R|S|M|I|F;
+action_type : TR|TS|TM|TI|TF;
 
 transition   	  :  id  ARROW  id ( STAR  transition_priority)? ('?' condition)? (COLON transition_action)* SEMICOLON   ;         	//transition (with  action(s)) 
 reset_transition  :   '->' id (STAR reset_transition_priority)? ('?' condition) (COLON transition_action)* SEMICOLON   ;         	//transition (with  action(s)), the condition is mandatory for reset transition
