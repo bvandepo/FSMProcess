@@ -92,6 +92,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
  }
 
  }*/
+
+//TODO: parser le pragma entity pour detecter E/S (ou alors add/remove..) + bus
 //////////////////////////////////////////////////////////
 public class FsmProcess {
 
@@ -192,7 +194,7 @@ public class FsmProcess {
 			generatePackageVhdl();
 			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_pack.vhd"));
 			bufVhdl.setLength(0);
-			generatePortMapVhdl();
+			generatePortMapFileVhdl();
 			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_portmap.vhd"));
 			saveToFile(bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n" + bufLogInfo.toString(),
 					fsmBaseName.concat(".log"));
@@ -1234,58 +1236,63 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generatePortMapVhdl() {
+	static public void generatePortMapVhdl(StringBuilder buf) {
+		buf.append(fsm.name);
+		buf.append("_u0 : ");
+		buf.append(fsm.name);
+		buf.append("\n");
+		buf.append("port map(\n");
+
+		if (!fsm.pragmaVhdlEntity.equals("")) {
+			buf.append("------------------------------pragma_vhdl_entity-----------------------------------------------------------\n");
+			buf.append(fsm.pragmaVhdlEntity);
+			buf.append("--------------------------end of pragma_vhdl_entity--------------------------------------------------------\n");
+		}
+
+		buf.append("		");
+		buf.append(fsm.clkSignalName);
+		buf.append(" => ");
+		buf.append(fsm.clkSignalName);
+		buf.append(",\n");
+		buf.append("		");
+		buf.append(fsm.aResetSignalName);
+		buf.append(" => ");
+		buf.append(fsm.aResetSignalName);
+		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.realInputs.size() > 0) || (fsm.realOutputs.size() > 0))
+			buf.append(",\n");
+		// ////////////////listing of inputs/outputs//////////////////
+		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
+			buf.append("		state_number =>  state_number");
+			if ((fsm.realInputs.size() > 0) || (fsm.realOutputs.size() > 0))
+				buf.append(",\n");
+
+		}
+		for (int n = 0; n < fsm.realInputs.size(); n++) {
+			buf.append("		");
+			buf.append(fsm.realInputs.get(n).name);
+			buf.append(" => ");
+			buf.append(fsm.realInputs.get(n).name);
+			if ((n != fsm.realInputs.size() - 1) || ((fsm.realInputs.size() > 0)))
+				buf.append(",\n");
+		}
+		for (int n = 0; n < fsm.realOutputs.size(); n++) {
+			buf.append("		");
+			buf.append(fsm.realOutputs.get(n).name);
+			buf.append(" => ");
+			buf.append(fsm.realOutputs.get(n).name);
+			if (n != fsm.realOutputs.size() - 1)
+				buf.append(",\n");
+		}
+		buf.append(");\n");
+	}
+
+	// ////////////////////////////////////////////////////////////////////////////////////
+	static public void generatePortMapFileVhdl() {
 		bufVhdl.append("library work;\n");
 		bufVhdl.append("use work.");
 		bufVhdl.append(fsm.name);
 		bufVhdl.append("_pack.all;\n\n");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append("_u0 : ");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append("\n");
-		bufVhdl.append("port map(\n");
-
-		if (!fsm.pragmaVhdlEntity.equals("")) {
-			bufVhdl.append("------------------------------pragma_vhdl_entity-----------------------------------------------------------\n");
-			bufVhdl.append(fsm.pragmaVhdlEntity);
-			bufVhdl.append("--------------------------end of pragma_vhdl_entity--------------------------------------------------------\n");
-		}
-
-		bufVhdl.append("		");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append(" => ");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append(",\n");
-		bufVhdl.append("		");
-		bufVhdl.append(fsm.aResetSignalName);
-		bufVhdl.append(" => ");
-		bufVhdl.append(fsm.aResetSignalName);
-		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.realInputs.size() > 0) || (fsm.realOutputs.size() > 0))
-			bufVhdl.append(",\n");
-		// ////////////////listing of inputs/outputs//////////////////
-		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
-			bufVhdl.append("		state_number =>  state_number");
-			if ((fsm.realInputs.size() > 0) || (fsm.realOutputs.size() > 0))
-				bufVhdl.append(",\n");
-
-		}
-		for (int n = 0; n < fsm.realInputs.size(); n++) {
-			bufVhdl.append("		");
-			bufVhdl.append(fsm.realInputs.get(n).name);
-			bufVhdl.append(" => ");
-			bufVhdl.append(fsm.realInputs.get(n).name);
-			if ((n != fsm.realInputs.size() - 1) || ((fsm.realInputs.size() > 0)))
-				bufVhdl.append(",\n");
-		}
-		for (int n = 0; n < fsm.realOutputs.size(); n++) {
-			bufVhdl.append("		");
-			bufVhdl.append(fsm.realOutputs.get(n).name);
-			bufVhdl.append(" => ");
-			bufVhdl.append(fsm.realOutputs.get(n).name);
-			if (n != fsm.realOutputs.size() - 1)
-				bufVhdl.append(",\n");
-		}
-		bufVhdl.append(");\n");
+		generatePortMapVhdl(bufVhdl);
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
