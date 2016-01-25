@@ -44,6 +44,7 @@ fragment W:('w'|'W');
 fragment X:('x'|'X');
 fragment Y:('y'|'Y');
 fragment Z:('z'|'Z');
+fragment UNDERSCORE:'_';
 
 
 AND         :  A N D;
@@ -66,6 +67,19 @@ TM: M;
 TI: I;
 TF: F;
 
+
+IN : I N;
+OUT : O U T;
+INOUT : I N O U T;
+BUFFER : B U F F E R;
+LINKAGE : L I N K A G E; 
+
+TO: T O ;
+DOWNTO:  D O W N T O;		      
+
+STD_LOGIC : S T D UNDERSCORE L O G I C ;
+STD_LOGIC_VECTOR : S T D UNDERSCORE L O G I C UNDERSCORE V E C T O R;
+	
 PARENTHESISOPEN: '(';
 PARENTHESISCLOSE:')' ;
 
@@ -114,7 +128,7 @@ fragment TAG
 
 
 PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE               :  '#pragma_vhdl_pre_entity' ;
-PRAGMA_VHDL_ENTITY_DIRECTIVE                   :  '#pragma_vhdl_entity' ;
+PRAGMA_VHDL_ENTITY_DIRECTIVE                   :  '#pragma_vhdl_entity{' ;
 PRAGMA_VHDL_ARCHITECTURE_PRE_BEGIN_DIRECTIVE   :  '#pragma_vhdl_architecture_pre_begin' ;
 PRAGMA_VHDL_ARCHITECTURE_POST_BEGIN_DIRECTIVE  :  '#pragma_vhdl_architecture_post_begin' ;
 PRAGMA_VHDL_PROMOTE_BUFFERED_DIRECTIVE         :  '#pragma_vhdl_promote_buffered{' ;

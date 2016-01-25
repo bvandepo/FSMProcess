@@ -98,8 +98,11 @@ id : ID  | NUMBER
 
 pragma_vhdl_pre_entity_directive              : PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE 
 				                PRAGMA_WITH_BEGINING_AND_ENDING;
+//pragma_vhdl_entity_directive                  : PRAGMA_VHDL_ENTITY_DIRECTIVE 
+//				                PRAGMA_WITH_BEGINING_AND_ENDING;
 pragma_vhdl_entity_directive                  : PRAGMA_VHDL_ENTITY_DIRECTIVE 
-				                PRAGMA_WITH_BEGINING_AND_ENDING;
+						interface_port_declaration
+				                PRAGMA_ENDING;
 pragma_vhdl_architecture_pre_begin_directive  : PRAGMA_VHDL_ARCHITECTURE_PRE_BEGIN_DIRECTIVE 
 				                PRAGMA_WITH_BEGINING_AND_ENDING;
 pragma_vhdl_architecture_post_begin_directive : PRAGMA_VHDL_ARCHITECTURE_POST_BEGIN_DIRECTIVE 
@@ -139,15 +142,33 @@ input_to_demote_to_signal : ID   ;
 
  
 
+//parsing of added entity pragmas
+
+interface_port_declaration  : interface_name COLON interface_port_mode interface_port_type SEMICOLON;
+ 
+
+interface_port_mode
+  : IN
+  | OUT
+  | INOUT
+  | BUFFER
+  | LINKAGE
+  ;
+
+interface_port_type:   interface_port_type_std_logic
+		     | interface_port_type_std_logic_vector  PARENTHESISOPEN bus_begin to_or_down_to bus_end PARENTHESISCLOSE;
 
 
+to_or_down_to :   TO
+                | DOWNTO;		      
 
+bus_begin: NUMBER;
+bus_end: NUMBER;
 
+interface_port_type_std_logic: STD_LOGIC;
+interface_port_type_std_logic_vector: STD_LOGIC_VECTOR ;
 
-
-
-
-
+interface_name : ID;
 
 
 
