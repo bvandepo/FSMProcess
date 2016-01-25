@@ -1244,6 +1244,13 @@ public class FsmProcess {
 		bufVhdl.append(fsm.name);
 		bufVhdl.append("\n");
 		bufVhdl.append("port map(\n");
+
+		if (!fsm.pragmaVhdlEntity.equals("")) {
+			bufVhdl.append("------------------------------pragma_vhdl_entity-----------------------------------------------------------\n");
+			bufVhdl.append(fsm.pragmaVhdlEntity);
+			bufVhdl.append("--------------------------end of pragma_vhdl_entity--------------------------------------------------------\n");
+		}
+
 		bufVhdl.append("		");
 		bufVhdl.append(fsm.clkSignalName);
 		bufVhdl.append(" => ");
@@ -2588,11 +2595,12 @@ public class FsmProcess {
 		}
 
 		// ///////////////////////////////////////////////////////////////
+
+		// TODO: test plusireurs input/outpus demote sur la même ligne pragma
 		public void enterInput_to_demote_to_signal(FsmParser.Input_to_demote_to_signalContext ctx) {
 			String inputName = ctx.children.get(0).getText().toUpperCase();
 			fsm.currentInput = fsm.getInputFromName(inputName);
-			if (fsm.currentInput == null) { // TODO: check demote an input
-											// before defining it
+			if (fsm.currentInput == null) {
 				Input i = new Input();
 				i.name = inputName;
 				fsm.addInput(inputName, i);
