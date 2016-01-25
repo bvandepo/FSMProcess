@@ -2366,6 +2366,9 @@ public class FsmProcess {
 		// as line numbers for errors, pragmas etc...
 		BufferedTokenStream tokens;
 
+		// TODO: make it clearer::::::
+		static String pragmaCleaned;
+
 		public FunctionListener(BufferedTokenStream tokens) {
 			this.tokens = tokens;
 		}
@@ -2603,11 +2606,51 @@ public class FsmProcess {
 		}
 
 		// ///////////////////////////////////////////////////////////////
+		public void enterInterface_name(FsmParser.Interface_nameContext ctx) {
+			pragmaCleaned = "";
+			String interface_name = ctx.children.get(0).getText();
+			pragmaCleaned += interface_name + " ";
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterInterface_port_mode(FsmParser.Interface_port_modeContext ctx) {
+			String interface_port_mode = ctx.children.get(0).getText();
+			pragmaCleaned += " : " + interface_port_mode + " ";
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterInterface_port_type(FsmParser.Interface_port_typeContext ctx) {
+			int nbTokens = ctx.children.size();
+			for (int i = 0; i < nbTokens; i++) {
+				String stToken = ctx.children.get(i).getText();
+				pragmaCleaned += stToken + " ";
+			}
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void exitInterface_port_declaration(FsmParser.Interface_port_declarationContext ctx) {
+			fsm.pragmaVhdlEntity += pragmaCleaned + ";\n";
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void exitPragma_vhdl_entity_directive(FsmParser.Pragma_vhdl_entity_directiveContext ctx) {
+			/*
+			 * for (int i = 1; i < ctx.children.size() - 1; i++) { String pragma
+			 * = ctx.children.get(i).getText(); pragmaCleaned += pragma + "\n";
+			 * } System.out.println(pragmaCleaned); fsm.pragmaVhdlEntity +=
+			 * pragmaCleaned; // + "\n";
+			 */
+			// fsm.pragmaVhdlEntity += pragmaCleaned + "\n";
+		}
+
+		// ///////////////////////////////////////////////////////////////
 		public void enterPragma_vhdl_entity_directive(FsmParser.Pragma_vhdl_entity_directiveContext ctx) {
-			String pragma = ctx.children.get(1).getText();
-			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
-			// System.out.println(pragmaCleaned);
-			fsm.pragmaVhdlEntity += pragmaCleaned;
+			/*
+			 * for (int i = 1; i < ctx.children.size() - 1; i++) { String pragma
+			 * = ctx.children.get(i).getText(); pragmaCleaned += pragma + "\n";
+			 * } System.out.println(pragmaCleaned); fsm.pragmaVhdlEntity +=
+			 * pragmaCleaned; // + "\n";
+			 */
 		}
 
 		// ///////////////////////////////////////////////////////////////

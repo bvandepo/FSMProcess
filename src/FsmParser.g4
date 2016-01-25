@@ -102,6 +102,7 @@ pragma_vhdl_pre_entity_directive              : PRAGMA_VHDL_PRE_ENTITY_DIRECTIVE
 //				                PRAGMA_WITH_BEGINING_AND_ENDING;
 pragma_vhdl_entity_directive                  : PRAGMA_VHDL_ENTITY_DIRECTIVE 
 						interface_port_declaration
+                                                (interface_port_declaration)*
 				                PRAGMA_ENDING;
 pragma_vhdl_architecture_pre_begin_directive  : PRAGMA_VHDL_ARCHITECTURE_PRE_BEGIN_DIRECTIVE 
 				                PRAGMA_WITH_BEGINING_AND_ENDING;
