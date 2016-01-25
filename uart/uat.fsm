@@ -1,0 +1,92 @@
+0:pret;
+1:en_reg_decal=fin_prediv:sload_prediv=fin_prediv:en_cpt=fin_prediv;
+0->1?WRB:sraz_cpt:sload_reg_decal:sload_prediv;
+1->0?END_FRAME;
+
+
+#pragma_vhdl_allow_automatic_buffering
+
+#pragma_vhdl_promote_buffered{sraz_cpt,en_cpt}#pragma 
+
+//#pragma_vhdl_demote_output_to_signal{en_reg_decal, sload_reg_decal , sload_prediv , en_cpt }#pragma
+#pragma_vhdl_demote_output_to_signal{sraz_cpt}#pragma
+#pragma_vhdl_demote_output_to_signal{en_reg_decal}#pragma
+#pragma_vhdl_demote_output_to_signal{sload_reg_decal}#pragma
+#pragma_vhdl_demote_output_to_signal{sload_prediv}#pragma
+#pragma_vhdl_demote_output_to_signal{en_cpt }#pragma
+  
+
+#pragma_vhdl_demote_input_to_signal{END_FRAME, fin_prediv}#pragma
+
+#pragma_vhdl_entity{ 
+D : in std_logic_vector(7 downto 0);
+TX : out std_logic;
+BaudRATE_SELECTOR   : in std_logic_vector(1 downto 0);
+iq_cpt : buffer std_logic_vector(3 downto 0);
+iq_reg_decal : buffer std_logic_vector (10 downto 0);
+}#pragma
+
+
+//peut être passer tous les sigaux en buffered outputs pour aider en simu
+
+#pragma_vhdl_architecture_pre_begin{ 
+--signal iq_cpt,
+signal id_cpt: std_logic_vector (3 downto 0);
+signal iq_prediv, id_prediv, e_prediv: std_logic_vector (19 downto 0);
+--signal iq_reg_decal, 
+signal id_reg_decal: std_logic_vector (10 downto 0);
+signal D_reg_decal : std_logic_vector(10 downto 0);
+signal EVENPARITY : std_logic;
+}#pragma
+
+#pragma_vhdl_architecture_post_begin{ 
+D_reg_decal <= '0' & D(0) & D(1) & D(2) & D(3) & D(4) & D(5) & D(6) & D(7) & EVENPARITY & '1';
+EVENPARITY <=  D(0) XOR D(1) XOR D(2) XOR D(3) XOR D(4) XOR D(5) XOR D(6) XOR D(7); --si on veut odd, utiliser le complément de ce signal
+END_FRAME  <= '1' when (iq_cpt="1010")   AND fin_prediv='1' else
+	      '0';
+--counter:
+Process (ck, arazb)
+	begin
+		if arazb='0' then iq_cpt <= (others=>'0');
+		elsif ck'event and ck='1' then iq_cpt <= id_cpt;
+		end if;
+	end process;
+
+	id_cpt <=  (others=>'0') when sraz_cpt='1' else
+	    	   iq_cpt+1 	 when en_cpt='1'   else
+	           iq_cpt;
+--predivisor:
+Process (ck, arazb)
+	begin
+		if arazb='0' then iq_prediv <= (others=>'1');
+		elsif ck'event and ck='1' then iq_prediv <= id_prediv;
+		end if;
+	end process;
+
+	id_prediv <= e_prediv     when sload_prediv='1'  else
+--                   e_prediv     when iq_prediv=0
+	    	     iq_prediv-1;
+
+	fin_prediv<= '1' when  iq_prediv=0 else
+	    	     '0';
+
+	with BaudRATE_SELECTOR select
+                e_prediv<="00000000000000000000" when "00",
+                          "00000000000000000001" when "01",
+                          "00000000000000000010" when "10",
+                          "00000000000000000100" when others;
+ 
+--shift register:
+Process (ck, arazb)
+	begin
+		if arazb='0' then iq_reg_decal <= (others=>'1');
+		elsif ck'event and ck='1' then iq_reg_decal <= id_reg_decal;
+		end if;
+	end process;
+
+	id_reg_decal <= D_reg_decal                      when sload_reg_decal='1' else
+	    	        iq_reg_decal(9 downto 0)   & '1' when en_reg_decal='1'   else
+	                iq_reg_decal;
+	TX<= iq_reg_decal(10);
+}#pragma
+
