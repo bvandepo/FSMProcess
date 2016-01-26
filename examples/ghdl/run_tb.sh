@@ -5,6 +5,9 @@ echo "component_name: the file in the parent directory without extension (defaul
 echo "duration of the simulation as string, eg: 5000us (default: 100us)"
 echo "        example: ./test_tb.sh mycomponent 1200us " 
 echo "--------------------------------------------------------------------------------------------------------" 
+
+#TODO: deal with multiple COMPONENT_FILES list !!!!
+
 if [ -z "$1" ]
 then
 COMPONENT_NAME="test"
@@ -18,6 +21,9 @@ else
 DURATION=$2
 fi
 COMPONENT_FILES="../"$COMPONENT_NAME
+
+java -jar ../../bin/FsmProcess.jar -f $COMPONENT_FILES".fsm"
+
 TB_DIR="../"
 TB_FILE=$COMPONENT_NAME"_tb"
 GHDL_OPTIONS="--std=02 --ieee=synopsys -fexplicit  --warn-no-vital-generic --workdir=./"
