@@ -145,7 +145,7 @@ input_to_demote_to_signal : ID   ;
 
 //parsing of added entity pragmas
 
-interface_port_declaration  : interface_name COLON interface_port_mode interface_port_type SEMICOLON;
+interface_port_declaration  : interface_name (COMMA interface_name)* COLON interface_port_mode interface_port_type SEMICOLON;
  
 
 interface_port_mode

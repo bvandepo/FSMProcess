@@ -2607,7 +2607,9 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterInterface_name(FsmParser.Interface_nameContext ctx) {
-			pragmaCleaned = "";
+			if (!pragmaCleaned.equals("")) {
+				pragmaCleaned += ", ";
+			}
 			String interface_name = ctx.children.get(0).getText();
 			pragmaCleaned += interface_name + " ";
 		}
@@ -2628,9 +2630,20 @@ public class FsmProcess {
 		}
 
 		// ///////////////////////////////////////////////////////////////
+		public void enterInterface_port_declaration(FsmParser.Interface_port_declarationContext ctx) {
+			pragmaCleaned = "";
+		}
+
+		// ///////////////////////////////////////////////////////////////
 		public void exitInterface_port_declaration(FsmParser.Interface_port_declarationContext ctx) {
 			fsm.pragmaVhdlEntity += pragmaCleaned + ";\n";
 		}
+
+		// TODO: ajouter automatiquement aux listes Inputs/outputs!!!!!!->
+		// ajouter des champs pour les vecteurs
+		// si le signal existe dejà, updater le caractère vecteur et la taille
+		// si pas d'action associée, vérifier qu'il n'y a pas de code vhdl
+		// caculé par fsm ou alors juste <='0' ?
 
 		// ///////////////////////////////////////////////////////////////
 		public void exitPragma_vhdl_entity_directive(FsmParser.Pragma_vhdl_entity_directiveContext ctx) {
