@@ -95,3 +95,33 @@ Process (ck, arazb)
 	TX<= iq_reg_decal(10);
 }#pragma
 
+
+#pragma_vhdl_testbench{  
+ ---------------------------------------	
+	wait until (ck'event and ck='0' );
+	BaudRATE_SELECTOR<="00";
+   D<="01010101";		
+	WRB<='1';
+	wait for ck_period;
+	WRB<='0';
+	wait for ck_period*20;
+---------------------------------------	
+	wait until (ck'event and ck='0' );
+	BaudRATE_SELECTOR<="01";
+   D<="01010101";		 
+	WRB<='1';
+	wait for ck_period;
+	WRB<='0';
+	wait for ck_period*40;
+---------------------------------------		
+	wait until (ck'event and ck='0' );
+	BaudRATE_SELECTOR<="10";
+   D<="11100101";		 
+	WRB<='1';
+	wait for ck_period;
+	WRB<='0';
+	wait for ck_period*80;
+---------------------------------------	
+
+}#pragma
+
