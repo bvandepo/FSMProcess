@@ -136,7 +136,8 @@ PRAGMA_VHDL_DEMOTE_OUTPUT_TO_SIGNAL_DIRECTIVE  :  '#pragma_vhdl_demote_output_to
 PRAGMA_VHDL_DEMOTE_INPUT_TO_SIGNAL_DIRECTIVE   :  '#pragma_vhdl_demote_input_to_signal{' ;
 PRAGMA_VHDL_ALLOW_AUTOMATIC_BUFFERING_DIRECTIVE:  '#pragma_vhdl_allow_automatic_buffering' ;
 PRAGMA_VHDL_SET_BIT_SIZE_FOR_OUTPUT_STATE_NUMBER: '#pragma_vhdl_set_bit_size_for_output_state_number{' ;
-
+PRAGMA_VHDL_TESTBENCH_BEGIN_DIRECTIVE          :  '#pragma_vhdl_testbench' ;
+				                 
 
 
 PRAGMA_WITH_BEGINING_AND_ENDING: '{' SOMECARS  '}#pragma' ; 

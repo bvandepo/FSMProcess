@@ -93,6 +93,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
  }*/
 
+//TODO: gérer que l'on puisse ajouter des commentaires dans les pragmas entity
 //TODO: parser le pragma entity pour detecter E/S (ou alors add/remove..) + bus
 //////////////////////////////////////////////////////////
 public class FsmProcess {
@@ -1204,9 +1205,13 @@ public class FsmProcess {
 		// bufVhdl.append("='0' );\n");
 		// bufVhdl.append("wait for ck_period;\n");
 		// bufVhdl.append("wait for ck_period*20;\n");
-		// bufVhdl.append(" wait;\n");
-		// bufVhdl.append("end process;\n");
-		// bufVhdl.append("END;\n");
+		bufVhdl.append("------------------------------pragma_vhdl_testbench-------------------------------------------------------\n");
+		bufVhdl.append(fsm.pragmaVhdlTestbench);
+		bufVhdl.append("--------------------------end of pragma_vhdl_testbench----------------------------------------------------\n");
+
+		bufVhdl.append(" wait;\n");
+		bufVhdl.append("end process;\n");
+		bufVhdl.append("END;\n");
 		// TODO: prévoir si possible une sortie texte affectée avec le nom de
 		// l'état actif
 	}
@@ -2127,6 +2132,7 @@ public class FsmProcess {
 		public String pragmaVhdlEntity = "";
 		public String pragmaVhdlArchitecturePreBegin = "";
 		public String pragmaVhdlArchitecturePostBegin = "";
+		public String pragmaVhdlTestbench = "";
 
 		// global flag to allow the reuse of memorized outputs as inputs in
 		// conditions and expressions
@@ -2740,7 +2746,7 @@ public class FsmProcess {
 				int nbtokens = fsm.listOfInterfacePortTypesToAddThroughPragma.size();
 				String interfacePortTypes = "";
 				for (int j = 0; j < nbtokens; j++) {
-					String tempo=fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
+					String tempo = fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
 					interfacePortTypes += fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
 					interfacePortTypes += " ";
 				}
@@ -2824,6 +2830,14 @@ public class FsmProcess {
 			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
 			// System.out.println(pragmaCleaned);
 			fsm.pragmaVhdlArchitecturePostBegin += pragmaCleaned;
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterPragma_vhdl_testbench(FsmParser.Pragma_vhdl_testbenchContext ctx) {
+			String pragma = ctx.children.get(1).getText();
+			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
+			// System.out.println(pragmaCleaned);
+			fsm.pragmaVhdlTestbench += pragmaCleaned;
 		}
 
 		// ///////////////////////////////////////////////////////////////
@@ -2932,7 +2946,6 @@ public class FsmProcess {
 			}
 		}
 		// ///////////////////////////////////////////////////////////////
-
 	}
 
 	// ///////////////////////////////////////////////////////////////
