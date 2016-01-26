@@ -791,6 +791,12 @@ public class FsmProcess {
 					// modelOk = false;
 					// } else {
 					Input i = fsm.hmapInput.get(name);
+					// TODO: do we have topropagate the fact that the signal is
+					// used as input...
+					// not easy because it can appears in process sensivity list
+					// but be use as output in pragma, so should not auto
+					// generate code for affectation
+					// if (i.isUsedInFSm) o.isUsedInFSm = true;
 					fsm.inputs.remove(i);
 					fsm.hmapInput.remove(i.name);
 					numberOfInputs--;
@@ -1146,31 +1152,19 @@ public class FsmProcess {
 		bufVhdl.append("-- Uncomment the following library declaration if using\n");
 		bufVhdl.append("-- arithmetic functions with Signed or Unsigned values\n");
 		bufVhdl.append("--USE ieee.numeric_std.ALL;\n\n");
-		bufVhdl.append("ENTITY tb_");
+		bufVhdl.append("ENTITY ");
 		bufVhdl.append(fsm.name);
-		bufVhdl.append(" IS\n");
-		bufVhdl.append("END tb_");
+		bufVhdl.append("_tb IS\n");
+		bufVhdl.append("END ");
 		bufVhdl.append(fsm.name);
-		bufVhdl.append(";\n\n");
-		bufVhdl.append("ARCHITECTURE behavior OF tb_");
+		bufVhdl.append("_tb ;\n\n");
+		bufVhdl.append("ARCHITECTURE behavior OF ");
 		bufVhdl.append(fsm.name);
-		bufVhdl.append(" IS\n");
+		bufVhdl.append("_tb IS\n");
 		bufVhdl.append("-- Component Declaration for the Unit Under Test (UUT)\n");
 		generateComponentVhdl();
-		// TODO: listing of signals
-		bufVhdl.append("-- added through pragmas\n");
-		// signal D : std_logic_vector(7 downto 0); --:="01010101";
-		// signal TX :std_logic;
-		// signal BaudRATE_SELECTOR : std_logic_vector(1 downto 0); --:="00";
-		// signal iq_cpt : std_logic_vector(3 downto 0);
-		// signal iq_reg_decal : std_logic_vector(10 downto 0);
-		bufVhdl.append("--inputs\n");
-		// signal ck : std_logic := '0';
-		// signal ARAZB : std_logic := '0';
-		// signal WRB : std_logic := '0';
-		bufVhdl.append("--outputs\n");
-		// signal STATE_NUMBER: std_logic_vector( 0 downto 0);
-		// signal PRET: std_logic;
+		bufVhdl.append("\n");
+		generateSignalsForInterfaceVhdl();
 		bufVhdl.append("\n--Clock period, should be settable through pragma_vhdl to get real time in simu\n");
 		bufVhdl.append("constant ck_period : time := 100 ns;\n\n");
 		bufVhdl.append("BEGIN\n");
@@ -1203,16 +1197,16 @@ public class FsmProcess {
 		bufVhdl.append("-- insert stimuli here \n");
 		bufVhdl.append("-- TODO: the content of the simu should be settable by vhdl pragma or from an external tb.fsm file provided through command line\n");
 		bufVhdl.append("---------------------------------------	\n");
-		bufVhdl.append("wait until (");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append("'event and ");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append("='0' );\n");
-		bufVhdl.append("wait for ck_period;\n");
-		bufVhdl.append("wait for ck_period*20;\n");
-		bufVhdl.append(" wait;\n");
-		bufVhdl.append("end process;\n");
-		bufVhdl.append("END;\n");
+		// bufVhdl.append("wait until (");
+		// bufVhdl.append(fsm.clkSignalName);
+		// bufVhdl.append("'event and ");
+		// bufVhdl.append(fsm.clkSignalName);
+		// bufVhdl.append("='0' );\n");
+		// bufVhdl.append("wait for ck_period;\n");
+		// bufVhdl.append("wait for ck_period*20;\n");
+		// bufVhdl.append(" wait;\n");
+		// bufVhdl.append("end process;\n");
+		// bufVhdl.append("END;\n");
 		// TODO: prévoir si possible une sortie texte affectée avec le nom de
 		// l'état actif
 	}
@@ -1254,6 +1248,63 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
+	static public void generateSignalsForInterfaceVhdl() {
+
+		//
+		//
+		// -- pragma by hand
+		// signal D : std_logic_vector(7 downto 0); --:="01010101";
+		// signal TX :std_logic;
+		// signal BaudRATE_SELECTOR : std_logic_vector(1 downto 0); --:="00";
+		// signal iq_cpt : std_logic_vector(3 downto 0);
+		// signal iq_reg_decal : std_logic_vector(10 downto 0);
+		//
+		// --inputs
+		// signal ck : std_logic := '0';
+		// signal ARAZB : std_logic := '0';
+		// signal WRB : std_logic := '0';
+		// --outputs
+		// signal STATE_NUMBER: std_logic_vector( 0 downto 0);
+		// signal PRET: std_logic;
+		//
+		//
+
+		// ////////////////listing of inputs/outputs//////////////////
+		bufVhdl.append("signal ");
+		bufVhdl.append(fsm.clkSignalName);
+		bufVhdl.append(" :    std_logic;\n");
+		bufVhdl.append("signal ");
+		bufVhdl.append(fsm.aResetSignalName);
+		bufVhdl.append(" :    std_logic;\n");
+
+		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
+			bufVhdl.append("signal		");
+			bufVhdl.append(" STATE_NUMBER");
+			bufVhdl.append(" :    std_logic_vector( ");
+			bufVhdl.append(fsm.numberOfBitsForStates - 1);
+			bufVhdl.append(" downto 0);\n");
+		}
+
+		// ////////////////listing of inputs/outputs//////////////////
+		bufVhdl.append("--signals for inputs:  \n");
+		for (int n = 0; n < fsm.realInputs.size(); n++) {
+			bufVhdl.append("signal ");
+			bufVhdl.append(fsm.realInputs.get(n).paddedName);
+			bufVhdl.append(" :   ");
+			bufVhdl.append(fsm.realInputs.get(n).interfacePortTypes);
+			bufVhdl.append(";\n");
+		}
+		bufVhdl.append("--signals for outputs:  \n");
+		for (int n = 0; n < fsm.realOutputs.size(); n++) {
+			bufVhdl.append("signal ");
+			bufVhdl.append(fsm.realOutputs.get(n).paddedName);
+			bufVhdl.append(" : ");
+			bufVhdl.append(fsm.realOutputs.get(n).interfacePortTypes);
+			bufVhdl.append(";\n");
+		}
+	}
+
+	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateInterfaceVhdl() {
 		bufVhdl.append("port (\n");
 		if (!fsm.pragmaVhdlEntity.equals("")) {
@@ -1283,7 +1334,8 @@ public class FsmProcess {
 		for (int n = 0; n < fsm.realInputs.size(); n++) {
 			bufVhdl.append("		");
 			bufVhdl.append(fsm.realInputs.get(n).paddedName);
-			bufVhdl.append(" : in     std_logic");
+			bufVhdl.append(" : in     ");
+			bufVhdl.append(fsm.realInputs.get(n).interfacePortTypes);
 			if ((n != fsm.realInputs.size() - 1) || ((fsm.realOutputs.size() > 0)))
 				bufVhdl.append(";\n");
 		}
@@ -1292,10 +1344,10 @@ public class FsmProcess {
 			bufVhdl.append(fsm.realOutputs.get(n).paddedName);
 			bufVhdl.append(" : ");
 			if (fsm.realOutputs.get(n).isBuffer)
-				bufVhdl.append("buffer");
+				bufVhdl.append("buffer ");
 			else
-				bufVhdl.append("out   ");
-			bufVhdl.append(" std_logic");
+				bufVhdl.append("out    ");
+			bufVhdl.append(fsm.realOutputs.get(n).interfacePortTypes);
 			if (n != fsm.realOutputs.size() - 1)
 				bufVhdl.append(";\n");
 		}
@@ -1443,7 +1495,7 @@ public class FsmProcess {
 		// outputs//////////////////
 		for (int n = 0; n < fsm.outputs.size(); n++) {
 			Output out = fsm.outputs.get(n);
-			if (out.memorized) {
+			if ((out.memorized) && (out.isUsedInFSm)) {
 				bufVhdl.append("signal ");
 				bufVhdl.append(out.name);
 				bufVhdl.append("_set, ");
@@ -1473,21 +1525,25 @@ public class FsmProcess {
 		if (fsm.demotedToSignalOutputs.size() > 0) {
 			bufVhdl.append("-----------------outputs demoted to internal signals through pragma-------------------------------------\n");
 			for (int n = 0; n < fsm.demotedToSignalOutputs.size(); n++) {
-				bufVhdl.append("signal ");
-				bufVhdl.append(fsm.demotedToSignalOutputs.get(n).paddedName);
-				bufVhdl.append(" : ");
-				bufVhdl.append(" std_logic");
-				bufVhdl.append(";\n");
+				if (fsm.demotedToSignalOutputs.get(n).isUsedInFSm) {
+					bufVhdl.append("signal ");
+					bufVhdl.append(fsm.demotedToSignalOutputs.get(n).paddedName);
+					bufVhdl.append(" : ");
+					bufVhdl.append(" std_logic");
+					bufVhdl.append(";\n");
+				}
 			}
 		}
 		if (fsm.demotedToSignalInputs.size() > 0) {
 			bufVhdl.append("-----------------inputs demoted to internal signals through pragma-------------------------------------\n");
 			for (int n = 0; n < fsm.demotedToSignalInputs.size(); n++) {
-				bufVhdl.append("signal ");
-				bufVhdl.append(fsm.demotedToSignalInputs.get(n).paddedName);
-				bufVhdl.append(" : ");
-				bufVhdl.append(" std_logic");
-				bufVhdl.append(";\n");
+				if (fsm.demotedToSignalInputs.get(n).isUsedInFSm) {
+					bufVhdl.append("signal ");
+					bufVhdl.append(fsm.demotedToSignalInputs.get(n).paddedName);
+					bufVhdl.append(" : ");
+					bufVhdl.append(" std_logic");
+					bufVhdl.append(";\n");
+				}
 			}
 		}
 		// ////////////////let's animate all that stuff...//////////////////
@@ -1498,7 +1554,6 @@ public class FsmProcess {
 			bufVhdl.append(fsm.pragmaVhdlArchitecturePostBegin);
 			bufVhdl.append("--------------------------end of pragma_vhdl_architecture_post_begin--------------------------------------\n");
 		}
-
 		bufVhdl.append("value_one_internal <='1';\n");
 		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
 			if (numberOfResetTransitions > 0) {
@@ -1532,12 +1587,14 @@ public class FsmProcess {
 			bufVhdl.append("-------------------Combinatorial process for the evolution of the state------------------\n");
 			bufVhdl.append("process (current_state");
 			for (int n = 0; n < fsm.inputs.size(); n++) {
-				bufVhdl.append(", ");
-				bufVhdl.append(fsm.inputs.get(n).name);
+				if (fsm.inputs.get(n).isUsedInFSm) {
+					bufVhdl.append(", ");
+					bufVhdl.append(fsm.inputs.get(n).name);
+				}
 			}
 			if (fsm.bufferedOutputsAllowed) {
 				for (int n = 0; n < fsm.outputs.size(); n++) {
-					if (fsm.outputs.get(n).isBuffer) {
+					if ((fsm.outputs.get(n).isBuffer) && (fsm.outputs.get(n).isUsedInFSm)) {
 						bufVhdl.append(", ");
 						// bufVhdl.append("	signal_buffered_");
 						bufVhdl.append(fsm.outputs.get(n).name);
@@ -1609,10 +1666,8 @@ public class FsmProcess {
 						bufVhdl.append(" true ");
 					else {
 						bufVhdl.append(" ( ");
-
 						bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
 						bufVhdl.append(" ) ");
-
 						bufVhdl.append(" = '1' ");
 					}
 					bufVhdl.append(") then next_state <= state_");
@@ -1641,17 +1696,15 @@ public class FsmProcess {
 			bufVhdl.append(fsm.states.get(0).name);
 			bufVhdl.append(";\n    end case;\n");
 			// if there has been some synchronous reset transition, end if
-			// should be
-			// added
+			// should be added
 			if (nbResetTransitions != 0)
 				bufVhdl.append("   end if;\n");
-
 			bufVhdl.append("end process;\n");
 		}
 		bufVhdl.append("------------------FLIP FLOPS FOR MEMORIZED OUTPUTS ------------\n");
 		for (int n = 0; n < fsm.outputs.size(); n++) {
 			Output out = fsm.outputs.get(n);
-			if (out.memorized) {
+			if ((out.memorized) && (out.isUsedInFSm)) {
 				bufVhdl.append("------ FLIP FLOPS FOR ");
 				bufVhdl.append(out.name);
 				bufVhdl.append(" ------\n");
@@ -1744,7 +1797,7 @@ public class FsmProcess {
 				break;
 			}
 			for (int n = 0; n < fsm.outputs.size(); n++)
-				if (fsm.outputs.get(n).memorized == processMemorizedOutput) {
+				if ((fsm.outputs.get(n).memorized == processMemorizedOutput) && (fsm.outputs.get(n).isUsedInFSm)) {
 					String currentOutputName = fsm.outputs.get(n).name;
 					bufVhdl.append("    ");
 					bufVhdl.append(fsm.outputs.get(n).name);
@@ -1962,6 +2015,10 @@ public class FsmProcess {
 											// to be only used internaly and not
 											// generate a real input in the
 											// entity
+		Boolean isUsedInFSm = false; // set to true when the input is
+										// effectively used in the FSM, not only
+										// in pragma
+		String interfacePortTypes = "std_logic"; // default
 
 		public int compareTo(Input o) {
 			Input a = (Input) o;
@@ -1984,6 +2041,10 @@ public class FsmProcess {
 											// to be only used internaly and not
 											// generate a real output in the
 											// entity
+		Boolean isUsedInFSm = false; // set to true when the output is
+										// effectively used in the FSM, not only
+										// in pragma
+		String interfacePortTypes = "std_logic"; // default
 
 		public int compareTo(Output o) {
 			Output a = (Output) o;
@@ -2087,6 +2148,10 @@ public class FsmProcess {
 		ArrayList<Action> noRepeatedlyActions = new ArrayList<Action>();
 
 		ArrayList<Output> outputsWithAsynchronousResetValue = new ArrayList<Output>();
+
+		ArrayList<String> listOfInterfaceNamesToAddThroughPragma = new ArrayList<String>();
+		ArrayList<String> listOfInterfacePortTypesToAddThroughPragma = new ArrayList<String>();
+		String InterfacePortModeToAddThroughPragma;
 
 		// each output in outputs list is also located in one of this two lists
 		ArrayList<Output> realOutputs = new ArrayList<Output>();
@@ -2400,6 +2465,7 @@ public class FsmProcess {
 		public void enterInput(FsmParser.InputContext ctx) {
 			Input i = new Input();
 			i.name = ctx.children.get(0).getText().toUpperCase();
+			i.isUsedInFSm = true;
 			fsm.addInput(ctx.children.get(0).getText().toUpperCase(), i);
 		}
 
@@ -2510,6 +2576,7 @@ public class FsmProcess {
 						.append("     Moreover, the inputs in the expression will not be added automatically to the process sensitivity list, probably resulting in errors or warnings.\n");
 			}
 			fsm.currentOutput.asyncResetExpression = reconstructedExpression;
+			fsm.currentOutput.isUsedInFSm = true;
 		}
 
 		// //////////////////////////////////////////////////////////////
@@ -2525,6 +2592,7 @@ public class FsmProcess {
 			// there is no yet Action_expression_reset_asynchronous, only its
 			// name, so lets give a defaut "1" expression, that can be updated
 			// later
+			fsm.currentOutput.isUsedInFSm = true;
 			fsm.currentOutput.asyncResetExpression = "1"; // default
 			fsm.outputsWithAsynchronousResetValue.add(fsm.currentOutput);
 			fsm.currentOutput.memorized = true; // check that the output is
@@ -2547,6 +2615,7 @@ public class FsmProcess {
 					o.memorized = false;
 				fsm.addOutput(outputName, o);
 				fsm.currentOutput = o;
+				o.isUsedInFSm = true;
 			}
 		}
 
@@ -2591,7 +2660,9 @@ public class FsmProcess {
 			a.expression = ""; // default value if not specified
 			fsm.repeatedlyActions.add(a);
 			fsm.actions.add(a);// add to the global action list
-		}// //////////////////////////////////////////////////////////////
+		}
+
+		// //////////////////////////////////////////////////////////////
 
 		public void enterState(FsmParser.StateContext ctx) {
 			String name = ctx.children.get(0).getText().toUpperCase();
@@ -2607,36 +2678,109 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterInterface_name(FsmParser.Interface_nameContext ctx) {
-			if (!pragmaCleaned.equals("")) {
-				pragmaCleaned += ", ";
-			}
+			// if (!pragmaCleaned.equals("")) {
+			// pragmaCleaned += ", ";
+			// }
 			String interface_name = ctx.children.get(0).getText();
-			pragmaCleaned += interface_name + " ";
+			// pragmaCleaned += interface_name + " ";
+			fsm.listOfInterfaceNamesToAddThroughPragma.add(interface_name.toUpperCase());
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterInterface_port_mode(FsmParser.Interface_port_modeContext ctx) {
 			String interface_port_mode = ctx.children.get(0).getText();
-			pragmaCleaned += " : " + interface_port_mode + " ";
+			// convert to toUpperCase to compare it with IN, OUT, BUFFER...
+			fsm.InterfacePortModeToAddThroughPragma = interface_port_mode.toUpperCase();
+			// prepare type list
+			fsm.listOfInterfacePortTypesToAddThroughPragma.clear();
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterInterface_port_type(FsmParser.Interface_port_typeContext ctx) {
+			// fsm.listOfInterfacePortTypesToAddThroughPragma.clear();
 			int nbTokens = ctx.children.size();
 			for (int i = 0; i < nbTokens; i++) {
 				String stToken = ctx.children.get(i).getText();
-				pragmaCleaned += stToken + " ";
+				// pragmaCleaned += stToken + " ";
+				fsm.listOfInterfacePortTypesToAddThroughPragma.add(stToken);
 			}
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterInterface_port_declaration(FsmParser.Interface_port_declarationContext ctx) {
-			pragmaCleaned = "";
+			// pragmaCleaned = "";
+			fsm.listOfInterfaceNamesToAddThroughPragma.clear();
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void exitInterface_port_declaration(FsmParser.Interface_port_declarationContext ctx) {
-			fsm.pragmaVhdlEntity += pragmaCleaned + ";\n";
+			// fsm.pragmaVhdlEntity += pragmaCleaned + ";\n";
+			int nb = fsm.listOfInterfaceNamesToAddThroughPragma.size();
+			// for (int k = 0; k < nb; k++) {
+			// String name = fsm.listOfInterfaceNamesToAddThroughPragma.get(k);
+			// fsm.pragmaVhdlEntity += "-- ";
+			// fsm.pragmaVhdlEntity += name;
+			// fsm.pragmaVhdlEntity += " : ";
+			// fsm.pragmaVhdlEntity += fsm.InterfacePortModeToAddThroughPragma;
+			// int nbtokens =
+			// fsm.listOfInterfacePortTypesToAddThroughPragma.size();
+			// String interfacePortTypes = " ";
+			// for (int j = 0; j < nbtokens; j++) {
+			// interfacePortTypes +=
+			// fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
+			// interfacePortTypes += " ";
+			// }
+			// fsm.pragmaVhdlEntity += interfacePortTypes;
+			// fsm.pragmaVhdlEntity += ";\n";
+			// }
+
+			// fsm.pragmaVhdlEntity += pragmaCleaned + ";\n";
+			for (int k = 0; k < nb; k++) {
+				String name = fsm.listOfInterfaceNamesToAddThroughPragma.get(k);
+				int nbtokens = fsm.listOfInterfacePortTypesToAddThroughPragma.size();
+				String interfacePortTypes = "";
+				for (int j = 0; j < nbtokens; j++) {
+					String tempo=fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
+					interfacePortTypes += fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
+					interfacePortTypes += " ";
+				}
+				if (fsm.InterfacePortModeToAddThroughPragma.equals("IN")) {
+					Input i = fsm.getInputFromName(name);
+					if (i == null) {
+						i = new Input();
+						i.name = fsm.listOfInterfaceNamesToAddThroughPragma.get(k);
+						i.type = "I";
+						i.isDemotedToSignal = false;
+						fsm.addInput(i.name, i);
+						// i.isUsedInFSm=false;
+					}
+					i.interfacePortTypes = interfacePortTypes;
+				} else if (fsm.InterfacePortModeToAddThroughPragma.equals("OUT")
+						|| fsm.InterfacePortModeToAddThroughPragma.equals("BUFFER")) {
+					Output o = fsm.getOutputFromName(name);
+					if (o == null) {
+						o = new Output();
+						o.name = fsm.listOfInterfaceNamesToAddThroughPragma.get(k);
+						o.type = "I";
+						o.isDemotedToSignal = false;
+						fsm.addOutput(o.name, o);
+						// o.isUsedInFSm=false;
+					}
+					if (fsm.InterfacePortModeToAddThroughPragma.equals("BUFFER"))
+						o.isBuffer = true;
+					o.interfacePortTypes = interfacePortTypes;
+				}
+				// TODOO: inout????
+
+				// TODO: Log INFO
+				// TODO check to et downto que les bornes sont compatibles
+				// pragmaCleaned + ";\n";
+			}
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void exitInterface_port_type(FsmParser.Interface_port_typeContext ctx) {
+
 		}
 
 		// TODO: ajouter automatiquement aux listes Inputs/outputs!!!!!!->
@@ -2727,6 +2871,7 @@ public class FsmProcess {
 				fsm.currentOutput = o;
 			}
 			fsm.currentOutput.isBuffer = true;
+			fsm.currentOutput.isUsedInFSm = true;
 			bufLogInfo.append("Info: The output ");
 			bufLogInfo.append(fsm.currentOutput.name);
 			bufLogInfo.append(" has been promoted to a buffered output through pragma directive.\n");
@@ -2742,6 +2887,7 @@ public class FsmProcess {
 				fsm.addOutput(outputName, o);
 				fsm.currentOutput = o;
 			}
+			fsm.currentOutput.isUsedInFSm = true;
 			fsm.currentOutput.isDemotedToSignal = true;
 			bufLogInfo.append("Info: The output ");
 			bufLogInfo.append(fsm.currentOutput.name);
