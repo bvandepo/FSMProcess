@@ -13,3 +13,97 @@
 4 -> 5 ?NOT C9;
 5 -> 6 ?NOT C10;
 6 -> 0 ?NOT C8;
+
+ 
+//to testbench this file, just type ./run_tb.sh train 10000us in example/ghdl directory
+
+#pragma_vhdl_testbench{  
+ ---------------------------------------
+        C8<='1';
+        C9<='1';
+        C10<='1';
+        C11<='1';
+        C12<='1';
+        C13<='1';
+	
+	wait until (ck'event and ck='0' );
+	Inter0<='1';
+	wait for ck_period*2;
+	Inter1<='1';
+---------------------------------------	
+	wait for ck_period;
+	Inter1<='0';
+	wait for ck_period;
+	Inter0<='0';
+	wait for ck_period;
+	Inter0<='1';
+	wait for ck_period*10;
+	C12<='0';
+	wait for ck_period;
+	C12<='1';
+---------------------------------------	
+ 	wait for ck_period;
+	Inter1<='0';
+	wait for ck_period;
+	Inter0<='0';
+	wait for ck_period;
+	Inter0<='1';
+	wait for ck_period*10;
+	C11<='0';
+	wait for ck_period;
+	C11<='1';
+---------------------------------------	
+	wait for ck_period;
+	Inter1<='0';
+	wait for ck_period;
+	Inter0<='0';
+	wait for ck_period;
+	Inter0<='1';
+	wait for ck_period*10;
+	C13<='0';
+	wait for ck_period;
+	C13<='1';
+---------------------------------------	
+	wait for ck_period;
+	Inter1<='0';
+	wait for ck_period;
+	Inter0<='0';
+	wait for ck_period;
+	Inter0<='1';
+	wait for ck_period*10;
+	C9<='0';
+	wait for ck_period;
+	C9<='1';
+---------------------------------------	
+	wait for ck_period;
+	Inter1<='0';
+	wait for ck_period;
+	Inter0<='0';
+	wait for ck_period;
+	Inter0<='1';
+	wait for ck_period*10;
+	C10<='0';
+	wait for ck_period;
+	C10<='1';
+---------------------------------------	
+	wait for ck_period;
+	Inter1<='0';
+	wait for ck_period;
+	Inter0<='0';
+	wait for ck_period;
+	Inter0<='1';
+	wait for ck_period*10;
+	C8<='0';
+	wait for ck_period;
+	C8<='1';
+---------------------------------------	
+
+	wait for ck_period*10;
+	Inter1<='1';
+
+---------------------------------------	
+
+}#pragma
+
+
+
