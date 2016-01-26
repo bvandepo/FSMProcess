@@ -581,6 +581,8 @@ Il est possible d'utiliser ce mécanisme pour décrire des comportements plus co
 
 ==Destitution manuelle d'une sortie ou d'une entrée en signal interne==
 
+TODO: lequel utiliser quand une sortie est buffered ?? ordre???
+ 
 <<FSM ex_demoted_output_pragma.fsm>>
 1 :OUT2:OUT4;
 #pragma_vhdl_demote_output_to_signal{ OUT4,OUT3}#pragma 
@@ -606,9 +608,10 @@ Il est possible d'utiliser ce mécanisme pour décrire des comportements plus co
 -- tata=3;
 -- }
 }#pragma
+// this a a pragma inserted inside entity
+// for instance to add inputs /outputs
 #pragma_vhdl_entity{ 
--- this a a pragma inserted inside entity
--- for instance to add inputs /outputs
+A : in std_logic;
 added_output: out std_logic;
 }#pragma
 #pragma_vhdl_architecture_pre_begin{ 
@@ -622,8 +625,48 @@ signal signal_added_output: std_logic;
 signal_added_output <= '1';
 added_output<=signal_added_output;
 }#pragma
+
+
+
+#pragma_vhdl_testbench{  
+-- code ajouté pour le testbench:
+ ---------------------------------------	
+	wait until (ck'event and ck='0' );
+	BaudRATE_SELECTOR<="00";
+   D<="01010101";		
+	WRB<='1';
+	wait for ck_period;
+	WRB<='0';
+	wait for ck_period*20;
+---------------------------------------	
+	wait until (ck'event and ck='0' );
+	BaudRATE_SELECTOR<="01";
+   D<="01010101";		 
+	WRB<='1';
+	wait for ck_period;
+	WRB<='0';
+	wait for ck_period*40;
+---------------------------------------		
+	wait until (ck'event and ck='0' );
+	BaudRATE_SELECTOR<="10";
+   D<="11100101";		 
+	WRB<='1';
+	wait for ck_period;
+	WRB<='0';
+	wait for ck_period*80;
+---------------------------------------	
+}#pragma
+
+
 <</FSM>>
 
+
+===Casse===
+<<FSM ex_case_insensitive.fsm>>
+1 :i,OUT2:OUT4; 
+2 : OUT3:S,OUT5:r,out6= in1 anD totO2 XnOR TATA; 
+1->2?IN1;
+<</FSM>>
 
 ===Génération de modèle par programme===
 
