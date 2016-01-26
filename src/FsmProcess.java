@@ -2746,7 +2746,6 @@ public class FsmProcess {
 				int nbtokens = fsm.listOfInterfacePortTypesToAddThroughPragma.size();
 				String interfacePortTypes = "";
 				for (int j = 0; j < nbtokens; j++) {
-					String tempo = fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
 					interfacePortTypes += fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
 					interfacePortTypes += " ";
 				}
