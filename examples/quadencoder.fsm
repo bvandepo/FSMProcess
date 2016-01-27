@@ -1,0 +1,65 @@
+
+0->1?A;
+1->0?NOT A:DEC;
+1->2?B;
+2->1?NOT B;
+2->3?NOT A:INC;
+3->2?A;
+3->0?NOT B;
+0->3?B;
+
+
+#pragma_vhdl_entity{ COUNT    : buffer std_logic_vector(15 downto 0); 
+		     sraz_cpt : in     std_logic; }#pragma
+#pragma_vhdl_promote_buffered{INC,DEC}#pragma 
+
+#pragma_vhdl_architecture_post_begin{ 
+--counter:
+Process (ck, arazb)
+begin
+	if arazb='0' then count <= (others=>'0');
+	elsif ck'event and ck='1' then
+		if sraz_cpt='1' then 
+		  count <= (others=>'0');
+		elsif  inc='1' then
+		  count <=count+1;
+		elsif  dec='1' then
+		  count <=count-1;
+		end if;
+	end if;
+end process;
+}#pragma
+
+
+#pragma_vhdl_testbench{  
+ ---------------------------------------	
+wait until (ck'event and ck='0' );
+sraz_cpt<='1';
+wait for ck_period;
+sraz_cpt<='0';
+A<='0';
+B<='0';
+wait for ck_period;
+
+
+A<='1';
+wait for ck_period*3;
+A<='0';
+wait for ck_period*3;
+
+for i in 0 to 255 loop
+A<='1';
+wait for ck_period*3;
+B<='1';
+wait for ck_period*3;
+A<='0';
+wait for ck_period*3;
+B<='0';
+wait for ck_period*3;
+END LOOP;
+
+wait for ck_period*80;
+---------------------------------------	
+
+}#pragma
+
