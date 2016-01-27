@@ -1,0 +1,59 @@
+=>INIT?resetn,0;
+
+INIT->WAIT_RISING?NOT signal_in;
+INIT->WAIT_FALLING?signal_in;
+WAIT_RISING->WAIT_CONFIRM_RISING?signal_in:srazcpt;
+WAIT_CONFIRM_RISING -> WAIT_FALLING? NOT  signal_in AND delay_ended;
+WAIT_CONFIRM_RISING ->WAIT_RISING? NOT signal_in AND NOT delay_ended;
+WAIT_FALLING->WAIT_CONFIRM_FALLING?NOT signal_in:srazcpt;
+WAIT_CONFIRM_FALLING->WAIT_RISING?  signal_in  and delay_ended;
+WAIT_CONFIRM_FALLING->WAIT_FALLING?  signal_in  and not delay_ended;
+->WAIT_FALLING?SRESET AND   signal_in;
+->WAIT_RISING?SRESET AND NOT  signal_in;
+
+/ck;
+WAIT_CONFIRM_RISING  :rising_edge        = (NOT delay_ended)  AND COUNT_EQUAL
+		     :false_rising_edge  = (NOT signal_in) AND (NOT delay_ended);
+WAIT_CONFIRM_FALLING :falling_edge       = (NOT delay_ended)  AND COUNT_EQUAL
+                     :false_falling_edge = (    signal_in) AND (NOT delay_ended);
+
+//TODO: bizarre sans ce pragma, probleme...
+#pragma_vhdl_allow_automatic_buffering
+%S,delay_ended=COUNT_EQUAL;  
+%R,delay_ended=srazcpt;  
+
+#pragma_vhdl_promote_buffered{delay_ended, srazcpt}#pragma 
+#pragma_vhdl_demote_input_to_signal{ COUNT_EQUAL}#pragma
+#pragma_vhdl_entity{ Q: buffer std_logic_vector (5 downto 0);
+		     MIN_TIME: in std_logic_vector (5 downto 0);  }#pragma
+#pragma_vhdl_architecture_post_begin{  
+process(ck, resetn)
+	begin
+	if resetn = '0' then Q<=(others=>'0');
+	elsif ck'event and ck = '1' then
+		if (srazcpt='1') then Q<=(others=>'0');
+		else Q<=Q+1;
+		end if;	
+	end if;
+end process ;
+COUNT_EQUAL<='1' when Q=MIN_TIME else    '0';
+}#pragma
+#pragma_vhdl_testbench{  
+ ---------------------------------------	
+wait until (ck'event and ck='0' );
+MIN_TIME<="000111";
+signal_in<='1';
+SRESET<='1';
+wait for ck_period;
+SRESET<='0';
+
+for j in 1 to 10 loop
+for i in 0 to 5 loop
+signal_in<='1';
+wait for ck_period*j;
+signal_in<='0';
+wait for ck_period*j;
+END LOOP;
+END LOOP;
+---------------------------------------	
+}#pragma
