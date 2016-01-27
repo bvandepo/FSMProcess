@@ -1,0 +1,111 @@
+
+0->1?EN_MESURE:SLOAD_PRED:SRAZ_CPT;
+1->0*1?FIN_PREDIV:EN_REG_MES:R,DEP:S,DISPO;
+1->2*2?NOT ENTREE_MESURE;
+2->0*1?MAX_CPT AND ENTREE_MESURE:S,DEP:R,DISPO;
+2->0*2?FIN_PREDIV:EN_REG_MES:R,DEP:S,DISPO;
+2->1*3?ENTREE_MESURE:EN_CPT;
+
+1:EN_PRED;
+2:EN_PRED;
+ 
+#pragma_vhdl_demote_input_to_signal{MAX_CPT, FIN_PREDIV  }#pragma
+#pragma_vhdl_promote_buffered{EN_CPT,SLOAD_PRED ,SRAZ_CPT ,EN_REG_MES, EN_PRED  }#pragma 
+
+
+#pragma_vhdl_entity{ COUNT_EVENT    : buffer std_logic_vector(15 downto 0); 
+		     MEASURE        : out    std_logic_vector(15 downto 0); 
+		     WINDOW_TIME     : in std_logic_vector(23 downto 0); 
+		     COUNT_TIME     : buffer std_logic_vector(23 downto 0); 
+		    }#pragma
+
+
+#pragma_vhdl_architecture_post_begin{ 
+--counter:
+Process (ck, arazb)
+begin
+if COUNT_EVENT="1111111111111111" then
+ 	MAX_CPT<='1'; 
+else 
+	MAX_CPT<='0'; 
+end if; 
+
+	if arazb='0' then COUNT_EVENT <= (others=>'0');
+	elsif ck'event and ck='1' then
+		if sraz_cpt='1' then 
+		  COUNT_EVENT <= (others=>'0');
+		elsif  EN_CPT='1' then
+		  COUNT_EVENT <=COUNT_EVENT+1;
+		end if;
+	end if;
+
+end process;
+--prediviseur:
+Process (ck, arazb)
+begin
+	if arazb='0' then COUNT_TIME <= (others=>'1');
+	elsif ck'event and ck='1' then
+		if SLOAD_PRED='1' then 
+		  COUNT_TIME <= WINDOW_TIME; --"0000000001000000";
+		elsif  EN_PRED='1' then
+		  COUNT_TIME <=COUNT_TIME-1;
+		end if;
+	end if;
+if COUNT_TIME="000000000000000000000000" then 
+	FIN_PREDIV<='1'; 
+else 
+	FIN_PREDIV<='0';
+end if; 
+end process;
+--measure:
+Process (ck, arazb)
+begin
+	if arazb='0' then MEASURE <= (others=>'1');
+	elsif ck'event and ck='1' then
+		if EN_REG_MES='1' then 
+		  MEASURE <= COUNT_EVENT;
+		end if;
+	end if;
+
+end process;
+}#pragma
+
+
+#pragma_vhdl_testbench{  
+ ---------------------------------------	
+en_mesure<='0';
+entree_mesure<='0';
+WINDOW_TIME <= "000000000000000001000000";
+wait for ck_period*3;
+wait until (ck'event and ck='0' );
+en_mesure<='1';
+
+for i in 0 to 255 loop
+	wait for ck_period;
+	entree_mesure<='1';
+	wait for ck_period*3;
+	entree_mesure<='0';
+	wait for ck_period*3;
+END LOOP;
+
+ en_mesure<='0';
+WINDOW_TIME <= "111111111111111111111111";
+
+
+wait for ck_period*3;
+en_mesure<='1';
+for i in 0 to 200000 loop
+	wait for ck_period;
+	entree_mesure<='1';
+	wait for ck_period;
+	entree_mesure<='0';
+	wait for ck_period;
+END LOOP;
+
+wait for ck_period*80;
+---------------------------------------	
+
+}#pragma
+
+// testbench to run by: ./run_tb.sh frequencemetre 20ms
+
