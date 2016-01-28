@@ -1139,12 +1139,42 @@ public class FsmProcess {
 				fsm.demotedToSignalInputs.add(fsm.inputs.get(i));
 			} else
 				fsm.realInputs.add(fsm.inputs.get(i));
-
+		computeStateCodingVhdl();
 		if (modelOk)
 			bufLogInfo.append("Info:   No Critial error: Output files can be generated\n\n");
 		else
 			bufLogInfo.append("Info:   At least one Critial error: Output files canNOT be generated correctly\n\n");
 		return modelOk;
+	}
+
+	// ////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////////////////////////////////
+	static public void generateVhdlTestBenchAsciiStates() {
+		int numberOfStates = fsm.states.size();
+
+		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
+		bufVhdl.append("process (state_number)\n");
+		bufVhdl.append("begin\n");
+		bufVhdl.append("    case state_number is\n");
+		// bufVhdl.append("      when \"");
+		// bufVhdl.append(fsm.stateCodeError)
+		// bufVhdl.append("\"    => state_name <= \"Error\";\n ");
+		for (int n = 0; n < numberOfStates; n++) {
+			bufVhdl.append("      when \"");
+			bufVhdl.append(fsm.states.get(n).stateCode);
+			bufVhdl.append("\"    => state_name <= \"");
+			bufVhdl.append(fsm.states.get(n).nameDisplay);
+			bufVhdl.append("\";\n");
+		}
+		bufVhdl.append("      when others   => state_name <= \"");
+		bufVhdl.append(fsm.stateNameDisplayError);
+		bufVhdl.append("\";\n ");
+		bufVhdl.append("      end case;\n");
+		bufVhdl.append("end process;\n");
+		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
@@ -1181,6 +1211,9 @@ public class FsmProcess {
 		bufVhdl.append("BEGIN\n");
 		bufVhdl.append("-- Instantiate the Unit Under Test (UUT)\n");
 		generatePortMapVhdl(bufVhdl);
+
+		generateVhdlTestBenchAsciiStates();
+
 		bufVhdl.append("\n-- Clock process definitions\n");
 		bufVhdl.append("ck_process :process\n");
 		bufVhdl.append("begin\n");
@@ -1224,12 +1257,40 @@ public class FsmProcess {
 		bufVhdl.append(" wait;\n");
 		bufVhdl.append("end process;\n");
 		bufVhdl.append("END;\n");
-		// TODO: prévoir si possible une sortie texte affectée avec le nom de
-		// l'état actif
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
 
+	static public void computeStateCodingVhdl() {
+		int numberOfStates = fsm.states.size();
+		int longest = 3; // compute longest state name, at least 3 chars to display Err
+		for (int i = 0; i < numberOfStates; i++) {
+			String code = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(i)).replace(" ",
+					"0");
+			if (fsm.numberOfBitsForStatesMax > fsm.numberOfBitsForStates)
+				fsm.states.get(i).stateCode = code.substring(fsm.numberOfBitsForStatesMax - fsm.numberOfBitsForStates,
+						fsm.numberOfBitsForStatesMax);
+			else
+				fsm.states.get(i).stateCode = code;
+			int sz = fsm.states.get(i).name.length();
+			if (sz > longest)
+				longest = sz;
+		}
+		for (int i = 0; i < numberOfStates; i++) {
+		fsm.states.get(i).nameDisplay=fillStringWithSpace2(fsm.states.get(i).name, longest);
+		}
+		
+		String codeError = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(1))
+				.replace(" ", "1").replace("0", "1");// all at '1'
+		if (fsm.numberOfBitsForStatesMax > fsm.numberOfBitsForStates)
+			fsm.stateCodeError = codeError
+					.substring(fsm.numberOfBitsForStatesMax - fsm.numberOfBitsForStates, fsm.numberOfBitsForStatesMax);
+		else
+			fsm.stateCodeError = codeError;
+		fsm.stateNameDisplayError=fillStringWithSpace2("Err",longest);
+	}
+
+	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateStateCodingVhdl(Boolean comment) {
 		bufVhdl.append("------------------  OUTPUTS FOR CURRENT STATE VISUALIZATION ------------\n");
 		if (comment)
@@ -1242,11 +1303,7 @@ public class FsmProcess {
 					bufVhdl.append("--");
 				bufVhdl.append("                   else \"");
 			}
-			String code = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(i)).replace(" ",
-					"0");
-			if (fsm.numberOfBitsForStatesMax > fsm.numberOfBitsForStates)
-				code = code.substring(fsm.numberOfBitsForStatesMax - fsm.numberOfBitsForStates, fsm.numberOfBitsForStatesMax);
-			bufVhdl.append(code);
+			bufVhdl.append(fsm.states.get(i).stateCode);
 			// bufVhdl.append( Integer.toBinaryString(i));
 			bufVhdl.append("\" when ( current_state = ");
 			bufVhdl.append("state_");
@@ -1256,36 +1313,12 @@ public class FsmProcess {
 		if (comment)
 			bufVhdl.append("--");
 		bufVhdl.append("                   else \"");
-		String code = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(1))
-				.replace(" ", "1").replace("0", "1");
-		if (fsm.numberOfBitsForStatesMax > fsm.numberOfBitsForStates)
-			code = code.substring(fsm.numberOfBitsForStatesMax - fsm.numberOfBitsForStates, fsm.numberOfBitsForStatesMax);
-		bufVhdl.append(code); // all at '1'
+		bufVhdl.append(fsm.stateCodeError);
 		bufVhdl.append("\";   -- coding for error\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateSignalsForInterfaceVhdl() {
-
-		//
-		//
-		// -- pragma by hand
-		// signal D : std_logic_vector(7 downto 0); --:="01010101";
-		// signal TX :std_logic;
-		// signal BaudRATE_SELECTOR : std_logic_vector(1 downto 0); --:="00";
-		// signal iq_cpt : std_logic_vector(3 downto 0);
-		// signal iq_reg_decal : std_logic_vector(10 downto 0);
-		//
-		// --inputs
-		// signal ck : std_logic := '0';
-		// signal ARAZB : std_logic := '0';
-		// signal WRB : std_logic := '0';
-		// --outputs
-		// signal STATE_NUMBER: std_logic_vector( 0 downto 0);
-		// signal PRET: std_logic;
-		//
-		//
-
 		// ////////////////listing of inputs/outputs//////////////////
 		bufVhdl.append("signal ");
 		bufVhdl.append(fsm.clkSignalName);
@@ -2086,6 +2119,10 @@ public class FsmProcess {
 		// state
 		Boolean isAlone;
 		int nbTimeFoundInFSMFile = 0;
+		// to store the binary value that is put on state_number output when
+		// this state is active
+		public String stateCode = "";
+		public String nameDisplay = "";
 
 		public int compareTo(State o) {
 			State a = (State) o;
@@ -2145,6 +2182,11 @@ public class FsmProcess {
 		public String pragmaVhdlArchitecturePreBegin = "";
 		public String pragmaVhdlArchitecturePostBegin = "";
 		public String pragmaVhdlTestbench = "";
+
+		// to store the binary value that is put on state_number output when
+		// error
+		public String stateCodeError = "";
+		public String stateNameDisplayError;
 
 		// global flag to allow the reuse of memorized outputs as inputs in
 		// conditions and expressions
@@ -2902,6 +2944,9 @@ public class FsmProcess {
 					o.name = inputOrOutputName;
 					fsm.addOutput(inputOrOutputName, o);
 					fsm.currentOutput = o;
+					// TODO: if the inputs appears later to be used in
+					// memorized, it will generate an error.... because this
+					// created temp output is 'I' by default
 					bufLogInfo.append("Info: The input ");
 					fsm.currentOutput.isBuffer = true;
 					fsm.currentOutput.isUsedInFSm = true;
