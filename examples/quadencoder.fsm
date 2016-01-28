@@ -11,7 +11,7 @@
 
 #pragma_vhdl_entity{ COUNT    : buffer std_logic_vector(15 downto 0); 
 		     sraz_cpt : in     std_logic; }#pragma
-#pragma_vhdl_promote_buffered{INC,DEC}#pragma 
+#pragma_vhdl_promote_to_buffer{INC,DEC}#pragma 
 
 #pragma_vhdl_architecture_post_begin{ 
 --counter:

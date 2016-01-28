@@ -9,8 +9,8 @@
 1:EN_PRED;
 2:EN_PRED;
  
-#pragma_vhdl_demote_input_to_signal{MAX_CPT, FIN_PREDIV  }#pragma
-#pragma_vhdl_promote_buffered{EN_CPT,SLOAD_PRED ,SRAZ_CPT ,EN_REG_MES, EN_PRED  }#pragma 
+#pragma_vhdl_demote_to_signal{MAX_CPT, FIN_PREDIV  }#pragma
+#pragma_vhdl_promote_to_buffer{EN_CPT,SLOAD_PRED ,SRAZ_CPT ,EN_REG_MES, EN_PRED  }#pragma 
 
 
 #pragma_vhdl_entity{ COUNT_EVENT    : buffer std_logic_vector(15 downto 0); 

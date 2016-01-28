@@ -2886,55 +2886,65 @@ public class FsmProcess {
 		}
 
 		// ///////////////////////////////////////////////////////////////
-		public void enterOutput_to_promote_buffered(FsmParser.Output_to_promote_bufferedContext ctx) {
-			String outputName = ctx.children.get(0).getText().toUpperCase();
-			fsm.currentOutput = fsm.getOutputFromName(outputName);
+		public void enterInput_or_output_to_promote_to_buffer(FsmParser.Input_or_output_to_promote_to_bufferContext ctx) {
+			String inputOrOutputName = ctx.children.get(0).getText().toUpperCase();
+			fsm.currentOutput = fsm.getOutputFromName(inputOrOutputName);
 			if (fsm.currentOutput == null) {
-				Output o = new Output();
-				o.name = outputName;
-				fsm.addOutput(outputName, o);
-				fsm.currentOutput = o;
+				fsm.currentInput = fsm.getInputFromName(inputOrOutputName);
+				if (fsm.currentInput == null) {
+					bufLogWarning.append("Warning: The pragma that would promote ");
+					bufLogWarning.append(inputOrOutputName);
+					bufLogWarning.append(" cannot be taken into account as this name is not yet defined as an input or output...\n");
+				} else {
+					Output o = new Output(); // create a new output with the
+												// same name, the 2 will be
+												// merge in checkModel()
+					o.name = inputOrOutputName;
+					fsm.addOutput(inputOrOutputName, o);
+					fsm.currentOutput = o;
+					bufLogInfo.append("Info: The input ");
+					fsm.currentOutput.isBuffer = true;
+					fsm.currentOutput.isUsedInFSm = true;
+					bufLogInfo.append(fsm.currentOutput.name);
+					bufLogInfo.append(" has been promoted to a buffered output through pragma directive.\n");
+				}
+			} else {
+				bufLogInfo.append("Info: The output ");
+				fsm.currentOutput.isBuffer = true;
+				fsm.currentOutput.isUsedInFSm = true;
+				bufLogInfo.append(fsm.currentOutput.name);
+				bufLogInfo.append(" has been promoted to a buffered output through pragma directive.\n");
 			}
-			fsm.currentOutput.isBuffer = true;
-			fsm.currentOutput.isUsedInFSm = true;
-			bufLogInfo.append("Info: The output ");
-			bufLogInfo.append(fsm.currentOutput.name);
-			bufLogInfo.append(" has been promoted to a buffered output through pragma directive.\n");
 		}
 
 		// ///////////////////////////////////////////////////////////////
-		public void enterOutput_to_demote_to_signal(FsmParser.Output_to_demote_to_signalContext ctx) {
-			String outputName = ctx.children.get(0).getText().toUpperCase();
-			fsm.currentOutput = fsm.getOutputFromName(outputName);
+		public void enterInput_or_output_to_demote_to_signal(FsmParser.Input_or_output_to_demote_to_signalContext ctx) {
+			String inputOrOutputName = ctx.children.get(0).getText().toUpperCase();
+			fsm.currentOutput = fsm.getOutputFromName(inputOrOutputName);
 			if (fsm.currentOutput == null) {
-				Output o = new Output();
-				o.name = outputName;
-				fsm.addOutput(outputName, o);
-				fsm.currentOutput = o;
+				fsm.currentInput = fsm.getInputFromName(inputOrOutputName);
+				if (fsm.currentInput == null) {
+					bufLogWarning.append("Warning: The pragma that would demote ");
+					bufLogWarning.append(inputOrOutputName);
+					bufLogWarning.append(" cannot be taken into account as this name is not yet defined as an input or output...\n");
+					return;
+				} else {
+					fsm.currentInput.isDemotedToSignal = true;
+					bufLogInfo.append("Info: The input ");
+					bufLogInfo.append(fsm.currentInput.name);
+					bufLogInfo.append(" has been demoted to an internal signal through pragma directive.\n");
+				}
+			} else {
+				// Output o = new Output();
+				// o.name = outputName;
+				// fsm.addOutput(outputName, o);
+				// fsm.currentOutput = o;
+				fsm.currentOutput.isUsedInFSm = true;
+				fsm.currentOutput.isDemotedToSignal = true;
+				bufLogInfo.append("Info: The output ");
+				bufLogInfo.append(fsm.currentOutput.name);
+				bufLogInfo.append(" has been demoted to an internal signal through pragma directive.\n");
 			}
-			fsm.currentOutput.isUsedInFSm = true;
-			fsm.currentOutput.isDemotedToSignal = true;
-			bufLogInfo.append("Info: The output ");
-			bufLogInfo.append(fsm.currentOutput.name);
-			bufLogInfo.append(" has been demoted to an internal signal through pragma directive.\n");
-		}
-
-		// ///////////////////////////////////////////////////////////////
-
-		// TODO: test plusireurs input/outpus demote sur la même ligne pragma
-		public void enterInput_to_demote_to_signal(FsmParser.Input_to_demote_to_signalContext ctx) {
-			String inputName = ctx.children.get(0).getText().toUpperCase();
-			fsm.currentInput = fsm.getInputFromName(inputName);
-			if (fsm.currentInput == null) {
-				Input i = new Input();
-				i.name = inputName;
-				fsm.addInput(inputName, i);
-				fsm.currentInput = i;
-			}
-			fsm.currentInput.isDemotedToSignal = true;
-			bufLogInfo.append("Info: The input ");
-			bufLogInfo.append(fsm.currentInput.name);
-			bufLogInfo.append(" has been demoted to an internal signal through pragma directive.\n");
 		}
 
 		// ///////////////////////////////////////////////////////////////

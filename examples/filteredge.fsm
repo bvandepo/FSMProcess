@@ -22,8 +22,8 @@ WAIT_CONFIRM_FALLING :falling_edge       = (NOT delay_ended)  AND COUNT_EQUAL
 %S,delay_ended=COUNT_EQUAL;  
 %R,delay_ended=srazcpt;  
 
-#pragma_vhdl_promote_buffered{delay_ended, srazcpt}#pragma 
-#pragma_vhdl_demote_input_to_signal{ COUNT_EQUAL}#pragma
+#pragma_vhdl_promote_to_buffer{delay_ended, srazcpt}#pragma 
+#pragma_vhdl_demote_to_signal{ COUNT_EQUAL}#pragma
 #pragma_vhdl_entity{ Q: buffer std_logic_vector (5 downto 0);
 		     MIN_TIME: in std_logic_vector (5 downto 0);  }#pragma
 #pragma_vhdl_architecture_post_begin{  
