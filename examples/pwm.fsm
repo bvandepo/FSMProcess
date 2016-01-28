@@ -1,0 +1,66 @@
+=>0?arazb,0;
+/ck;
+0;
+//TODO: avec gestion bus, mémorisation possible avec 0->0?WR:M,PERIOD=PERIOD_IN:M,TON=TON_IN;
+ 
+#pragma_vhdl_entity{ WR     : in std_logic; 
+ 		    PERIOD_IN     : in std_logic_vector(9 downto 0); 
+		    TON_IN      : in std_logic_vector(9 downto 0);
+		    PERIOD     : buffer std_logic_vector(9 downto 0); 
+		    TON      : buffer std_logic_vector(9 downto 0); 
+		    COUNT_TIME     : buffer std_logic_vector(9 downto 0); 
+		    PWM_OUT: out  std_logic; 
+		    }#pragma
+#pragma_vhdl_architecture_post_begin{ 
+--counter:
+Process (ck, arazb)
+begin
+	if arazb='0' then COUNT_TIME <= (others=>'0');
+			  PERIOD<= (others=>'0');
+ 			  TON <= (others=>'0');
+	elsif ck'event and ck='1' then
+		if PERIOD=COUNT_TIME then 
+		  COUNT_TIME <= (others=>'0');
+		else
+		  COUNT_TIME <=COUNT_TIME+1;
+		end if;
+		if WR='1' then
+			PERIOD<=PERIOD_IN;
+			TON<=TON_IN;
+		end if;
+	end if;
+end process;
+
+PWM_OUT<='1' when COUNT_TIME<TON 
+else '0';
+}#pragma
+
+#pragma_vhdl_pre_entity{ 
+use ieee.numeric_std.all;
+}#pragma
+
+#pragma_vhdl_testbench{  
+ ---------------------------------------	
+wait until (ck'event and ck='0' );
+ 
+TON_IN<="0000000100";
+PERIOD_IN<="0000001001";
+WR<='1';
+wait for ck_period;
+WR<='0';
+
+for j in 0 to 10 loop
+for i in 0 to 10 loop
+wait for ck_period*j;
+wait for ck_period*j;
+END LOOP;
+
+TON_IN<=  std_logic_vector(to_unsigned(j, TON_IN'length));
+WR<='1';
+wait for ck_period;
+WR<='0';
+
+END LOOP;
+---------------------------------------	
+}#pragma
+
