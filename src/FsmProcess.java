@@ -51,7 +51,17 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+//TODO; ajouter gestion des GENERIC et aussi dans testbench... (avec un pragma dans le fsm
+
+//TODO: ajouter pragma pour imposer le Statenumber d'un etat d'apres son nom
 //TODO: comprendre pourquoi antlr ne genere par le fichier FsmParser.java  mais uniquement le class...
+
+//TODO: ajouter un pragma #pragma_vhdl_demote_input_to_buffered{
+
+//TODO: bizarre sans ce pragma, probleme... dans filteredge...
+//#pragma_vhdl_allow_automatic_buffering
+//%S,delay_ended=COUNT_EQUAL;  
+//%R,delay_ended=srazcpt;  
 
 // ///////////////////////////////////////////////////////////////
 // Il suffit de redéfinir la méthode equals de tes objets pour contrôler
@@ -1145,11 +1155,11 @@ public class FsmProcess {
 		bufVhdl.append(" B. VANDEPORTAELE LAAS-CNRS 2016\n");
 		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
 		bufVhdl.append("library	ieee;\nuse		ieee.std_logic_1164.all;\nuse		ieee.std_logic_unsigned.all;\nuse		ieee.std_logic_arith.all;\n");
-		// if (!fsm.pragmaVhdlPreEntity.equals("")) {
-		// bufVhdl.append("------------------------------pragma_vhdl_pre_entity-------------------------------------------------------\n");
-		// bufVhdl.append(fsm.pragmaVhdlPreEntity);
-		// bufVhdl.append("--------------------------end of pragma_vhdl_pre_entity----------------------------------------------------\n");
-		// }
+		if (!fsm.pragmaVhdlPreEntity.equals("")) {
+			bufVhdl.append("------------------------------pragma_vhdl_pre_entity-------------------------------------------------------\n");
+			bufVhdl.append(fsm.pragmaVhdlPreEntity);
+			bufVhdl.append("--------------------------end of pragma_vhdl_pre_entity----------------------------------------------------\n");
+		}
 		bufVhdl.append("-- Uncomment the following library declaration if using\n");
 		bufVhdl.append("-- arithmetic functions with Signed or Unsigned values\n");
 		bufVhdl.append("--USE ieee.numeric_std.ALL;\n\n");
@@ -1187,11 +1197,13 @@ public class FsmProcess {
 		bufVhdl.append("--(ck,resetn)\n");
 		bufVhdl.append("  begin	\n");
 		bufVhdl.append("-- hold reset state for 100 ns.\n");
-		bufVhdl.append("ARAZB<='");
+		bufVhdl.append(fsm.aResetSignalName);
+		bufVhdl.append(" <='");
 		bufVhdl.append(fsm.aResetSignalLevel);
 		bufVhdl.append("';\n");
 		bufVhdl.append("wait for 100 ns;\n");
-		bufVhdl.append("ARAZB<=NOT '");
+		bufVhdl.append(fsm.aResetSignalName);
+		bufVhdl.append(" <= NOT '");
 		bufVhdl.append(fsm.aResetSignalLevel);
 		bufVhdl.append("';\n");
 		bufVhdl.append("wait for ck_period*2;\n");
@@ -2219,7 +2231,7 @@ public class FsmProcess {
 				"NEW", "NEXT", "NOR", "NOT", "NULL", "OF", "ON", "OPEN", "OR", "OTHERS", "OUT", "PACKAGE", "PORT", "POSTPONED",
 				"PROCEDURE", "PROCESS", "PURE", "RANGE", "RECORD", "REGISTER", "REJECT", "REM", "REPORT", "RETURN", "ROL", "ROR", "SELECT",
 				"SEVERITY", "SIGNAL", "SHARED", "SLA", "SLL", "SRA", "SRL", "SUBTYPE", "THEN", "TO", "TRANSPORT", "TYPE", "UNAFFECTED",
-				"UNITS", "UNTIL", "USE", "VARIABLE", "WAIT", "WHEN", "WHILE", "WITH", "XNOR", "XOR");
+				"UNITS", "UNTIL", "USE", "VARIABLE", "WAIT", "WHEN", "WHILE", "WITH", "XNOR", "XOR", "TIME");
 		// TODO complete lists
 		// TODO: add methods to generate string that lists the words for the
 		// documentation
