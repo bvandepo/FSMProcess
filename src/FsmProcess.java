@@ -1151,27 +1151,37 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////////////////////////////////////////
 	// ////////////////////////////////////////////////////////////////////////////////////
 	// ////////////////////////////////////////////////////////////////////////////////////
+
+	static public String generateBinaryAsciiString(String s) {
+		String sout;
+		sout = "";
+		for (int i = 0; i < s.length(); i++) {
+			sout += String.format("%8s", Integer.toBinaryString(s.charAt(i))).replace(" ", "0");
+		}
+		return sout;
+	}
+
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateVhdlTestBenchAsciiStates() {
 		int numberOfStates = fsm.states.size();
-
 		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
 		bufVhdl.append("process (state_number)\n");
 		bufVhdl.append("begin\n");
 		bufVhdl.append("    case state_number is\n");
-		// bufVhdl.append("      when \"");
-		// bufVhdl.append(fsm.stateCodeError)
-		// bufVhdl.append("\"    => state_name <= \"Error\";\n ");
 		for (int n = 0; n < numberOfStates; n++) {
 			bufVhdl.append("      when \"");
 			bufVhdl.append(fsm.states.get(n).stateCode);
 			bufVhdl.append("\"    => state_name <= \"");
+			bufVhdl.append(generateBinaryAsciiString(fsm.states.get(n).nameDisplay));
+			bufVhdl.append("\"; -- ");
 			bufVhdl.append(fsm.states.get(n).nameDisplay);
-			bufVhdl.append("\";\n");
+			bufVhdl.append("\n");
 		}
 		bufVhdl.append("      when others   => state_name <= \"");
+		bufVhdl.append(generateBinaryAsciiString(fsm.stateNameDisplayError));
+		bufVhdl.append("\"; -- ");
 		bufVhdl.append(fsm.stateNameDisplayError);
-		bufVhdl.append("\";\n ");
+		bufVhdl.append("\n ");
 		bufVhdl.append("      end case;\n");
 		bufVhdl.append("end process;\n");
 		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
@@ -1263,7 +1273,8 @@ public class FsmProcess {
 
 	static public void computeStateCodingVhdl() {
 		int numberOfStates = fsm.states.size();
-		int longest = 3; // compute longest state name, at least 3 chars to display Err
+		int longest = 1; // compute longest state name, at least 1 chars to
+							// display Error as !
 		for (int i = 0; i < numberOfStates; i++) {
 			String code = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(i)).replace(" ",
 					"0");
@@ -1277,9 +1288,9 @@ public class FsmProcess {
 				longest = sz;
 		}
 		for (int i = 0; i < numberOfStates; i++) {
-		fsm.states.get(i).nameDisplay=fillStringWithSpace2(fsm.states.get(i).name, longest);
+			fsm.states.get(i).nameDisplay = fillStringWithSpace2(fsm.states.get(i).name, longest);
 		}
-		
+
 		String codeError = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(1))
 				.replace(" ", "1").replace("0", "1");// all at '1'
 		if (fsm.numberOfBitsForStatesMax > fsm.numberOfBitsForStates)
@@ -1287,7 +1298,13 @@ public class FsmProcess {
 					.substring(fsm.numberOfBitsForStatesMax - fsm.numberOfBitsForStates, fsm.numberOfBitsForStatesMax);
 		else
 			fsm.stateCodeError = codeError;
-		fsm.stateNameDisplayError=fillStringWithSpace2("Err",longest);
+		// Error is displayed at least as "!", if there is more room, display
+		// "!Error" as much as possible
+		String err = "!Error";
+		if (longest < 6)
+			fsm.stateNameDisplayError = err.substring(0, longest);
+		else
+			fsm.stateNameDisplayError = fillStringWithSpace2(err, longest);
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
@@ -1352,6 +1369,14 @@ public class FsmProcess {
 			bufVhdl.append(fsm.realOutputs.get(n).interfacePortTypes);
 			bufVhdl.append(";\n");
 		}
+		bufVhdl.append("--signals for current state name visualization:  \n");
+		// bufVhdl.append("signal state_name : string(");
+		// bufVhdl.append(fsm.stateNameDisplayError.length());
+		// bufVhdl.append(" downto 1 );\n");
+		// or use std.textio.all;
+		bufVhdl.append("signal state_name : std_logic_vector(");
+		bufVhdl.append((fsm.stateNameDisplayError.length() * 8) - 1);
+		bufVhdl.append(" downto 0 );\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
