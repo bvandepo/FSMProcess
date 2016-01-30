@@ -1,0 +1,98 @@
+0;
+1:D0;
+2:D1;
+3:D0:D1;
+
+
+0->1?TIMEOUT:sraz_cpt;
+1->2?TIMEOUT:sraz_cpt;
+2->3?TIMEOUT:sraz_cpt;
+3->0?TIMEOUT:sraz_cpt;
+#pragma_vhdl_promote_to_buffer{TIMEOUT}#pragma 
+
+#pragma_vhdl_allow_automatic_buffering
+
+
+
+#pragma_vhdl_promote_to_buffer{sraz_cpt }#pragma 
+#pragma_vhdl_demote_to_signal{D0,D1}#pragma
+#pragma_vhdl_entity{ I3,I2,I1,I0,pt : in std_logic_vector(3 downto 0);  }#pragma
+#pragma_vhdl_entity{ seg : out std_logic_vector(7 downto 0);}#pragma
+#pragma_vhdl_entity{ an: out std_logic_vector(3 downto 0);}#pragma
+ 
+#pragma_vhdl_entity{ cpt: buffer std_logic_vector (18 downto 0);}#pragma
+
+//50Mhz -> 100Khz<= 512Ko = 19bits  
+#pragma_vhdl_architecture_pre_begin{ 
+--signal  cpt: std_logic_vector (18 downto 0);
+signal  cntr: std_logic_vector (3 downto 0);
+signal  n: std_logic_vector (1 downto 0);
+signal  pti: std_logic;
+}#pragma
+
+#pragma_vhdl_architecture_post_begin{ 
+--counter:
+Process (ck, arazb)
+	begin
+		if arazb='0' then  cpt <= (others=>'0');
+		elsif ck'event and ck='1' then 
+		  if sraz_cpt='1'then  
+			cpt <= (others=>'0');
+		  else  cpt <= cpt+1;
+		  end if;	
+		end if;
+--if cpt=100000 then TIMEOUT<='1';  else TIMEOUT<='0'; end if;
+	end process;
+ TIMEOUT<='1' when cpt =100000 else        '0';
+seg <=    
+         		pti & "0111111" when cntr = "0000" else
+			pti & "0000110" when cntr = "0001" else
+			pti & "1011011" when cntr = "0010" else
+			pti & "1001111" when cntr = "0011" else
+			pti & "1100110" when cntr = "0100" else
+			pti & "1101101" when cntr = "0101" else
+			pti & "1111101" when cntr = "0110" else
+			pti & "0000111" when cntr = "0111" else
+			pti & "1111111" when cntr = "1000" else
+			pti & "1101111" when cntr = "1001" else
+			pti & "1110111" when cntr = "1010" else
+			pti & "1111100" when cntr = "1011" else
+			pti & "0111001" when cntr = "1100" else
+			pti & "1011110" when cntr = "1101" else
+			pti & "1111001" when cntr = "1110" else
+			pti & "1110001" when cntr = "1111" else
+			pti & "0000000";
+n<=D1 & D0;
+WITH n SELECT
+        pti <=pt(3) WHEN "00",
+	      pt(2) WHEN "01",
+	      pt(1) WHEN "10",
+	      pt(0) WHEN others;
+WITH n SELECT
+      	cntr <=I3 WHEN "00",
+	       I2 WHEN "01",
+	       I1 WHEN "10",
+	       I0 WHEN others;
+with n select
+	an(3 downto 0)<= 
+		  "1110" when "00",
+		  "1101" when "01",
+		  "1011" when "10",
+		  "0111" when others;
+
+}#pragma
+
+
+//run for 50ms
+#pragma_vhdl_testbench{  
+---------------------------------------	
+	wait until (ck'event and ck='0' );
+I3<="0001";
+I2<="0010";
+I1<="0011";
+I0<="0100";
+pt<="0000";
+	wait for ck_period*500000*5;
+---------------------------------------	
+}#pragma
+
