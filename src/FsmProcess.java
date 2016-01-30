@@ -51,12 +51,12 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+//TODO: pour les AMZI, ajouter une commande qui permet de les définir active à 0... rien ne change dans le code sauf ca...
+
 //TODO; ajouter gestion des GENERIC et aussi dans testbench... (avec un pragma dans le fsm
 
 //TODO: ajouter pragma pour imposer le Statenumber d'un etat d'apres son nom
 //TODO: comprendre pourquoi antlr ne genere par le fichier FsmParser.java  mais uniquement le class...
-
-//TODO: ajouter un pragma #pragma_vhdl_demote_input_to_buffered{
 
 //TODO: bizarre sans ce pragma, probleme... dans filteredge...
 //#pragma_vhdl_allow_automatic_buffering
@@ -1570,7 +1570,7 @@ public class FsmProcess {
 		// outputs//////////////////
 		for (int n = 0; n < fsm.outputs.size(); n++) {
 			Output out = fsm.outputs.get(n);
-			if ((out.memorized) && (out.isUsedInFSm)) {
+			if ((out.memorized) && (out.isUsedAsOutputInFSm)) {
 				bufVhdl.append("signal ");
 				bufVhdl.append(out.name);
 				bufVhdl.append("_set, ");
@@ -1600,7 +1600,7 @@ public class FsmProcess {
 		if (fsm.demotedToSignalOutputs.size() > 0) {
 			bufVhdl.append("-----------------outputs demoted to internal signals through pragma-------------------------------------\n");
 			for (int n = 0; n < fsm.demotedToSignalOutputs.size(); n++) {
-				if (fsm.demotedToSignalOutputs.get(n).isUsedInFSm) {
+				if (fsm.demotedToSignalOutputs.get(n).isUsedAsOutputInFSm) {
 					bufVhdl.append("signal ");
 					bufVhdl.append(fsm.demotedToSignalOutputs.get(n).paddedName);
 					bufVhdl.append(" : ");
@@ -1612,7 +1612,7 @@ public class FsmProcess {
 		if (fsm.demotedToSignalInputs.size() > 0) {
 			bufVhdl.append("-----------------inputs demoted to internal signals through pragma-------------------------------------\n");
 			for (int n = 0; n < fsm.demotedToSignalInputs.size(); n++) {
-				if (fsm.demotedToSignalInputs.get(n).isUsedInFSm) {
+				if (fsm.demotedToSignalInputs.get(n).isUsedAsInputInFSm) {
 					bufVhdl.append("signal ");
 					bufVhdl.append(fsm.demotedToSignalInputs.get(n).paddedName);
 					bufVhdl.append(" : ");
@@ -1662,14 +1662,14 @@ public class FsmProcess {
 			bufVhdl.append("-------------------Combinatorial process for the evolution of the state------------------\n");
 			bufVhdl.append("process (current_state");
 			for (int n = 0; n < fsm.inputs.size(); n++) {
-				if (fsm.inputs.get(n).isUsedInFSm) {
+				if (fsm.inputs.get(n).isUsedAsInputInFSm) {
 					bufVhdl.append(", ");
 					bufVhdl.append(fsm.inputs.get(n).name);
 				}
 			}
 			if (fsm.bufferedOutputsAllowed) {
 				for (int n = 0; n < fsm.outputs.size(); n++) {
-					if ((fsm.outputs.get(n).isBuffer) && (fsm.outputs.get(n).isUsedInFSm)) {
+					if ((fsm.outputs.get(n).isBuffer) && (fsm.outputs.get(n).isUsedAsOutputInFSm)) {
 						bufVhdl.append(", ");
 						// bufVhdl.append("	signal_buffered_");
 						bufVhdl.append(fsm.outputs.get(n).name);
@@ -1779,7 +1779,7 @@ public class FsmProcess {
 		bufVhdl.append("------------------FLIP FLOPS FOR MEMORIZED OUTPUTS ------------\n");
 		for (int n = 0; n < fsm.outputs.size(); n++) {
 			Output out = fsm.outputs.get(n);
-			if ((out.memorized) && (out.isUsedInFSm)) {
+			if ((out.memorized) && (out.isUsedAsOutputInFSm)) {
 				bufVhdl.append("------ FLIP FLOPS FOR ");
 				bufVhdl.append(out.name);
 				bufVhdl.append(" ------\n");
@@ -1872,7 +1872,7 @@ public class FsmProcess {
 				break;
 			}
 			for (int n = 0; n < fsm.outputs.size(); n++)
-				if ((fsm.outputs.get(n).memorized == processMemorizedOutput) && (fsm.outputs.get(n).isUsedInFSm)) {
+				if ((fsm.outputs.get(n).memorized == processMemorizedOutput) && (fsm.outputs.get(n).isUsedAsOutputInFSm)) {
 					String currentOutputName = fsm.outputs.get(n).name;
 					bufVhdl.append("    ");
 					bufVhdl.append(fsm.outputs.get(n).name);
@@ -2090,9 +2090,9 @@ public class FsmProcess {
 											// to be only used internaly and not
 											// generate a real input in the
 											// entity
-		Boolean isUsedInFSm = false; // set to true when the input is
-										// effectively used in the FSM, not only
-										// in pragma
+		Boolean isUsedAsInputInFSm = false; // set to true when the input is
+		// effectively used in the FSM, not only
+		// in pragma
 		String interfacePortTypes = "std_logic"; // default
 
 		public int compareTo(Input o) {
@@ -2116,9 +2116,9 @@ public class FsmProcess {
 											// to be only used internaly and not
 											// generate a real output in the
 											// entity
-		Boolean isUsedInFSm = false; // set to true when the output is
-										// effectively used in the FSM, not only
-										// in pragma
+		Boolean isUsedAsOutputInFSm = false; // set to true when the output is
+		// effectively used in the FSM, not only
+		// in pragma
 		String interfacePortTypes = "std_logic"; // default
 
 		public int compareTo(Output o) {
@@ -2512,7 +2512,8 @@ public class FsmProcess {
 
 	// ///////////////////////////////////////////////////////////////
 	static class FunctionListener extends FsmParserBaseListener {
-		// keep the tokens list availabe to get them and extract some info (such
+		// TODO: keep the tokens list availabe to get them and extract some info
+		// (such
 		// as line numbers for errors, pragmas etc...
 		BufferedTokenStream tokens;
 
@@ -2550,7 +2551,7 @@ public class FsmProcess {
 		public void enterInput(FsmParser.InputContext ctx) {
 			Input i = new Input();
 			i.name = ctx.children.get(0).getText().toUpperCase();
-			i.isUsedInFSm = true;
+			i.isUsedAsInputInFSm = true;
 			fsm.addInput(ctx.children.get(0).getText().toUpperCase(), i);
 		}
 
@@ -2661,7 +2662,7 @@ public class FsmProcess {
 						.append("     Moreover, the inputs in the expression will not be added automatically to the process sensitivity list, probably resulting in errors or warnings.\n");
 			}
 			fsm.currentOutput.asyncResetExpression = reconstructedExpression;
-			fsm.currentOutput.isUsedInFSm = true;
+			fsm.currentOutput.isUsedAsOutputInFSm = true;
 		}
 
 		// //////////////////////////////////////////////////////////////
@@ -2677,7 +2678,7 @@ public class FsmProcess {
 			// there is no yet Action_expression_reset_asynchronous, only its
 			// name, so lets give a defaut "1" expression, that can be updated
 			// later
-			fsm.currentOutput.isUsedInFSm = true;
+			fsm.currentOutput.isUsedAsOutputInFSm = true;
 			fsm.currentOutput.asyncResetExpression = "1"; // default
 			fsm.outputsWithAsynchronousResetValue.add(fsm.currentOutput);
 			fsm.currentOutput.memorized = true; // check that the output is
@@ -2700,7 +2701,7 @@ public class FsmProcess {
 					o.memorized = false;
 				fsm.addOutput(outputName, o);
 				fsm.currentOutput = o;
-				o.isUsedInFSm = true;
+				o.isUsedAsOutputInFSm = true;
 			}
 		}
 
@@ -2855,8 +2856,6 @@ public class FsmProcess {
 					o.interfacePortTypes = interfacePortTypes;
 				}
 				// TODOO: inout????
-
-				// TODO: Log INFO
 				// TODO check to et downto que les bornes sont compatibles
 				// pragmaCleaned + ";\n";
 			}
@@ -2974,14 +2973,14 @@ public class FsmProcess {
 					// created temp output is 'I' by default
 					bufLogInfo.append("Info: The input ");
 					fsm.currentOutput.isBuffer = true;
-					fsm.currentOutput.isUsedInFSm = true;
+					fsm.currentOutput.isUsedAsOutputInFSm = false;
 					bufLogInfo.append(fsm.currentOutput.name);
 					bufLogInfo.append(" has been promoted to a buffered output through pragma directive.\n");
 				}
 			} else {
 				bufLogInfo.append("Info: The output ");
 				fsm.currentOutput.isBuffer = true;
-				fsm.currentOutput.isUsedInFSm = true;
+				fsm.currentOutput.isUsedAsOutputInFSm = true;
 				bufLogInfo.append(fsm.currentOutput.name);
 				bufLogInfo.append(" has been promoted to a buffered output through pragma directive.\n");
 			}
@@ -3009,7 +3008,7 @@ public class FsmProcess {
 				// o.name = outputName;
 				// fsm.addOutput(outputName, o);
 				// fsm.currentOutput = o;
-				fsm.currentOutput.isUsedInFSm = true;
+				fsm.currentOutput.isUsedAsOutputInFSm = true;
 				fsm.currentOutput.isDemotedToSignal = true;
 				bufLogInfo.append("Info: The output ");
 				bufLogInfo.append(fsm.currentOutput.name);
