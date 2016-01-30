@@ -1215,7 +1215,7 @@ public class FsmProcess {
 		bufVhdl.append(fsm.name);
 		bufVhdl.append("_tb IS\n");
 		bufVhdl.append("-- Component Declaration for the Unit Under Test (UUT)\n");
-		generateComponentVhdl();
+		generateComponentVhdl(false);
 		bufVhdl.append("\n");
 		generateSignalsForInterfaceVhdl();
 		bufVhdl.append("\n--Clock period, should be settable through pragma_vhdl to get real time in simu\n");
@@ -1432,13 +1432,13 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generateComponentVhdl() {
+	static public void generateComponentVhdl(Boolean comment) {
 		bufVhdl.append("component ");
 		bufVhdl.append(fsm.name);
 		bufVhdl.append("\n");
 		generateInterfaceVhdl();
 		bufVhdl.append("end component;\n");
-		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0))
+		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0) && comment)
 			generateStateCodingVhdl(true);
 	}
 
@@ -1449,7 +1449,7 @@ public class FsmProcess {
 		bufVhdl.append("package ");
 		bufVhdl.append(fsm.name);
 		bufVhdl.append("_pack is\n");
-		generateComponentVhdl();
+		generateComponentVhdl(true);
 		bufVhdl.append("end \n");
 		bufVhdl.append(fsm.name);
 		bufVhdl.append("_pack;\n");
