@@ -11,14 +11,10 @@
 //#pragma_vhdl_demote_output_to_signal{en_reg_decal, sload_reg_decal , sload_prediv , en_cpt }#pragma
 
 //plutot tout passer en buffered pour les voir à la simu
-#pragma_vhdl_demote_output_to_signal{sraz_cpt}#pragma
-#pragma_vhdl_demote_output_to_signal{en_reg_decal}#pragma
-#pragma_vhdl_demote_output_to_signal{sload_reg_decal}#pragma
-#pragma_vhdl_demote_output_to_signal{sload_prediv}#pragma
-#pragma_vhdl_demote_output_to_signal{en_cpt }#pragma
+#pragma_vhdl_demote_to_signal{sraz_cpt, en_reg_decal, sload_reg_decal, sload_prediv, en_cpt }#pragma
   
 
-#pragma_vhdl_demote_input_to_signal{END_FRAME, fin_prediv}#pragma
+#pragma_vhdl_demote_to_signal{END_FRAME, fin_prediv}#pragma
 
 
 //TODO: parser pour extraire les infos: nom : type (in out buffer integer??) std_logic/std_logic_vector....;
