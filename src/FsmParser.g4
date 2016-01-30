@@ -14,6 +14,7 @@ line : state
      | repeatedly_action
      | reset_asynchronous
      | clock_definition
+     | multi_transitions_directive
      | pragma_directive;
 
 pragma_directive:
@@ -30,6 +31,16 @@ pragma_vhdl_directive:
      | pragma_vhdl_set_bit_size_for_output_state_number
      | pragma_vhdl_testbench
      ;
+
+
+multi_transitions_directive:
+ANTISLASH (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number ARROW multi_transitions_last_state_number PARENTHESISCLOSE ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)?  SEMICOLON;
+multi_transitions_base_state_name:id;
+multi_transitions_first_state_number:NUMBER;
+multi_transitions_last_state_number:NUMBER;
+multi_transitions_priority:NUMBER;
+condition_multi_transitions: element ( element)*  ;
+
 
  
 state   :  id ( COLON state_action)* SEMICOLON    ;         	//state (with  action(s))

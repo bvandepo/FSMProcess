@@ -8,6 +8,7 @@ tokens {  WHITESPACE_CHANNEL, COMMENTS_CHANNEL,PRAGMAS_CHANNEL}
 SEMICOLON            : ';'   ;
 COLON                : ':'   ;
 SLASH                : '/'   ; 
+ANTISLASH            : '\\'   ; 
 CONDITION            : '?'   ;
 COMMA                : ','   ;
 EQUAL                : '='   ;

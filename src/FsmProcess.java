@@ -51,6 +51,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+//TODO: merger inputs et outputs
+
 //TODO: pour les AMZI, ajouter une commande qui permet de les définir active à 0... rien ne change dans le code sauf ca...
 
 //TODO; ajouter gestion des GENERIC et aussi dans testbench... (avec un pragma dans le fsm
@@ -2511,11 +2513,22 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////////////////////
+	static class MultiTransitions {
+		// class used to parse muliple transitions defined at once before they
+		// are added in the fsm
+		String baseStateName;
+		String condition;
+		Integer priority, first, last;
+	}
+
+	// ///////////////////////////////////////////////////////////////
 	static class FunctionListener extends FsmParserBaseListener {
 		// TODO: keep the tokens list availabe to get them and extract some info
 		// (such
 		// as line numbers for errors, pragmas etc...
 		BufferedTokenStream tokens;
+
+		MultiTransitions multiTransitions = new MultiTransitions();
 
 		// TODO: make it clearer::::::
 		static String pragmaCleaned;
@@ -3033,6 +3046,71 @@ public class FsmProcess {
 			} else {
 				bufLogWarning
 						.append("Warning: The number of bits for current state number visualization set through pragma  directive should be between 1 and 1000\n");
+			}
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterMulti_transitions_directive(FsmParser.Multi_transitions_directiveContext ctx) {
+			// set default values if they are not set by optional parameters
+			multiTransitions.baseStateName = "";
+			multiTransitions.priority = 1000000; // default value
+			multiTransitions.condition = "1";
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterMulti_transitions_base_state_name(FsmParser.Multi_transitions_base_state_nameContext ctx) {
+			multiTransitions.baseStateName = ctx.children.get(0).getText().toUpperCase();
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterMulti_transitions_first_state_number(FsmParser.Multi_transitions_first_state_numberContext ctx) {
+			multiTransitions.first = Integer.parseInt(ctx.children.get(0).getText());
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterMulti_transitions_last_state_number(FsmParser.Multi_transitions_last_state_numberContext ctx) {
+			multiTransitions.last = Integer.parseInt(ctx.children.get(0).getText());
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterMulti_transitions_priority(FsmParser.Multi_transitions_priorityContext ctx) {
+			multiTransitions.priority = Integer.parseInt(ctx.children.get(0).getText());
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterCondition_multi_transitions(FsmParser.Condition_multi_transitionsContext ctx) {
+			String reconstructedCondition = new String("");
+			int nbChildren = ctx.getChildCount();
+			for (int n = 0; n < nbChildren; n++)
+			// reconstruct the condition, adding space characters between terms.
+			{
+				reconstructedCondition += ctx.children.get(n).getText().toUpperCase();
+				if (n != nbChildren - 1)
+					reconstructedCondition += " ";
+			}
+			multiTransitions.condition = reconstructedCondition;
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void exitMulti_transitions_directive(FsmParser.Multi_transitions_directiveContext ctx) {
+			// do the actual job once all parameters have been gathered
+			// ascending or descending order?
+			Integer increment = +1;
+			if (multiTransitions.first > multiTransitions.last) {
+				increment = -1;
+			}
+			for (int i = multiTransitions.first; i != multiTransitions.last; i += increment) {
+				Transition t = new Transition();
+				t.condition = multiTransitions.condition;
+				t.priorityOrder = multiTransitions.priority;
+				t.origin = multiTransitions.baseStateName + Integer.toString(i);
+				t.destination = multiTransitions.baseStateName + Integer.toString(i + increment);
+				State s1 = fsm.getStateOrCreateAndAdd(t.origin);
+				fsm.getStateOrCreateAndAdd(t.destination);
+				s1.transitionsFromThisState.add(t);
+				fsm.transitions.add(t); // also add it to the global
+										// transitions
+										// list
 			}
 		}
 		// ///////////////////////////////////////////////////////////////

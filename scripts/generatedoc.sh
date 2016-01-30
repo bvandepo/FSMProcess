@@ -25,6 +25,7 @@ echo ---------------------------------------------------------------
 #echo ----------------------DELETING OLD FILES----------------------
 #rm $dotfile $vhdfile
 echo ----------------------RUNNING THE PARSER----------------------
+chmod a+x ../bin/FsmProcess.jar
 ../bin/FsmProcess.jar -i -c -f $filename 
 #echo ----------------------DISPLAY THE DOT CODE----------------------
 #cat $dotfile
