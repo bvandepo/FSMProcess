@@ -810,6 +810,8 @@ public class FsmProcess {
 					// but be use as output in pragma, so should not auto
 					// generate code for affectation
 					// if (i.isUsedInFSm) o.isUsedInFSm = true;
+					if (i.isUsedAsInputInFSm)
+						o.isUsedAsInputInFSm = true;
 					fsm.inputs.remove(i);
 					fsm.hmapInput.remove(i.name);
 					numberOfInputs--;
@@ -1666,11 +1668,21 @@ public class FsmProcess {
 			bufVhdl.append("end process;\n\n");
 			bufVhdl.append("-------------------Combinatorial process for the evolution of the state------------------\n");
 			bufVhdl.append("process (current_state");
+			// check inputs that are used by the fsm as inputs
 			for (int n = 0; n < fsm.inputs.size(); n++) {
 				if (fsm.inputs.get(n).isUsedAsInputInFSm) {
 					bufVhdl.append(", ");
 					bufVhdl.append(fsm.inputs.get(n).name);
 				}
+			}
+			// check also buffered outputs that are used by the fsm as
+			// inputs
+			for (int n = 0; n < fsm.outputs.size(); n++) {
+				if (fsm.outputs.get(n).isUsedAsInputInFSm) {
+					bufVhdl.append(", ");
+					bufVhdl.append(fsm.outputs.get(n).name);
+				}
+
 			}
 			if (fsm.bufferedOutputsAllowed) {
 				for (int n = 0; n < fsm.outputs.size(); n++) {
@@ -2121,9 +2133,11 @@ public class FsmProcess {
 											// to be only used internaly and not
 											// generate a real output in the
 											// entity
-		Boolean isUsedAsOutputInFSm = false; // set to true when the output is
-		// effectively used in the FSM, not only
+		// set to true when the output is effectively used in the FSM, not only
 		// in pragma
+		Boolean isUsedAsOutputInFSm = false;
+		// for buffer output that are used in conditions by the fsm
+		Boolean isUsedAsInputInFSm = false;
 		String interfacePortTypes = "std_logic"; // default
 
 		public int compareTo(Output o) {
