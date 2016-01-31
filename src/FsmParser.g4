@@ -15,6 +15,7 @@ line : state
      | reset_asynchronous
      | clock_definition
      | multi_transitions_directive
+     | multi_transitions_to_same_directive
      | pragma_directive;
 
 pragma_directive:
@@ -34,13 +35,16 @@ pragma_vhdl_directive:
 
 
 multi_transitions_directive:
-ANTISLASH (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number ARROW multi_transitions_last_state_number PARENTHESISCLOSE ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)?  SEMICOLON;
+SHARP (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number TO multi_transitions_last_state_number PARENTHESISCLOSE ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)?  SEMICOLON;
 multi_transitions_base_state_name:id;
-multi_transitions_first_state_number:NUMBER;
-multi_transitions_last_state_number:NUMBER;
-multi_transitions_priority:NUMBER;
+multi_transitions_first_state_number:POSITIVE_INTEGER;
+multi_transitions_last_state_number:POSITIVE_INTEGER;
+multi_transitions_priority:POSITIVE_INTEGER;
 condition_multi_transitions: element ( element)*  ;
 
+multi_transitions_to_same_directive:
+SHARP (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number TO multi_transitions_last_state_number PARENTHESISCLOSE ARROW multi_transitions_destination_state ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)?  SEMICOLON;
+multi_transitions_destination_state: id;
 
  
 state   :  id ( COLON state_action)* SEMICOLON    ;         	//state (with  action(s))
@@ -48,7 +52,7 @@ clock_definition: SLASH  input_clock SEMICOLON ;
 input_clock:  id;
 reset_asynchronous:   DOUBLEARROW id (CONDITION condition_reset_asynchronous)? ( COMMA level_reset_asynchronous)?  (COLON action_reset_asynchronous)* SEMICOLON  ;        
 
-level_reset_asynchronous : NUMBER ;
+level_reset_asynchronous : POSITIVE_INTEGER ;
 
 condition_reset_asynchronous: input_async_reset;
 
@@ -71,16 +75,16 @@ transition   	  :  id  ARROW  id ( STAR  transition_priority)? ('?' condition)? 
 reset_transition  :   '->' id (STAR reset_transition_priority)? ('?' condition) (COLON transition_action)* SEMICOLON   ;         	//transition (with  action(s)), the condition is mandatory for reset transition
 
 
-transition_priority: NUMBER;
+transition_priority: POSITIVE_INTEGER;
 
-reset_transition_priority: NUMBER;
+reset_transition_priority: POSITIVE_INTEGER;
 
 condition :  element ( element)*  ;
 expression :  id ( id)*  ;
 
-action_id_reset_asynchronous:  ID  | NUMBER
+action_id_reset_asynchronous:  ID  | POSITIVE_INTEGER
    ;
-action_id: ID  | NUMBER
+action_id: ID  | POSITIVE_INTEGER
    ;
 
 action_expression:  element ( element)*  ;
@@ -91,12 +95,12 @@ element: operators  | constant | input | parenthesis;
 
 parenthesis : PARENTHESISOPEN | PARENTHESISCLOSE ;
 	 
-constant: NUMBER ;
+constant: POSITIVE_INTEGER ;
 
 input: id;
 
 
-id : ID  | NUMBER
+id : ID  | POSITIVE_INTEGER
    ;
 
 
@@ -131,7 +135,7 @@ pragma_vhdl_set_bit_size_for_output_state_number: PRAGMA_VHDL_SET_BIT_SIZE_FOR_O
 pragma_vhdl_testbench                         : PRAGMA_VHDL_TESTBENCH_BEGIN_DIRECTIVE 
 				                PRAGMA_WITH_BEGINING_AND_ENDING;
 
-bit_size_for_output_state_number: NUMBER;
+bit_size_for_output_state_number: POSITIVE_INTEGER;
 
 input_or_output_to_promote_to_buffer: ID   ;
 input_or_output_to_demote_to_signal: ID   ;
@@ -169,8 +173,8 @@ interface_port_type:   interface_port_type_std_logic
 to_or_down_to :   TO
                 | DOWNTO;		      
 
-bus_begin: NUMBER;
-bus_end: NUMBER;
+bus_begin: POSITIVE_INTEGER;
+bus_end: POSITIVE_INTEGER;
 
 interface_port_type_std_logic: STD_LOGIC;
 interface_port_type_std_logic_vector: STD_LOGIC_VECTOR ;

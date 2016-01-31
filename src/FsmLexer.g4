@@ -9,6 +9,7 @@ SEMICOLON            : ';'   ;
 COLON                : ':'   ;
 SLASH                : '/'   ; 
 ANTISLASH            : '\\'   ; 
+SHARP                : '#'   ; 
 CONDITION            : '?'   ;
 COMMA                : ','   ;
 EQUAL                : '='   ;
@@ -89,10 +90,14 @@ PARENTHESISCLOSE:')' ;
 
 
 
+POSITIVE_INTEGER   :    DIGIT+    ;  
+
 /** "a numeral [-]?(.[0-9]+ | [0-9]+(.[0-9]*)? )" */ 
 NUMBER
    : '-'? ( '.' DIGIT+ | DIGIT+ ( '.' DIGIT* )? )
    ;
+
+
 
 
 fragment DIGIT

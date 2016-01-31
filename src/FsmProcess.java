@@ -2519,6 +2519,9 @@ public class FsmProcess {
 		String baseStateName;
 		String condition;
 		Integer priority, first, last;
+		// for multiple transition to a same state, store the name of the
+		// destination name
+		String destinationState;
 	}
 
 	// ///////////////////////////////////////////////////////////////
@@ -3113,7 +3116,51 @@ public class FsmProcess {
 										// list
 			}
 		}
+
 		// ///////////////////////////////////////////////////////////////
+		public void enterMulti_transitions_to_same_directive(FsmParser.Multi_transitions_to_same_directiveContext ctx) {
+			// set default values if they are not set by optional parameters
+			multiTransitions.baseStateName = "";
+			multiTransitions.priority = 1000000; // default value
+			multiTransitions.condition = "1";
+		}
+
+		// ///////////////////////////////////////////////////////////////
+
+		public void enterMulti_transitions_destination_state(FsmParser.Multi_transitions_destination_stateContext ctx) {
+			multiTransitions.destinationState = ctx.children.get(0).getText().toUpperCase();
+		}
+
+		// ///////////////////////////////////////////////////////////////
+
+		public void exitMulti_transitions_to_same_directive(FsmParser.Multi_transitions_to_same_directiveContext ctx) {
+			// do the actual job once all parameters have been gathered
+			// ascending or descending order?
+			Integer increment = +1;
+			if (multiTransitions.first > multiTransitions.last) {
+				increment = -1;
+			}
+			Boolean over = false;
+			int i = multiTransitions.first;
+			while (!over) {
+				Transition t = new Transition();
+				t.condition = multiTransitions.condition;
+				t.priorityOrder = multiTransitions.priority;
+				t.origin = multiTransitions.baseStateName + Integer.toString(i);
+				t.destination = multiTransitions.destinationState;
+				State s1 = fsm.getStateOrCreateAndAdd(t.origin);
+				fsm.getStateOrCreateAndAdd(t.destination);
+				s1.transitionsFromThisState.add(t);
+				fsm.transitions.add(t); // also add it to the global
+										// transitions
+										// list
+				if (i == multiTransitions.last)
+					over = true;
+				i += increment;
+			}
+		}
+		// ///////////////////////////////////////////////////////////////
+
 	}
 
 	// ///////////////////////////////////////////////////////////////
