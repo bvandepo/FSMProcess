@@ -1,0 +1,101 @@
+//STILL TODO: deal with overflows
+
+WAIT_TO_START->COUNTING?RISING_EDGE_SIG:SRESET_CPT_TIME:SRESET_CPT_PERIODS; //do not count this as a period
+COUNTING:EN_CPT_PERIODS=RISING_EDGE_SIG; 
+COUNTING->FINISH_TIME? CPT_TIME_ELAPSED;
+FINISH_TIME->PRE_FINISH_COUNT?RISING_EDGE_SIG:EN_CPT_PERIODS; //count one more period (and time)
+PRE_FINISH_COUNT->FINISH_COUNT:SAVE_AND_COMPUTE;
+FINISH_COUNT->FINISH_COMPUTE?COMPUTE_OVER;
+FINISH_COMPUTE->WAIT_TO_START;
+COUNTING->OVERFLOW*1? TIME_OVERFLOW;
+PRE_FINISH_COUNT->OVERFLOW*1? TIME_OVERFLOW;
+FINISH_TIME->OVERFLOW*1? TIME_OVERFLOW;
+COUNTING->OVERFLOW*2? PERIODS_OVERFLOW;
+PRE_FINISH_COUNT->OVERFLOW*2? PERIODS_OVERFLOW;
+FINISH_TIME->OVERFLOW*2? PERIODS_OVERFLOW;
+
+->WAIT_TO_START?SRESET:SRESET_CPT_TIME:SRESET_CPT_PERIODS; 
+=>WAIT_TO_START?RESETN;
+
+#pragma_vhdl_allow_automatic_buffering
+#pragma_vhdl_promote_to_buffer{SRESET_CPT_TIME,SRESET_CPT_PERIODS ,RISING_EDGE_SIG ,EN_CPT_PERIODS}#pragma 
+#pragma_vhdl_promote_to_buffer{SAVE_AND_COMPUTE,COMPUTE_OVER,TIME_OVERFLOW,PERIODS_OVERFLOW,CPT_TIME_ELAPSED}#pragma
+#pragma_vhdl_entity{ SIG: in std_logic;  }#pragma    //this is the actual signal input
+#pragma_vhdl_entity{ DESIRED_WINDOW: in std_logic_vector(31 downto 0);  }#pragma    //this is the desired number of clock periods to achieve the measure
+#pragma_vhdl_entity{ MAX_WINDOW: in std_logic_vector(31 downto 0);  }#pragma    //this is the max number of clock periods to achieve the measure, before overflow
+  
+
+#pragma_vhdl_entity{ cpt_time,cpt_period: buffer std_logic_vector(31 downto 0);  }#pragma    //this is the desired number of clock periods to achieve 
+#pragma_vhdl_entity{ saved_cpt_time,saved_cpt_period: buffer std_logic_vector (31 downto 0);  }#pragma    //this is the results of the measurement
+
+#pragma_vhdl_architecture_pre_begin{ 
+signal  old_sig: std_logic;
+
+}#pragma
+
+#pragma_vhdl_architecture_post_begin{ 
+--counters:
+Process (ck, RESETN)
+	begin
+		if RESETN='0' then  cpt_time <= (others=>'0');cpt_period <= (others=>'0');
+				   saved_cpt_time <= (others=>'0');saved_cpt_period <= (others=>'0');
+		elsif ck'event and ck='1' then 
+		  if sRESET_cpt_TIME='1'then  
+			cpt_TIME <= (others=>'0');
+		  else  cpt_TIME <= cpt_TIME+1;
+		  end if;
+ 		  if sRESET_cpt_periods='1'then  
+			cpt_period <= (others=>'0');
+		  elsif EN_CPT_PERIODS='1' then  
+			cpt_period <= cpt_period+1;
+		  end if;	
+		  if SRESET='1' then  
+			saved_cpt_time <= (others=>'0');saved_cpt_period <= (others=>'0');
+		  elsif  SAVE_AND_COMPUTE='1' then
+			saved_cpt_time <= cpt_time ;saved_cpt_period <= cpt_period ;
+		  end if;
+		end if;
+	end process;
+--generation of RISING_EDGE_SIG
+Process (ck, RESETN)
+	begin
+		if RESETN='0' then  old_sig<='0';
+		elsif ck'event and ck='1' then
+			old_sig<=sig; 
+		end if;
+end process;
+RISING_EDGE_SIG<='1' when SIG='1' AND OLD_SIG='0' else '0';
+ 
+COMPUTE_OVER<='0';
+--TODO:
+TIME_OVERFLOW<='0';
+PERIODS_OVERFLOW<='0';
+CPT_TIME_ELAPSED<='1' when CPT_TIME >= DESIRED_WINDOW   else '0';
+}#pragma
+
+
+//run for 50ms
+#pragma_vhdl_testbench{  
+---------------------------------------	
+	wait until (ck'event and ck='0' );
+ SIG<='0';
+DESIRED_WINDOW<="00000000" &"00000100" &"00000000" &"00000000" ;
+MAX_WINDOW<="00000000" &"00000000" &"00000000" &"01000000" ;
+SRESET<='0';
+
+for i in 0 to 100000 loop
+	sig<='1';
+	wait for ck_period*8.256;
+	sig<='0';
+	wait for ck_period*5.815;
+END LOOP;
+
+	wait for ck_period*500000*5;
+---------------------------------------	
+}#pragma
+
+//result at 27ms:
+//synthesized= 8.256+5.815=14.071
+//measured: 262157/18612=14,08537502686
+
+
