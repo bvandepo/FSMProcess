@@ -542,6 +542,12 @@ asychrone >  set > reset > mémorisation
 #state(8 to 2)->org*3?CONDI2;
 <</FSM>>
 
+
+
+
+Pour voir l'intérêt, comparer filteredge2.fsm et filteredge3.fsm qui font la même chose.
+ 
+
 ===Spécifications via Pragma===
 ==Indiquer taille du bus pour la visualisation du numéro de l'état en cours==
 Par défaut la  taille du buspour la sortie codant le numéro de l'état en cours est réglée automatiquement mais il est possible d'imposer une valeur fixe, par exemple pour contrôler un afficheur prenant des mots de 4 bits pour afficher en hexadécimal. Ceci est réalisé à l'aide de la commande pragma: 

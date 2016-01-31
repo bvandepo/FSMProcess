@@ -4,9 +4,6 @@
 	0 : R,marche;
 	1 : S,marche:pousse_piece:sens_pousse;
 	2 : pousse_piece;
-	3 ;
-	4 ;
-	5 ;
 	6 : eject_milieu;
 	7 : eject_fin;
 ////////////////////////////////////////////////////////////////////////////////////////////////////// 
@@ -19,8 +16,6 @@
 	5 -> 6 ?NOT fin_tempob;
 	6 -> 0 ?fin_tempob;
 	4 -> 7 ?NOT fin_bdeb;
-	7 -> 0 ? fin_bdeb;
-	  
+	7 -> 0 ?fin_bdeb;
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
-//Transitions avec état d'origine vide pour reset synchrone, actions sur reset
- 
+

@@ -1,4 +1,4 @@
-//STILL TODO: deal with overflows
+//STILL TODO: compute frequency and period values and add outputs for result_available and  
 
 WAIT_TO_START->COUNTING?RISING_EDGE_SIG:SRESET_CPT_TIME:SRESET_CPT_PERIODS; //do not count this as a period
 COUNTING:EN_CPT_PERIODS=RISING_EDGE_SIG; 
@@ -6,13 +6,13 @@ COUNTING->FINISH_TIME? CPT_TIME_ELAPSED;
 FINISH_TIME->PRE_FINISH_COUNT?RISING_EDGE_SIG:EN_CPT_PERIODS; //count one more period (and time)
 PRE_FINISH_COUNT->FINISH_COUNT:SAVE_AND_COMPUTE;
 FINISH_COUNT->FINISH_COMPUTE?COMPUTE_OVER;
-FINISH_COMPUTE->WAIT_TO_START;
-COUNTING->OVERFLOW*1? TIME_OVERFLOW;
-PRE_FINISH_COUNT->OVERFLOW*1? TIME_OVERFLOW;
-FINISH_TIME->OVERFLOW*1? TIME_OVERFLOW;
-COUNTING->OVERFLOW*2? PERIODS_OVERFLOW;
-PRE_FINISH_COUNT->OVERFLOW*2? PERIODS_OVERFLOW;
-FINISH_TIME->OVERFLOW*2? PERIODS_OVERFLOW;
+FINISH_COMPUTE->WAIT_TO_START:S,result_available:R,OVERFLOW;
+
+COUNTING->S_OVERFLOW*1? TIME_OVERFLOW OR PERIODS_OVERFLOW;
+PRE_FINISH_COUNT->S_OVERFLOW*1? TIME_OVERFLOW OR PERIODS_OVERFLOW;
+FINISH_TIME->S_OVERFLOW*1? TIME_OVERFLOW OR PERIODS_OVERFLOW;
+
+S_OVERFLOW->WAIT_TO_START:R,result_available:S,OVERFLOW;
 
 ->WAIT_TO_START?SRESET:SRESET_CPT_TIME:SRESET_CPT_PERIODS; 
 =>WAIT_TO_START?RESETN;
@@ -65,22 +65,70 @@ Process (ck, RESETN)
 		end if;
 end process;
 RISING_EDGE_SIG<='1' when SIG='1' AND OLD_SIG='0' else '0';
- 
-COMPUTE_OVER<='0';
---TODO:
-TIME_OVERFLOW<='0';
-PERIODS_OVERFLOW<='0';
-CPT_TIME_ELAPSED<='1' when CPT_TIME >= DESIRED_WINDOW   else '0';
+
+
+--TODO: 
+COMPUTE_OVER<='1';
+
+
+TIME_OVERFLOW<='1' when CPT_TIME=MAX_WINDOW else '0';
+PERIODS_OVERFLOW<='1' when not CPT_PERIOD= 0 else '0'; --should never happen
+CPT_TIME_ELAPSED<='1' when CPT_TIME = DESIRED_WINDOW   else '0';
 }#pragma
 
-
-//run for 50ms
-#pragma_vhdl_testbench{  
+/*
+//testbench to generate overflow
+ #pragma_vhdl_testbench{  
 ---------------------------------------	
 	wait until (ck'event and ck='0' );
  SIG<='0';
-DESIRED_WINDOW<="00000000" &"00000100" &"00000000" &"00000000" ;
+DESIRED_WINDOW<="00000000" &"00000000" &"00000000" &"01000000" ;
+MAX_WINDOW<="00000000" &"00000000" &"00000000" &"10000000" ;
+SRESET<='0';
+
+for i in 0 to 100000 loop
+	sig<='1';
+	wait for ck_period*62;
+	sig<='0';
+	wait for ck_period*69;
+END LOOP;
+
+	wait for ck_period*500000*5;
+---------------------------------------	
+}#pragma
+*/
+
+//for fast input signals
+/*#pragma_vhdl_testbench{  
+---------------------------------------	
+	wait until (ck'event and ck='0' );
+ SIG<='0';
+DESIRED_WINDOW<="00000000" &"00000000" &"00000000" &"00100000" ;
 MAX_WINDOW<="00000000" &"00000000" &"00000000" &"01000000" ;
+SRESET<='0';
+
+for i in 0 to 100000 loop
+	sig<='1';
+	wait for ck_period*1.415;
+	sig<='0';
+	wait for ck_period*1.81;
+END LOOP;
+
+	wait for ck_period*500000*5;
+---------------------------------------	
+}#pragma
+*/
+
+
+
+ 
+//run for 50ms
+#pragma_vhdl_testbench{  
+---------------------------------------	
+wait until (ck'event and ck='0' );
+SIG<='0';
+DESIRED_WINDOW<="00000000" &"00000100" &"00000000" &"00000000" ;
+MAX_WINDOW<="00000000" &"10000000" &"00000000" &"00000000" ;
 SRESET<='0';
 
 for i in 0 to 100000 loop
@@ -89,11 +137,10 @@ for i in 0 to 100000 loop
 	sig<='0';
 	wait for ck_period*5.815;
 END LOOP;
-
 	wait for ck_period*500000*5;
 ---------------------------------------	
 }#pragma
-
+ 
 //result at 27ms:
 //synthesized= 8.256+5.815=14.071
 //measured: 262157/18612=14,08537502686
