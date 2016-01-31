@@ -14,11 +14,19 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BufferedTokenStream;
@@ -57,6 +65,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 //TODO; ajouter gestion des GENERIC et aussi dans testbench... (avec un pragma dans le fsm
 
+//TODO: ajouter gestion de multiples testbenches
+
 //TODO: ajouter pragma pour imposer le Statenumber d'un etat d'apres son nom
 //TODO: comprendre pourquoi antlr ne genere par le fichier FsmParser.java  mais uniquement le class...
 
@@ -64,6 +74,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //#pragma_vhdl_allow_automatic_buffering
 //%S,delay_ended=COUNT_EQUAL;  
 //%R,delay_ended=srazcpt;  
+
+//TODO: ajouter un mode ou FsmProcess surveille un fichier fsm et le traite à chaque modif, en mettant à jours l'image dans display si -d
 
 // ///////////////////////////////////////////////////////////////
 // Il suffit de redéfinir la méthode equals de tes objets pour contrôler
@@ -110,6 +122,79 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //////////////////////////////////////////////////////////
 public class FsmProcess {
 
+	// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// FILE CHANGE DETECTION FOR INTERACTIVE MODE
+	// got from:
+	// http://stackoverflow.com/questions/16251273/can-i-watch-for-single-file-change-with-watchservice-not-the-whole-directory
+	// new FileWatcher(new File("/home/me/myfile")).start() and stop it by
+	// calling stopThread() on the thread.
+
+	static public class FileWatcher extends Thread {
+		private final File file;
+		private AtomicBoolean stop = new AtomicBoolean(false);
+
+		public FileWatcher(File file) {
+			this.file = file;
+		}
+
+		public boolean isStopped() {
+			return stop.get();
+		}
+
+		public void stopThread() {
+			stop.set(true);
+		}
+
+		public void doOnChange() {
+			// Do whatever action you want here
+			System.out.println("FILE CHANGED!!!!!!");
+			GenerateFiles(fsmInputName);
+		}
+
+		@Override
+		public void run() {
+			try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
+				Path path = file.toPath().getParent();
+				path.register(watcher, StandardWatchEventKinds.ENTRY_MODIFY);
+				while (!isStopped()) {
+					WatchKey key;
+					try {
+						key = watcher.poll(25, TimeUnit.MILLISECONDS);
+					} catch (InterruptedException e) {
+						return;
+					}
+					if (key == null) {
+						Thread.yield();
+						continue;
+					}
+
+					for (WatchEvent<?> event : key.pollEvents()) {
+						WatchEvent.Kind<?> kind = event.kind();
+
+						@SuppressWarnings("unchecked")
+						WatchEvent<Path> ev = (WatchEvent<Path>) event;
+						Path filename = ev.context();
+
+						if (kind == StandardWatchEventKinds.OVERFLOW) {
+							Thread.yield();
+							continue;
+						} else if (kind == java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY && filename.toString().equals(file.getName())) {
+							doOnChange();
+						}
+						boolean valid = key.reset();
+						if (!valid) {
+							break;
+						}
+					}
+					Thread.yield();
+				}
+			} catch (Throwable e) {
+				// Log or rethrow the error
+			}
+		}
+	}
+
+	// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	static String softNameAndVersion = "FsmProcess V 1.0";
 	static String fsmInputName;
 	static StringBuilder bufDot;
@@ -233,7 +318,7 @@ public class FsmProcess {
 					try {
 						Runtime r = Runtime.getRuntime();
 						Process p = r.exec(cmd);
-						p.waitFor();// si l'application doit attendre a ce que
+					//	p.waitFor();// si l'application doit attendre a ce que
 									// ce
 									// process fini
 					} catch (Exception e) {
@@ -3275,6 +3360,9 @@ public class FsmProcess {
 			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
 			return;
 		}
+		File f = new File(fsmInputName);
+		FileWatcher fw = new FileWatcher(f);
+		fw.start();
 
 	}
 }
