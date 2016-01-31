@@ -5,6 +5,9 @@
 //import java.io.BufferedReader;
 import gnu.getopt.Getopt;
 
+import java.awt.FlowLayout;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,6 +30,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BufferedTokenStream;
@@ -121,6 +129,46 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //TODO: parser le pragma entity pour detecter E/S (ou alors add/remove..) + bus
 //////////////////////////////////////////////////////////
 public class FsmProcess {
+
+	// get from:
+	// http://stackoverflow.com/questions/14353302/displaying-image-in-java
+
+	public static void DisplayImage(String fileName) throws IOException {
+		BufferedImage img = ImageIO.read(new File(fileName));
+		// cut a part
+		// img=img.getSubimage(100, 0, 1680, 1024);
+		// img=img.getSubimage(400, 200, 100, 100);
+
+		float aspectRatioOrg = (float) img.getWidth() / (float) img.getHeight();
+
+		int IMG_WIDTH = 1680;
+		int IMG_HEIGHT = 1024;
+		float aspectRatioDest = (float) IMG_WIDTH / (float) IMG_HEIGHT;
+		if (aspectRatioOrg > aspectRatioDest)
+			IMG_HEIGHT = (int) (IMG_WIDTH / aspectRatioOrg);
+		else
+			IMG_WIDTH = (int) (IMG_HEIGHT * aspectRatioOrg);
+
+		BufferedImage resizedImage = new BufferedImage(IMG_WIDTH, IMG_HEIGHT, img.getType());
+		Graphics2D g = resizedImage.createGraphics();
+
+		// g.drawImage(img, 0, 0, img.getWidth(),img.getHeight(), null);
+		g.drawImage(img, 0, 0, IMG_WIDTH, IMG_HEIGHT, 0, 0, img.getWidth(), img.getHeight(), null);
+		g.dispose();
+		ImageIcon icon = new ImageIcon(resizedImage);
+
+		// ImageIcon icon = new ImageIcon(img);
+		JFrame frame = new JFrame();
+		frame.setLayout(new FlowLayout());
+		// frame.setSize(200, 300);
+		frame.setSize(IMG_WIDTH, IMG_HEIGHT);
+		JLabel lbl = new JLabel();
+		lbl.setIcon(icon);
+		frame.add(lbl);
+		frame.setVisible(true);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+	}
 
 	// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// FILE CHANGE DETECTION FOR INTERACTIVE MODE
@@ -314,16 +362,25 @@ public class FsmProcess {
 					System.out.println("erreur d'execution " + cmd + e.toString());
 				}
 				if (fsm.optionsDisplayResultImage) {
-					cmd = "display " + imageFileName + " & ";
+
 					try {
-						Runtime r = Runtime.getRuntime();
-						Process p = r.exec(cmd);
-					//	p.waitFor();// si l'application doit attendre a ce que
-									// ce
-									// process fini
-					} catch (Exception e) {
-						System.out.println("erreur d'execution " + cmd + e.toString());
+						DisplayImage(imageFileName);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
+
+					// cmd = "display " + imageFileName + " & ";
+					// try {
+					// Runtime r = Runtime.getRuntime();
+					// Process p = r.exec(cmd);
+					// p.waitFor();// si l'application doit attendre a ce
+					// // que ce process fini
+					// } catch (Exception e) {
+					// System.out.println("erreur d'execution " + cmd +
+					// e.toString());
+					// }
+
 				}
 			}
 		}
@@ -2394,6 +2451,7 @@ public class FsmProcess {
 		public Boolean optionsDisplayResultImage = false;
 		public Boolean optionsComputeResultImage = false;
 		public String imageFileExtension = "gif";
+		public Boolean optionsRealtime = false;
 
 		List<String> forbiddenNamesVHDL = Arrays.asList("ABS", "ACCESS", "AFTER", "ALIAS", "ALL", "AND", "ARCHITECTURE", "ARRAY", "ASSERT",
 				"ATTRIBUTE", "BEGIN", "BLOCK", "BODY", "BUFFER", "BUS", "CASE", "COMPONENT", "CONFIGURATION", "CONSTANT", "DISCONNECT",
@@ -3311,6 +3369,12 @@ public class FsmProcess {
 				System.out.print("\n");
 				fsmInputName = arg;
 				break;
+			case 'r':
+				System.out.print(" Option: Realtime process of the input file\n");
+				fsm.optionsDisplayResultImage = true;
+				fsm.optionsComputeResultImage = true;
+				fsm.optionsRealtime = true;
+				break;
 			default:
 				System.out.println("getopt() returned " + c);
 				break;
@@ -3333,11 +3397,12 @@ public class FsmProcess {
 		// GetOpt et antlr
 		// TODO: rendre la generation de la doc sous windows possible / \
 		// TODO: insérer des \n ou \r en fin de ligne selon l'os
-		System.out.println("usage: java -jar FsmProcess.jar -i -c -d -f fichier.fsm");
+		System.out.println("usage: java -jar FsmProcess.jar -i -c -d -r -f fichier.fsm");
 		System.out.println("    -i: ignore error in the model and try to continue");
 		System.out.println("    -c: create output gif image file from the dot file");
 		System.out.println("    -d: display the output gif image with image magick (linux support only)");
 		System.out.println("    -f filename.fsm: provide the input file name to process");
+		System.out.println("    -r: realtime process, regenerate the files when the input file content changes");
 		System.out.println("  THE GENERATED FILES SHOULD NOT BE EDITED BY HAND, AS THEY MAY BE DELETED AUTOMATICALLY!!!!");
 
 		// generateCounter(10);
@@ -3360,9 +3425,10 @@ public class FsmProcess {
 			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
 			return;
 		}
-		File f = new File(fsmInputName);
-		FileWatcher fw = new FileWatcher(f);
-		fw.start();
-
+		if (fsm.optionsRealtime) {
+			File f = new File(fsmInputName);
+			FileWatcher fw = new FileWatcher(f);
+			fw.start();
+		}
 	}
 }
