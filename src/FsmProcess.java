@@ -1553,17 +1553,20 @@ public class FsmProcess {
 			// 0 and not emit a warning about it.
 			bufVhdl.append("state_");
 			bufVhdl.append(fsm.resetAsynchronousState.name);
-			if (numberOfStates > 1)
-				bufVhdl.append(", ");
 			// print the others states names
-			for (int n = 0; n < numberOfStates; n++) {
+			// change from for loop to deal with a problem if the asynchronous
+			// reset state appears at the end of alphabetical order
+			int numberOfStatesStill = numberOfStates - 1;
+			int n = 0;
+			while (numberOfStatesStill > 0) {
 				if (!fsm.states.get(n).name.equalsIgnoreCase(fsm.resetAsynchronousState.name)) {
+					bufVhdl.append(", ");
 					// prefix state name with state_
 					bufVhdl.append("state_");
 					bufVhdl.append(fsm.states.get(n).name);
-					if (n != numberOfStates - 1)
-						bufVhdl.append(", ");
+					numberOfStatesStill--;
 				}
+				n++;
 			}
 			bufVhdl.append(");\n");
 			bufVhdl.append("signal current_state, next_state : fsm_state;\n");
