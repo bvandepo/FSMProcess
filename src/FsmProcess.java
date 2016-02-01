@@ -130,44 +130,51 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //////////////////////////////////////////////////////////
 public class FsmProcess {
 
+	public static Boolean optionsIgnoreErrors = false;
+	public static Boolean optionsDisplayResultImage = false;
+	public static Boolean optionsComputeResultImage = false;
+	public static Boolean optionsRealtime = false;
+
 	// get from:
 	// http://stackoverflow.com/questions/14353302/displaying-image-in-java
+
+	public static JFrame frame = null;
+	public static JLabel lbl = null;
 
 	public static void DisplayImage(String fileName) throws IOException {
 		BufferedImage img = ImageIO.read(new File(fileName));
 		// cut a part
 		// img=img.getSubimage(100, 0, 1680, 1024);
 		// img=img.getSubimage(400, 200, 100, 100);
-
 		float aspectRatioOrg = (float) img.getWidth() / (float) img.getHeight();
-
-		int IMG_WIDTH = 1680;
-		int IMG_HEIGHT = 1024;
+		int IMG_WIDTH = 1280;
+		int IMG_HEIGHT = 924 - 40;
 		float aspectRatioDest = (float) IMG_WIDTH / (float) IMG_HEIGHT;
+		int IMG_WIDTH_dest = IMG_WIDTH;
+		int IMG_HEIGHT_dest = IMG_HEIGHT;
 		if (aspectRatioOrg > aspectRatioDest)
-			IMG_HEIGHT = (int) (IMG_WIDTH / aspectRatioOrg);
+			IMG_HEIGHT_dest = (int) (IMG_WIDTH_dest / aspectRatioOrg);
 		else
-			IMG_WIDTH = (int) (IMG_HEIGHT * aspectRatioOrg);
-
-		BufferedImage resizedImage = new BufferedImage(IMG_WIDTH, IMG_HEIGHT, img.getType());
+			IMG_WIDTH_dest = (int) (IMG_HEIGHT_dest * aspectRatioOrg);
+		BufferedImage resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
 		Graphics2D g = resizedImage.createGraphics();
-
 		// g.drawImage(img, 0, 0, img.getWidth(),img.getHeight(), null);
-		g.drawImage(img, 0, 0, IMG_WIDTH, IMG_HEIGHT, 0, 0, img.getWidth(), img.getHeight(), null);
+		g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
 		g.dispose();
 		ImageIcon icon = new ImageIcon(resizedImage);
-
 		// ImageIcon icon = new ImageIcon(img);
-		JFrame frame = new JFrame();
-		frame.setLayout(new FlowLayout());
-		// frame.setSize(200, 300);
-		frame.setSize(IMG_WIDTH, IMG_HEIGHT);
-		JLabel lbl = new JLabel();
+		// JFrame frame = new JFrame();
+		if (frame == null) {
+			frame = new JFrame();
+			frame.setLayout(new FlowLayout());
+			// frame.setSize(200, 300);
+			frame.setSize(IMG_WIDTH, IMG_HEIGHT + 40);
+			lbl = new JLabel();
+			frame.add(lbl);
+			frame.setVisible(true);
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		}
 		lbl.setIcon(icon);
-		frame.add(lbl);
-		frame.setVisible(true);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
 	}
 
 	// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -268,7 +275,7 @@ public class FsmProcess {
 	static StringBuilder bufLogWarning;
 	static StringBuilder bufLogError;
 
-	static FiniteStateMachine fsm = new FiniteStateMachine();
+	static FiniteStateMachine fsm;
 
 	// static public void processASingleFSM(String fsmBaseName) {}
 	static public void EraseFile(String name) {
@@ -287,6 +294,9 @@ public class FsmProcess {
 	// ///////////////////////////////////////////////
 
 	static public void GenerateFiles(String fsmInputName) {
+
+		fsm = new FiniteStateMachine();
+
 		// by default, the input stream is System.in
 		InputStream is = System.in;
 		if (fsmInputName != null)
@@ -345,7 +355,7 @@ public class FsmProcess {
 
 		walker.walk(collector, tree);
 
-		if (checkModel() || fsm.optionsIgnoreErrors)
+		if (checkModel() || optionsIgnoreErrors)
 		// if ignoreErrors, then display and generate fsm that have errors
 		{
 			generateDot();
@@ -366,7 +376,7 @@ public class FsmProcess {
 			saveToFile(bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n" + bufLogInfo.toString(),
 					fsmBaseName.concat(".log"));
 
-			if (fsm.optionsComputeResultImage) {
+			if (optionsComputeResultImage) {
 				// Execute external program to compute png and display it
 				// http://ydisanto.developpez.com/tutoriels/java/runtime-exec/
 				String cmd = "dot -T" + fsm.imageFileExtension + " " + fsmBaseName.concat(".dot") + " -o " + imageFileName;
@@ -378,7 +388,7 @@ public class FsmProcess {
 				} catch (Exception e) {
 					System.out.println("erreur d'execution " + cmd + e.toString());
 				}
-				if (fsm.optionsDisplayResultImage) {
+				if (optionsDisplayResultImage) {
 
 					try {
 						DisplayImage(imageFileName);
@@ -558,6 +568,19 @@ public class FsmProcess {
 		bufDot.append(" B. VANDEPORTAELE LAAS-CNRS 2016\n");
 		bufDot.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
 		bufDot.append("digraph finite_state_machine {\n");
+		// TODO: set image size:
+		// http://stackoverflow.com/questions/17719467/graphviz-ignores-size-attribute-a4-page
+		// bufDot.append(" ratio=\"fill\";\n");
+		int w = 1680;
+		int h = 1024;
+		double sc = 50.0;
+		bufDot.append(" size=\"");
+		bufDot.append(w / sc);
+		bufDot.append(",");
+		bufDot.append(w / sc);
+		bufDot.append(" !\";\n");
+		bufDot.append(" margin=0;\n");
+		// bufDot.append(" node[shape=point, height=0.02, width=0.01];\n");
 
 		// TODO: set all that trought pragma_dot ...
 
@@ -2464,11 +2487,7 @@ public class FsmProcess {
 		public ArrayList<String> inputsOrderedNamesList = new ArrayList<String>();
 		public ArrayList<String> outputsOrderedNamesList = new ArrayList<String>();
 
-		public Boolean optionsIgnoreErrors = false;
-		public Boolean optionsDisplayResultImage = false;
-		public Boolean optionsComputeResultImage = false;
 		public String imageFileExtension = "gif";
-		public Boolean optionsRealtime = false;
 
 		List<String> forbiddenNamesVHDL = Arrays.asList("ABS", "ACCESS", "AFTER", "ALIAS", "ALL", "AND", "ARCHITECTURE", "ARRAY", "ASSERT",
 				"ATTRIBUTE", "BEGIN", "BLOCK", "BODY", "BUFFER", "BUS", "CASE", "COMPONENT", "CONFIGURATION", "CONSTANT", "DISCONNECT",
@@ -3368,16 +3387,16 @@ public class FsmProcess {
 			switch (c) {
 			case 'i':
 				System.out.print(" Option: Ignore Errors\n");
-				fsm.optionsIgnoreErrors = true;
+				optionsIgnoreErrors = true;
 				break;
 			case 'c':
 				System.out.print(" Option: Compute result image\n");
-				fsm.optionsComputeResultImage = true;
+				optionsComputeResultImage = true;
 				break;
 			case 'd':
 				System.out.print(" Option: Compute and Display result image\n");
-				fsm.optionsDisplayResultImage = true;
-				fsm.optionsComputeResultImage = true;
+				optionsDisplayResultImage = true;
+				optionsComputeResultImage = true;
 				break;
 			case 'f':
 				arg = g.getOptarg();
@@ -3388,7 +3407,7 @@ public class FsmProcess {
 				break;
 			case 'r':
 				System.out.print(" Option: Realtime process of the input file\n");
-				fsm.optionsRealtime = true;
+				optionsRealtime = true;
 				break;
 			default:
 				System.out.println("getopt() returned " + c);
@@ -3440,7 +3459,7 @@ public class FsmProcess {
 			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
 			return;
 		}
-		if (fsm.optionsRealtime) {
+		if (optionsRealtime) {
 			File f = new File(fsmInputName);
 			FileWatcher fw = new FileWatcher(f);
 			fw.start();
