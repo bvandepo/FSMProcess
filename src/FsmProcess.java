@@ -8,6 +8,8 @@ import gnu.getopt.Getopt;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
 import java.awt.ScrollPane;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -34,8 +36,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BufferedTokenStream;
@@ -136,15 +140,96 @@ public class FsmProcess {
 	public static Boolean optionsComputeResultImage = false;
 	public static Boolean optionsRealtime = false;
 
+	public static String imageFileName;
 	// get from:
 	// http://stackoverflow.com/questions/14353302/displaying-image-in-java
 
-	public static JFrame frame = null;
+	public static MyJFrame frame = null;
 	public static JLabel lbl = null;
 	public static FlowLayout flayout = null;
 	public static ScrollPane p;
 	public static Boolean autoResize = true;
 
+////////////////////////////////////////////////////////////////////////
+//http://stackoverflow.com/questions/15685502/jframe-mouse-click-using-jcomponent-and-mouselistener
+	@SuppressWarnings("serial")
+	public static class MyMouseComponent extends JComponent implements MouseListener {
+
+		@Override
+		public void mouseClicked(MouseEvent arg0) {
+			System.out.println("here was a click ! ");
+			autoResize=!autoResize;
+			//arg0.getComponent().doLayout();
+			try {
+				DisplayImage(imageFileName);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+
+		@Override
+		public void mouseEntered(MouseEvent e) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void mouseExited(MouseEvent e) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void mousePressed(MouseEvent e) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			// TODO Auto-generated method stub
+
+		}
+	}
+
+////////////////////////////////////////////////////////////////////////
+//http://chortle.ccsu.edu/java5/notes/chap56/ch56_11.html
+	@SuppressWarnings("serial")
+	static public class MyJFrame extends JFrame {
+		JPanel panel;
+		JLabel label;
+
+
+		// constructor
+		MyJFrame(String title) {
+			super(title); // invoke the JFrame constructor
+			//frame.
+	
+			//addMouseListener fait dans le panel
+			//	addMouseListener((MouseListener)mouseClick);
+			
+//String mouseClick2=getMouseListeners().toString();
+		//	MouseListener m = mouseClick;
+
+			// frame.setVisible(true);
+
+			setSize(150, 100);
+			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+			setLayout(new FlowLayout()); // set the layout manager
+			label = new JLabel("Hello Swing!"); // construct a JLabel
+			add(label); // add the label to the JFrame
+		}
+
+	}
+////////////////////////////////////////////////////////////////////////
+	
+	
+
+	// Panel:
+	// https://docs.oracle.com/javase/7/docs/api/javax/swing/JScrollPane.html
 	public static void DisplayImage(String fileName) throws IOException {
 		BufferedImage img = ImageIO.read(new File(fileName));
 		// cut a part
@@ -178,21 +263,25 @@ public class FsmProcess {
 		}
 
 		if (frame == null) {
-			frame = new JFrame();
+			frame = new MyJFrame(fsm.name);
 			flayout = new FlowLayout();
 			frame.setLayout(flayout);
 			p = new ScrollPane();
-			p.setSize(IMG_WIDTH-30, IMG_HEIGHT + 40-30);
+			MyMouseComponent mouseClick= new MyMouseComponent();
+			//p.addMouseListener((MouseListener)mouseClick);
+			p.setSize(IMG_WIDTH - 30, IMG_HEIGHT + 40 - 30);
 			frame.add(p);
 			// frame.setSize(200, 300);
 			frame.setSize(IMG_WIDTH, IMG_HEIGHT + 40);
 			lbl = new JLabel();
+			lbl.addMouseListener((MouseListener)mouseClick);
 			// frame.add(lbl);
 			p.add(lbl);
 			frame.setVisible(true);
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		}
 		lbl.setIcon(icon);
+
 	}
 
 	// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -353,7 +442,7 @@ public class FsmProcess {
 		EraseFile(fsmBaseName.concat(".vhd"));
 		EraseFile(fsmBaseName.concat("_portmap.vhd"));
 		EraseFile(fsmBaseName.concat(".log"));
-		String imageFileName = fsmBaseName.concat(".").concat(fsm.imageFileExtension);
+		imageFileName = fsmBaseName.concat(".").concat(fsm.imageFileExtension);
 		EraseFile(imageFileName);
 
 		FsmLexer lexer = new FsmLexer(input);
@@ -3483,4 +3572,5 @@ public class FsmProcess {
 			fw.start();
 		}
 	}
+
 }
