@@ -7,6 +7,7 @@ import gnu.getopt.Getopt;
 
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
+import java.awt.ScrollPane;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -140,37 +141,54 @@ public class FsmProcess {
 
 	public static JFrame frame = null;
 	public static JLabel lbl = null;
+	public static FlowLayout flayout = null;
+	public static ScrollPane p;
+	public static Boolean autoResize = true;
 
 	public static void DisplayImage(String fileName) throws IOException {
 		BufferedImage img = ImageIO.read(new File(fileName));
 		// cut a part
 		// img=img.getSubimage(100, 0, 1680, 1024);
 		// img=img.getSubimage(400, 200, 100, 100);
-		float aspectRatioOrg = (float) img.getWidth() / (float) img.getHeight();
+		BufferedImage resizedImage;
+		Graphics2D g;
+		ImageIcon icon;
 		int IMG_WIDTH = 1280;
 		int IMG_HEIGHT = 924 - 40;
-		float aspectRatioDest = (float) IMG_WIDTH / (float) IMG_HEIGHT;
-		int IMG_WIDTH_dest = IMG_WIDTH;
-		int IMG_HEIGHT_dest = IMG_HEIGHT;
-		if (aspectRatioOrg > aspectRatioDest)
-			IMG_HEIGHT_dest = (int) (IMG_WIDTH_dest / aspectRatioOrg);
-		else
-			IMG_WIDTH_dest = (int) (IMG_HEIGHT_dest * aspectRatioOrg);
-		BufferedImage resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
-		Graphics2D g = resizedImage.createGraphics();
-		// g.drawImage(img, 0, 0, img.getWidth(),img.getHeight(), null);
-		g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
-		g.dispose();
-		ImageIcon icon = new ImageIcon(resizedImage);
-		// ImageIcon icon = new ImageIcon(img);
-		// JFrame frame = new JFrame();
+		if (autoResize) {
+			float aspectRatioOrg = (float) img.getWidth() / (float) img.getHeight();
+			float aspectRatioDest = (float) IMG_WIDTH / (float) IMG_HEIGHT;
+			int IMG_WIDTH_dest = IMG_WIDTH;
+			int IMG_HEIGHT_dest = IMG_HEIGHT;
+			if (aspectRatioOrg > aspectRatioDest)
+				IMG_HEIGHT_dest = (int) (IMG_WIDTH_dest / aspectRatioOrg);
+			else
+				IMG_WIDTH_dest = (int) (IMG_HEIGHT_dest * aspectRatioOrg);
+			resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
+			g = resizedImage.createGraphics();
+			// g.drawImage(img, 0, 0, img.getWidth(),img.getHeight(), null);
+			g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
+			g.dispose();
+			icon = new ImageIcon(resizedImage);
+			// ImageIcon icon = new ImageIcon(img);
+			// JFrame frame = new JFrame();
+
+		} else {
+			icon = new ImageIcon(img);
+		}
+
 		if (frame == null) {
 			frame = new JFrame();
-			frame.setLayout(new FlowLayout());
+			flayout = new FlowLayout();
+			frame.setLayout(flayout);
+			p = new ScrollPane();
+			p.setSize(IMG_WIDTH-30, IMG_HEIGHT + 40-30);
+			frame.add(p);
 			// frame.setSize(200, 300);
 			frame.setSize(IMG_WIDTH, IMG_HEIGHT + 40);
 			lbl = new JLabel();
-			frame.add(lbl);
+			// frame.add(lbl);
+			p.add(lbl);
 			frame.setVisible(true);
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		}
