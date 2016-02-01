@@ -183,6 +183,8 @@ public class FsmProcess {
 
 		public FileWatcher(File file) {
 			this.file = file;
+			System.out.print("LOOKING FOR CHANGE ON FILE: ");
+			System.out.println(file);
 		}
 
 		public boolean isStopped() {
@@ -195,23 +197,38 @@ public class FsmProcess {
 
 		public void doOnChange() {
 			// Do whatever action you want here
-			System.out.println("FILE CHANGED!!!!!!");
+			System.out.print("FILE ");
+			System.out.println(file);
+			System.out.print(" CHANGED!!!!!!");
 			GenerateFiles(fsmInputName);
 		}
 
 		@Override
 		public void run() {
 			try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
+				// System.out.println(" WatchService watcher = FileSystems.getDefault().newWatchService()");
 				Path path = file.toPath().getParent();
+
+				// TODO: detect if file is relative!!!
+				// TODO: reuse the image viewer windows instead of create a new
+				// one at each change
+				// TODO: reinit fsm at each file change
+				// if (path==null) //Probleme si nom de fichier sans le dossier
+				// devant...
+				System.out.print("path: ");
+				System.out.println(path);
 				path.register(watcher, StandardWatchEventKinds.ENTRY_MODIFY);
 				while (!isStopped()) {
 					WatchKey key;
+					// System.out.println(" !isStoped");
 					try {
+						// System.out.println(" poll");
 						key = watcher.poll(25, TimeUnit.MILLISECONDS);
 					} catch (InterruptedException e) {
 						return;
 					}
 					if (key == null) {
+						// System.out.println("key == null ");
 						Thread.yield();
 						continue;
 					}
@@ -3345,7 +3362,7 @@ public class FsmProcess {
 
 		int c;
 		String arg;
-		Getopt g = new Getopt("FsmProcess", args, "if:cd");
+		Getopt g = new Getopt("FsmProcess", args, "if:cdr");
 		g.setOpterr(false); // We'll do our own error handling
 		while ((c = g.getopt()) != -1)
 			switch (c) {
@@ -3371,8 +3388,6 @@ public class FsmProcess {
 				break;
 			case 'r':
 				System.out.print(" Option: Realtime process of the input file\n");
-				fsm.optionsDisplayResultImage = true;
-				fsm.optionsComputeResultImage = true;
 				fsm.optionsRealtime = true;
 				break;
 			default:
