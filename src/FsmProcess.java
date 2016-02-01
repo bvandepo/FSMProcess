@@ -150,16 +150,16 @@ public class FsmProcess {
 	public static ScrollPane p;
 	public static Boolean autoResize = true;
 
-////////////////////////////////////////////////////////////////////////
-//http://stackoverflow.com/questions/15685502/jframe-mouse-click-using-jcomponent-and-mouselistener
+	// //////////////////////////////////////////////////////////////////////
+	// http://stackoverflow.com/questions/15685502/jframe-mouse-click-using-jcomponent-and-mouselistener
 	@SuppressWarnings("serial")
 	public static class MyMouseComponent extends JComponent implements MouseListener {
 
 		@Override
 		public void mouseClicked(MouseEvent arg0) {
-			System.out.println("here was a click ! ");
-			autoResize=!autoResize;
-			//arg0.getComponent().doLayout();
+			// System.out.println("here was a click ! ");
+			autoResize = !autoResize;
+			// arg0.getComponent().doLayout();
 			try {
 				DisplayImage(imageFileName);
 			} catch (IOException e) {
@@ -194,53 +194,56 @@ public class FsmProcess {
 		}
 	}
 
-////////////////////////////////////////////////////////////////////////
-//http://chortle.ccsu.edu/java5/notes/chap56/ch56_11.html
+	// //////////////////////////////////////////////////////////////////////
+	// http://chortle.ccsu.edu/java5/notes/chap56/ch56_11.html
 	@SuppressWarnings("serial")
 	static public class MyJFrame extends JFrame {
 		JPanel panel;
 		JLabel label;
 
-
 		// constructor
 		MyJFrame(String title) {
-			super(title); // invoke the JFrame constructor
-			//frame.
-	
-			//addMouseListener fait dans le panel
-			//	addMouseListener((MouseListener)mouseClick);
-			
-//String mouseClick2=getMouseListeners().toString();
-		//	MouseListener m = mouseClick;
-
-			// frame.setVisible(true);
-
+			// invoke the JFrame constructor frame.
+			super(title);
 			setSize(150, 100);
 			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
 			setLayout(new FlowLayout()); // set the layout manager
-			label = new JLabel("Hello Swing!"); // construct a JLabel
+			label = new JLabel(bufLogFinal.toString()); // construct a JLabel
+			// TODO: rename it at each compilation
 			add(label); // add the label to the JFrame
 		}
 
+		void UpdateLabel(String text) {
+			label.setText(text);
+		}
 	}
-////////////////////////////////////////////////////////////////////////
-	
-	
 
+	// TODO: récupérer la position du click lors du zoom pour zoomer sur cette
+	// zone
+
+	// TODO: afficher le texte de log quand la souris clique sur le label error
+	// ou qu'on passe dessus
+
+	// TODO: récupérer les dimensions de la fenêtre lorsque on la redimensionne
+
+	// TODO: positionner la fenetre automatiquement
+
+	// //////////////////////////////////////////////////////////////////////
 	// Panel:
 	// https://docs.oracle.com/javase/7/docs/api/javax/swing/JScrollPane.html
 	public static void DisplayImage(String fileName) throws IOException {
 		BufferedImage img = ImageIO.read(new File(fileName));
-		// cut a part
-		// img=img.getSubimage(100, 0, 1680, 1024);
-		// img=img.getSubimage(400, 200, 100, 100);
 		BufferedImage resizedImage;
 		Graphics2D g;
 		ImageIcon icon;
-		int IMG_WIDTH = 1280;
-		int IMG_HEIGHT = 924 - 40;
+		int WIN_WIDTH = 1685;
+		int WIN_HEIGHT = 1000;
+
+		int IMG_WIDTH = WIN_WIDTH - 10;
+		int IMG_HEIGHT = WIN_HEIGHT - 80;
 		if (autoResize) {
+			IMG_WIDTH = WIN_WIDTH - 30 - 5;
+			IMG_HEIGHT = WIN_HEIGHT - 100;
 			float aspectRatioOrg = (float) img.getWidth() / (float) img.getHeight();
 			float aspectRatioDest = (float) IMG_WIDTH / (float) IMG_HEIGHT;
 			int IMG_WIDTH_dest = IMG_WIDTH;
@@ -267,20 +270,20 @@ public class FsmProcess {
 			flayout = new FlowLayout();
 			frame.setLayout(flayout);
 			p = new ScrollPane();
-			MyMouseComponent mouseClick= new MyMouseComponent();
-			//p.addMouseListener((MouseListener)mouseClick);
-			p.setSize(IMG_WIDTH - 30, IMG_HEIGHT + 40 - 30);
+			MyMouseComponent mouseClick = new MyMouseComponent();
+			p.setSize(WIN_WIDTH - 30, WIN_HEIGHT - 80);
 			frame.add(p);
 			// frame.setSize(200, 300);
-			frame.setSize(IMG_WIDTH, IMG_HEIGHT + 40);
+			frame.setSize(WIN_WIDTH, WIN_HEIGHT);
 			lbl = new JLabel();
-			lbl.addMouseListener((MouseListener)mouseClick);
+			lbl.addMouseListener((MouseListener) mouseClick);
 			// frame.add(lbl);
 			p.add(lbl);
 			frame.setVisible(true);
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		}
 		lbl.setIcon(icon);
+		frame.UpdateLabel(bufLogFinal.toString());
 
 	}
 
@@ -381,6 +384,7 @@ public class FsmProcess {
 	static StringBuilder bufLogInfo;
 	static StringBuilder bufLogWarning;
 	static StringBuilder bufLogError;
+	static StringBuilder bufLogFinal;
 
 	static FiniteStateMachine fsm;
 
@@ -459,6 +463,7 @@ public class FsmProcess {
 		bufLogInfo = new StringBuilder();
 		bufLogWarning = new StringBuilder();
 		bufLogError = new StringBuilder();
+		bufLogFinal = new StringBuilder();
 
 		walker.walk(collector, tree);
 
@@ -480,8 +485,9 @@ public class FsmProcess {
 			generateVhdlTestBench();
 			// TODO: compute name even if there is directory name before
 			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_tb.vhd"));
-			saveToFile(bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n" + bufLogInfo.toString(),
-					fsmBaseName.concat(".log"));
+			saveToFile(
+					bufLogFinal.toString() + "\n\n\n" + bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n"
+							+ bufLogInfo.toString(), fsmBaseName.concat(".log"));
 
 			if (optionsComputeResultImage) {
 				// Execute external program to compute png and display it
@@ -1434,9 +1440,9 @@ public class FsmProcess {
 				fsm.realInputs.add(fsm.inputs.get(i));
 		computeStateCodingVhdl();
 		if (modelOk)
-			bufLogInfo.append("Info:   No Critial error: Output files can be generated\n\n");
+			bufLogFinal.append("Info:   No Critial error: Output files can be generated\n\n");
 		else
-			bufLogInfo.append("Info:   At least one Critial error: Output files canNOT be generated correctly\n\n");
+			bufLogFinal.append("Info:   At least one Critial error: Output files canNOT be generated correctly\n\n");
 		return modelOk;
 	}
 
