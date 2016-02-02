@@ -641,8 +641,14 @@ TODO: lequel utiliser quand une sortie est buffered ?? ordre???
 -- tata=3;
 -- }
 }#pragma
+#pragma_vhdl_generic_directive{ n:integer:=2;}#pragma
+#pragma_vhdl_generic_directive{ M:integer:=8;}#pragma
+#pragma_vhdl_generic_directive{ par1:integer:=3;
+                                par2:integer:=9;
+}#pragma
 // this a a pragma inserted inside entity
-// for instance to add inputs /outputs
+// for instance to add inputs /outputs 
+// do no insert comments inside this pragmas
 #pragma_vhdl_entity{ 
 A : in std_logic;
 added_output: out std_logic;

@@ -92,15 +92,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //%S,delay_ended=COUNT_EQUAL;  
 //%R,delay_ended=srazcpt;  
 
-//TODO: ajouter un mode ou FsmProcess surveille un fichier fsm et le traite à chaque modif, en mettant à jours l'image dans display si -d
-
-// ///////////////////////////////////////////////////////////////
-// Il suffit de redéfinir la méthode equals de tes objets pour contrôler
-// comment fonctionne le contains (c'est lui qui est appelé pour faire la
-// comparaison).
-
-//////////////////////////////////////////////////////////
-
 //TODO: positionner et dimensionner la fenetre interactive par args
 
 //TODO: gérer que l'on puisse ajouter des commentaires dans les pragmas entity
@@ -161,9 +152,7 @@ public class FsmProcess {
 		labelResultsCompile.setText(bufLogFinal.toString());
 		int IMG_WIDTH = WIN_WIDTH - 10;
 		int IMG_HEIGHT = WIN_HEIGHT - 80;
-
 		scrollPanel.setSize(WIN_WIDTH - 30, WIN_HEIGHT - 80);
-
 		imageSizeWidth = img.getWidth();
 		imageSizeHeight = img.getHeight();
 		if (autoResize) {
@@ -182,8 +171,10 @@ public class FsmProcess {
 			resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
 			g = resizedImage.createGraphics();
 			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			//g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-			//g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+			// g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+			// RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+			// g.setRenderingHint(RenderingHints.KEY_RENDERING,
+			// RenderingHints.VALUE_RENDER_QUALITY);
 			g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
 			g.dispose();
 			icon = new ImageIcon(resizedImage);
@@ -435,9 +426,9 @@ public class FsmProcess {
 		try {
 			File file = new File(name);
 			if (file.delete()) {
-				System.out.println(file.getName() + " is deleted!");
+				// System.out.println(file.getName() + " is deleted!");
 			} else {
-				System.out.println("Delete operation is failed.");
+				// System.out.println("Delete operation is failed.");
 			}
 		} catch (Exception e) {
 			System.err.println(e);
@@ -1723,6 +1714,21 @@ public class FsmProcess {
 
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateInterfaceVhdl() {
+		// generics
+		if (fsm.genericDeclarations.size() > 0) {
+			bufVhdl.append("generic (\n		");
+			for (int i = 0; i < fsm.genericDeclarations.size(); i++) {
+				if (i > 0)
+					bufVhdl.append(";\n		");
+				bufVhdl.append(fsm.genericDeclarations.get(i).Name);
+				bufVhdl.append(" : ");
+				bufVhdl.append(fsm.genericDeclarations.get(i).Type);
+				bufVhdl.append(" := ");
+				bufVhdl.append(fsm.genericDeclarations.get(i).Default);
+			}
+			bufVhdl.append(");\n");
+		}
+		// ports
 		bufVhdl.append("port (\n");
 		if (!fsm.pragmaVhdlEntity.equals("")) {
 			bufVhdl.append("------------------------------pragma_vhdl_entity-----------------------------------------------------------\n");
@@ -1801,8 +1807,20 @@ public class FsmProcess {
 		buf.append("_u0 : ");
 		buf.append(fsm.name);
 		buf.append("\n");
+		// generics
+		if (fsm.genericDeclarations.size() > 0) {
+			bufVhdl.append("generic map (\n		");
+			for (int i = 0; i < fsm.genericDeclarations.size(); i++) {
+				if (i > 0)
+					bufVhdl.append(",\n		");
+				bufVhdl.append(fsm.genericDeclarations.get(i).Name);
+				bufVhdl.append(" => ");
+				bufVhdl.append(fsm.genericDeclarations.get(i).Default);
+			}
+			bufVhdl.append(")\n");
+		}
+		// ports
 		buf.append("port map(\n");
-
 		if (!fsm.pragmaVhdlEntity.equals("")) {
 			buf.append("------------------------------pragma_vhdl_entity-----------------------------------------------------------\n");
 			buf.append(fsm.pragmaVhdlEntity);
@@ -2574,6 +2592,9 @@ public class FsmProcess {
 		// conditions and expressions
 		public Boolean bufferedOutputsAllowed = false;
 
+		ArrayList<GenericDeclaration> genericDeclarations = new ArrayList<GenericDeclaration>();
+		GenericDeclaration currentGenericDeclarations;
+
 		ArrayList<ResetTransition> resetTransitions = new ArrayList<ResetTransition>();
 		ArrayList<State> states = new ArrayList<State>();
 		HashMap<String, State> hmapState = new HashMap<String, State>();
@@ -2874,6 +2895,13 @@ public class FsmProcess {
 		// for multiple transition to a same state, store the name of the
 		// destination name
 		String destinationState;
+	}
+
+	// ///////////////////////////////////////////////////////////////
+	static class GenericDeclaration {
+		String Name;
+		String Type;
+		String Default;
 	}
 
 	// ///////////////////////////////////////////////////////////////
@@ -3510,6 +3538,33 @@ public class FsmProcess {
 					over = true;
 				i += increment;
 			}
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterGeneric_declaration(FsmParser.Generic_declarationContext ctx) {
+			fsm.currentGenericDeclarations = new GenericDeclaration();
+
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void exitGeneric_declaration(FsmParser.Generic_declarationContext ctx) {
+			fsm.genericDeclarations.add(fsm.currentGenericDeclarations);
+
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterId_generic(FsmParser.Id_genericContext ctx) {
+			fsm.currentGenericDeclarations.Name = ctx.children.get(0).getText().toUpperCase();
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterType_generic(FsmParser.Type_genericContext ctx) {
+			fsm.currentGenericDeclarations.Type = ctx.children.get(0).getText().toUpperCase();
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterDefault_generic(FsmParser.Default_genericContext ctx) {
+			fsm.currentGenericDeclarations.Default = ctx.children.get(0).getText().toUpperCase();
 		}
 		// ///////////////////////////////////////////////////////////////
 

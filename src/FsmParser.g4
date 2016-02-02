@@ -30,8 +30,10 @@ pragma_vhdl_directive:
      | pragma_vhdl_demote_to_signal_directive
      | pragma_vhdl_allow_automatic_buffering
      | pragma_vhdl_set_bit_size_for_output_state_number
+     | pragma_vhdl_generic_directive
      | pragma_vhdl_testbench
      ;
+
 
 
 multi_transitions_directive:
@@ -100,7 +102,7 @@ constant: POSITIVE_INTEGER ;
 input: id;
 
 
-id : ID  | POSITIVE_INTEGER
+id : ID  | POSITIVE_INTEGER | TR | TS | TM | TI | TF
    ;
 
 
@@ -135,6 +137,13 @@ pragma_vhdl_set_bit_size_for_output_state_number: PRAGMA_VHDL_SET_BIT_SIZE_FOR_O
 pragma_vhdl_testbench                         : PRAGMA_VHDL_TESTBENCH_BEGIN_DIRECTIVE 
 				                PRAGMA_WITH_BEGINING_AND_ENDING;
 
+pragma_vhdl_generic_directive                 : PRAGMA_VHDL_GENERIC_DIRECTIVE 
+                                                generic_declaration
+						(generic_declaration)*
+				                PRAGMA_ENDING;
+
+
+
 bit_size_for_output_state_number: POSITIVE_INTEGER;
 
 input_or_output_to_promote_to_buffer: ID   ;
@@ -155,6 +164,13 @@ input_or_output_to_demote_to_signal: ID   ;
 
 //parsing of added entity pragmas
 
+generic_declaration  : id_generic COLON type_generic COLONEQUAL default_generic SEMICOLON;
+
+id_generic: ID | TR | TS | TM | TI | TF;
+type_generic: INTEGER;
+default_generic: ID | NUMBER | POSITIVE_INTEGER;
+
+
 interface_port_declaration  : interface_name (COMMA interface_name)* COLON interface_port_mode interface_port_type SEMICOLON;
  
 
@@ -173,13 +189,13 @@ interface_port_type:   interface_port_type_std_logic
 to_or_down_to :   TO
                 | DOWNTO;		      
 
-bus_begin: POSITIVE_INTEGER;
+bus_begin: POSITIVE_INTEGER; //TODO:gérer N-1 downto 0 par ex...
 bus_end: POSITIVE_INTEGER;
 
 interface_port_type_std_logic: STD_LOGIC;
 interface_port_type_std_logic_vector: STD_LOGIC_VECTOR ;
 
-interface_name : ID;
+interface_name : ID | TR | TS | TM | TI | TF;
 
 
 
