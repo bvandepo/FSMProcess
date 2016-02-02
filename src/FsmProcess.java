@@ -2,13 +2,16 @@
  * FSM
  @author Bertrand VANDEPORTAELE LAAS/CNRS 2016
  *  ***/
-//import java.io.BufferedReader;
+
 import gnu.getopt.Getopt;
 
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.ScrollPane;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -110,10 +113,11 @@ public class FsmProcess {
 	public static JLabel labelResultsCompile;
 	public static JLabel labelDisplayImage = null;
 	public static FlowLayout flayout = null;
-	public static ScrollPane p;
+	public static ScrollPane scrollPanel;
 	public static BufferedImage resizedImage;
 	public static Graphics2D g;
 	public static ImageIcon icon;
+	public static BufferedImage img;
 
 	public static Boolean autoResize = false;
 	public static int imageSizeWidth = 0;
@@ -123,11 +127,15 @@ public class FsmProcess {
 	public static int xscroll = 0;
 	public static int yscroll = 0;
 
-	static int WIN_WIDTH = 1685;
-	static int WIN_HEIGHT = 1000;
+	// static int WIN_WIDTH = 1685;
+	// static int WIN_HEIGHT = 1000;
+	// static int WIN_ORG_X = -800;
+	// static int WIN_ORG_Y = 0;
 	// monoscreen 13"
-	// WIN_WIDTH = 1285;
-	// WIN_HEIGHT = 750;
+	static int WIN_WIDTH = 1285;
+	static int WIN_HEIGHT = 750;
+	static int WIN_ORG_X = 0;
+	static int WIN_ORG_Y = 50;
 
 	private static FileWatcher watcher;
 
@@ -136,67 +144,77 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////////////////////////
-	static void Update() {
-		labelResultsCompile.setText(bufLogFinal.toString());
+	static void ImageUpdate() {
 		String fileName = imageFileName;
-		BufferedImage img;
 		try {
 			img = ImageIO.read(new File(fileName));
-			int IMG_WIDTH = WIN_WIDTH - 10;
-			int IMG_HEIGHT = WIN_HEIGHT - 80;
-			imageSizeWidth = img.getWidth();
-			imageSizeHeight = img.getHeight();
-			if (autoResize) {
-				IMG_WIDTH = WIN_WIDTH - 30 - 5;
-				IMG_HEIGHT = WIN_HEIGHT - 100;
-				float aspectRatioOrg = (float) img.getWidth() / (float) img.getHeight();
-				float aspectRatioDest = (float) IMG_WIDTH / (float) IMG_HEIGHT;
-				int IMG_WIDTH_dest = IMG_WIDTH;
-				int IMG_HEIGHT_dest = IMG_HEIGHT;
-				if (aspectRatioOrg > aspectRatioDest)
-					IMG_HEIGHT_dest = (int) (IMG_WIDTH_dest / aspectRatioOrg);
-				else
-					IMG_WIDTH_dest = (int) (IMG_HEIGHT_dest * aspectRatioOrg);
-				imageSizeWidth = IMG_WIDTH_dest;
-				imageSizeHeight = IMG_HEIGHT_dest;
-				resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
-				g = resizedImage.createGraphics();
-				g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
-				g.dispose();
-				icon = new ImageIcon(resizedImage);
-			} else {
-				icon = new ImageIcon(img);
-			}
-			xscroll = (int) (percentWidth * img.getWidth() / 100.);
-			yscroll = (int) (percentHeight * img.getHeight() / 100.);
-			// without this, the zoomed zone has its upper left corner at the
-			// click position, with this, the zoomed zone has its upper left
-			// corner at the central position
-			xscroll -= IMG_WIDTH / 2;
-			yscroll -= IMG_HEIGHT / 2;
-			// System.out.print("xscroll: ");
-			// System.out.print(xscroll);
-			// System.out.print("   yscroll: ");
-			// System.out.println(yscroll);
-
-			labelDisplayImage.setIcon(icon);
-			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
-			labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
-
-			// probleme au moment ou setScrollPosition s'execute, le scroll est
-			// encore desactivé car on est en mode autoresize.., il faut
-			// appeler le p.revalidate() avant pour que le scroller prenne
-			// la bonne taille
-			p.revalidate();
-			if (!autoResize) {
-				p.setScrollPosition(xscroll, yscroll);
-			}
 		} catch (IOException e) {
 			System.err.println(e);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		Update();
+	}
+
+	// ////////////////////////////////////////////////////////////////////
+	static void Update() {
+		labelResultsCompile.setText(bufLogFinal.toString());
+		int IMG_WIDTH = WIN_WIDTH - 10;
+		int IMG_HEIGHT = WIN_HEIGHT - 80;
+
+		scrollPanel.setSize(WIN_WIDTH - 30, WIN_HEIGHT - 80);
+
+		imageSizeWidth = img.getWidth();
+		imageSizeHeight = img.getHeight();
+		if (autoResize) {
+			IMG_WIDTH = WIN_WIDTH - 30 - 5;
+			IMG_HEIGHT = WIN_HEIGHT - 80;
+			double aspectRatioOrg = (double) img.getWidth() / (double) img.getHeight();
+			double aspectRatioDest = (double) IMG_WIDTH / (double) IMG_HEIGHT;
+			int IMG_WIDTH_dest = IMG_WIDTH;
+			int IMG_HEIGHT_dest = IMG_HEIGHT;
+			if (aspectRatioOrg > aspectRatioDest)
+				IMG_HEIGHT_dest = (int) ((double) IMG_WIDTH_dest / aspectRatioOrg);
+			else
+				IMG_WIDTH_dest = (int) ((double) IMG_HEIGHT_dest * aspectRatioOrg);
+			imageSizeWidth = IMG_WIDTH_dest;
+			imageSizeHeight = IMG_HEIGHT_dest;
+			resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
+			g = resizedImage.createGraphics();
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			//g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+			//g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+			g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
+			g.dispose();
+			icon = new ImageIcon(resizedImage);
+		} else {
+			icon = new ImageIcon(img);
+		}
+		xscroll = (int) (percentWidth * img.getWidth() / 100.);
+		yscroll = (int) (percentHeight * img.getHeight() / 100.);
+		// without this, the zoomed zone has its upper left corner at the
+		// click position, with this, the zoomed zone has its upper left
+		// corner at the central position
+		xscroll -= IMG_WIDTH / 2;
+		yscroll -= IMG_HEIGHT / 2;
+		// System.out.print("xscroll: ");
+		// System.out.print(xscroll);
+		// System.out.print("   yscroll: ");
+		// System.out.println(yscroll);
+
+		labelDisplayImage.setIcon(icon);
+		labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
+		labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
+
+		// probleme au moment ou setScrollPosition s'execute, le scroll est
+		// encore desactivé car on est en mode autoresize.., il faut
+		// appeler le p.revalidate() avant pour que le scroller prenne
+		// la bonne taille
+		scrollPanel.revalidate();
+		if (!autoResize) {
+			scrollPanel.setScrollPosition(xscroll, yscroll);
+		}
+
 	}
 
 	/**
@@ -214,8 +232,20 @@ public class FsmProcess {
 		// Create and set up the window.
 		frame = new JFrame(fsm.name);
 		frame.setSize(WIN_WIDTH, WIN_HEIGHT);
+
+		frame.addComponentListener(new ComponentAdapter() {
+			public void componentResized(ComponentEvent evt) {
+				Component c = (Component) evt.getSource();
+				WIN_WIDTH = c.getWidth();
+				WIN_HEIGHT = c.getHeight();
+				System.out.println(WIN_WIDTH);
+				System.out.println(WIN_HEIGHT);
+				Update(); // redraw the GUI, no reloading of the image
+			}
+		});
+
 		// TO move it to the screen at top
-		frame.setLocation(0, -800);
+		frame.setLocation(WIN_ORG_X, WIN_ORG_Y);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		// frame.setLayout(new FlowLayout()); // set the layout manager
 		labelResultsCompile = new JLabel(bufLogFinal.toString());
@@ -224,10 +254,10 @@ public class FsmProcess {
 		flayout = new FlowLayout(FlowLayout.CENTER);
 		panel.setLayout(flayout); // attache le layoutManager au panel
 		frame.setContentPane(panel);
-		p = new ScrollPane();
-		p.setSize(WIN_WIDTH - 30, WIN_HEIGHT - 80);
-		panel.add(p);
-		frame.setSize(WIN_WIDTH, WIN_HEIGHT);
+		scrollPanel = new ScrollPane();
+		scrollPanel.setSize(WIN_WIDTH - 30, WIN_HEIGHT - 80);
+		panel.add(scrollPanel);
+		// frame.setSize(WIN_WIDTH, WIN_HEIGHT);
 		labelDisplayImage = new JLabel();
 		labelDisplayImage.addMouseListener(new MouseAdapter() {
 			@Override
@@ -239,13 +269,13 @@ public class FsmProcess {
 				// System.out.print(percentWidth);
 				// System.out.print("   percentHeight: ");
 				// System.out.println(percentHeight);
-				Update(); // redraw the GUI
+				Update(); // redraw the GUI, no reloading of the image
 			}
 		});
-		p.add(labelDisplayImage);
+		scrollPanel.add(labelDisplayImage);
 		frame.setVisible(true);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		Update(); // redraw the GUI
+		ImageUpdate(); // redraw the GUI
 		// Display the window.
 		// frame.pack(); //do this only to redispatch the element in the JFframe
 		frame.setVisible(true);
@@ -324,7 +354,7 @@ public class FsmProcess {
 			// Ask the swing GUI to display the new image
 			javax.swing.SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
-					Update();
+					ImageUpdate();
 				}
 			});
 
