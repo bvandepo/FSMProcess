@@ -7,9 +7,10 @@ import gnu.getopt.Getopt;
 
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.ScrollPane;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -36,10 +37,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BufferedTokenStream;
@@ -95,45 +96,164 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 // comment fonctionne le contains (c'est lui qui est appelé pour faire la
 // comparaison).
 
-/*
- //////////////////////////////////////////////////////////
- class FilteredStream extends InputStream {
- public InputStream inputStream;
- public PipedOutputStream pipedOutputStream;
- public PipedInputStream pipedInputStream;
- public BufferedReader inBuf;
- public int state;
+//////////////////////////////////////////////////////////
 
- public FilteredStream(InputStream i) {
- inputStream = i;
- pipedOutputStream = new PipedOutputStream();
- pipedInputStream = new PipedInputStream(pipedOutputStream); // FIFO
- inBuf = new BufferedReader(new Reader(inputStream));
- state = 0;
- }
-
- @Override
- public int read() throws IOException {
-
- String line = inBuf.readLine();
- if (line.contains("<<FSM")) {
- state = 1;
- } else if (line.contains("/FSM>>")) {
- state = 0;
- // //appeler parsing par antlr qui travaille sur pipedInputStream
- }
- if (state == 1)
- pipedOutputStream.write(line.getBytes()); // to antlr , qui s'abonne
- else
- return pipedInputStream.read();
- }
-
- }*/
+//TODO: positionner et dimensionner la fenetre interactive par args
 
 //TODO: gérer que l'on puisse ajouter des commentaires dans les pragmas entity
 //TODO: parser le pragma entity pour detecter E/S (ou alors add/remove..) + bus
 //////////////////////////////////////////////////////////
+
 public class FsmProcess {
+	public static JFrame frame = null;
+	public static JPanel panel;
+	public static JLabel labelResultsCompile;
+	public static JLabel labelDisplayImage = null;
+	public static FlowLayout flayout = null;
+	public static ScrollPane p;
+	public static BufferedImage resizedImage;
+	public static Graphics2D g;
+	public static ImageIcon icon;
+
+	public static Boolean autoResize = false;
+	public static int imageSizeWidth = 0;
+	public static int imageSizeHeight = 0;
+	public static double percentWidth = 0;
+	public static double percentHeight = 0;
+	public static int xscroll = 0;
+	public static int yscroll = 0;
+
+	static int WIN_WIDTH = 1685;
+	static int WIN_HEIGHT = 1000;
+	// monoscreen 13"
+	// WIN_WIDTH = 1285;
+	// WIN_HEIGHT = 750;
+
+	private static FileWatcher watcher;
+
+	// ////////////////////////////////////////////////////////////////////
+	public FsmProcess() {
+	}
+
+	// ////////////////////////////////////////////////////////////////////
+	static void Update() {
+		labelResultsCompile.setText(bufLogFinal.toString());
+		String fileName = imageFileName;
+		BufferedImage img;
+		try {
+			img = ImageIO.read(new File(fileName));
+			int IMG_WIDTH = WIN_WIDTH - 10;
+			int IMG_HEIGHT = WIN_HEIGHT - 80;
+			imageSizeWidth = img.getWidth();
+			imageSizeHeight = img.getHeight();
+			if (autoResize) {
+				IMG_WIDTH = WIN_WIDTH - 30 - 5;
+				IMG_HEIGHT = WIN_HEIGHT - 100;
+				float aspectRatioOrg = (float) img.getWidth() / (float) img.getHeight();
+				float aspectRatioDest = (float) IMG_WIDTH / (float) IMG_HEIGHT;
+				int IMG_WIDTH_dest = IMG_WIDTH;
+				int IMG_HEIGHT_dest = IMG_HEIGHT;
+				if (aspectRatioOrg > aspectRatioDest)
+					IMG_HEIGHT_dest = (int) (IMG_WIDTH_dest / aspectRatioOrg);
+				else
+					IMG_WIDTH_dest = (int) (IMG_HEIGHT_dest * aspectRatioOrg);
+				imageSizeWidth = IMG_WIDTH_dest;
+				imageSizeHeight = IMG_HEIGHT_dest;
+				resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
+				g = resizedImage.createGraphics();
+				g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
+				g.dispose();
+				icon = new ImageIcon(resizedImage);
+			} else {
+				icon = new ImageIcon(img);
+			}
+			xscroll = (int) (percentWidth * img.getWidth() / 100.);
+			yscroll = (int) (percentHeight * img.getHeight() / 100.);
+			// without this, the zoomed zone has its upper left corner at the
+			// click position, with this, the zoomed zone has its upper left
+			// corner at the central position
+			xscroll -= IMG_WIDTH / 2;
+			yscroll -= IMG_HEIGHT / 2;
+			// System.out.print("xscroll: ");
+			// System.out.print(xscroll);
+			// System.out.print("   yscroll: ");
+			// System.out.println(yscroll);
+
+			labelDisplayImage.setIcon(icon);
+			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
+			labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
+
+			// probleme au moment ou setScrollPosition s'execute, le scroll est
+			// encore desactivé car on est en mode autoresize.., il faut
+			// appeler le p.revalidate() avant pour que le scroller prenne
+			// la bonne taille
+			p.revalidate();
+			if (!autoResize) {
+				p.setScrollPosition(xscroll, yscroll);
+			}
+		} catch (IOException e) {
+			System.err.println(e);
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Create the GUI and show it. For thread safety, this method should be
+	 * invoked from the event-dispatching thread.
+	 */
+
+	// doc:
+	// http://codes-sources.commentcamarche.net/faq/360-swinguez-jframe-jpanel-jcomponent-layoutmanager-borderlayout
+
+	// TODO: voir attachement evenement souris et timer (via action)
+	// http://stackoverflow.com/questions/14068472/java-mouselistener-action-event-in-paintcomponent
+
+	private static void createAndShowGUI() {
+		// Create and set up the window.
+		frame = new JFrame(fsm.name);
+		frame.setSize(WIN_WIDTH, WIN_HEIGHT);
+		// TO move it to the screen at top
+		frame.setLocation(0, -800);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		// frame.setLayout(new FlowLayout()); // set the layout manager
+		labelResultsCompile = new JLabel(bufLogFinal.toString());
+		panel = new JPanel(); // Panel
+		panel.add(labelResultsCompile); // add the label to the JFrame
+		flayout = new FlowLayout(FlowLayout.CENTER);
+		panel.setLayout(flayout); // attache le layoutManager au panel
+		frame.setContentPane(panel);
+		p = new ScrollPane();
+		p.setSize(WIN_WIDTH - 30, WIN_HEIGHT - 80);
+		panel.add(p);
+		frame.setSize(WIN_WIDTH, WIN_HEIGHT);
+		labelDisplayImage = new JLabel();
+		labelDisplayImage.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				autoResize = !autoResize;
+				percentWidth = 100.0 * e.getX() / (double) imageSizeWidth;
+				percentHeight = 100.0 * e.getY() / (double) imageSizeHeight;
+				// System.out.print("percentWidth: ");
+				// System.out.print(percentWidth);
+				// System.out.print("   percentHeight: ");
+				// System.out.println(percentHeight);
+				Update(); // redraw the GUI
+			}
+		});
+		p.add(labelDisplayImage);
+		frame.setVisible(true);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		Update(); // redraw the GUI
+		// Display the window.
+		// frame.pack(); //do this only to redispatch the element in the JFframe
+		frame.setVisible(true);
+		// setup the FileWatcher to detect changes on the fsm file
+		File f = new File(fsmInputName);
+		watcher = new FileWatcher(f);
+		watcher.start();
+	}
 
 	public static Boolean optionsIgnoreErrors = false;
 	public static Boolean optionsDisplayResultImage = false;
@@ -141,85 +261,17 @@ public class FsmProcess {
 	public static Boolean optionsRealtime = false;
 
 	public static String imageFileName;
+
 	// get from:
 	// http://stackoverflow.com/questions/14353302/displaying-image-in-java
 
-	public static MyJFrame frame = null;
-	public static JLabel lbl = null;
-	public static FlowLayout flayout = null;
-	public static ScrollPane p;
-	public static Boolean autoResize = true;
-
 	// //////////////////////////////////////////////////////////////////////
 	// http://stackoverflow.com/questions/15685502/jframe-mouse-click-using-jcomponent-and-mouselistener
-	@SuppressWarnings("serial")
-	public static class MyMouseComponent extends JComponent implements MouseListener {
-
-		@Override
-		public void mouseClicked(MouseEvent arg0) {
-			// System.out.println("here was a click ! ");
-			autoResize = !autoResize;
-			// arg0.getComponent().doLayout();
-			try {
-				DisplayImage(imageFileName);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-		}
-
-		@Override
-		public void mouseEntered(MouseEvent e) {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public void mouseExited(MouseEvent e) {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public void mousePressed(MouseEvent e) {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public void mouseReleased(MouseEvent e) {
-			// TODO Auto-generated method stub
-
-		}
-	}
+	// //////////////////////////////////////////////////////////////////////
+	// http://stackoverflow.com/questions/15685502/jframe-mouse-click-using-jcomponent-and-mouselistener
 
 	// //////////////////////////////////////////////////////////////////////
 	// http://chortle.ccsu.edu/java5/notes/chap56/ch56_11.html
-	@SuppressWarnings("serial")
-	static public class MyJFrame extends JFrame {
-		JPanel panel;
-		JLabel label;
-
-		// constructor
-		MyJFrame(String title) {
-			// invoke the JFrame constructor frame.
-			super(title);
-			setSize(150, 100);
-			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-			setLayout(new FlowLayout()); // set the layout manager
-			label = new JLabel(bufLogFinal.toString()); // construct a JLabel
-			// TODO: rename it at each compilation
-			add(label); // add the label to the JFrame
-		}
-
-		void UpdateLabel(String text) {
-			label.setText(text);
-		}
-	}
-
-	// TODO: récupérer la position du click lors du zoom pour zoomer sur cette
-	// zone
 
 	// TODO: afficher le texte de log quand la souris clique sur le label error
 	// ou qu'on passe dessus
@@ -231,61 +283,12 @@ public class FsmProcess {
 	// //////////////////////////////////////////////////////////////////////
 	// Panel:
 	// https://docs.oracle.com/javase/7/docs/api/javax/swing/JScrollPane.html
-	public static void DisplayImage(String fileName) throws IOException {
-		BufferedImage img = ImageIO.read(new File(fileName));
-		BufferedImage resizedImage;
-		Graphics2D g;
-		ImageIcon icon;
-		int WIN_WIDTH = 1685;
-		int WIN_HEIGHT = 1000;
-
-		int IMG_WIDTH = WIN_WIDTH - 10;
-		int IMG_HEIGHT = WIN_HEIGHT - 80;
-		if (autoResize) {
-			IMG_WIDTH = WIN_WIDTH - 30 - 5;
-			IMG_HEIGHT = WIN_HEIGHT - 100;
-			float aspectRatioOrg = (float) img.getWidth() / (float) img.getHeight();
-			float aspectRatioDest = (float) IMG_WIDTH / (float) IMG_HEIGHT;
-			int IMG_WIDTH_dest = IMG_WIDTH;
-			int IMG_HEIGHT_dest = IMG_HEIGHT;
-			if (aspectRatioOrg > aspectRatioDest)
-				IMG_HEIGHT_dest = (int) (IMG_WIDTH_dest / aspectRatioOrg);
-			else
-				IMG_WIDTH_dest = (int) (IMG_HEIGHT_dest * aspectRatioOrg);
-			resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
-			g = resizedImage.createGraphics();
-			// g.drawImage(img, 0, 0, img.getWidth(),img.getHeight(), null);
-			g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
-			g.dispose();
-			icon = new ImageIcon(resizedImage);
-			// ImageIcon icon = new ImageIcon(img);
-			// JFrame frame = new JFrame();
-
-		} else {
-			icon = new ImageIcon(img);
-		}
-
-		if (frame == null) {
-			frame = new MyJFrame(fsm.name);
-			flayout = new FlowLayout();
-			frame.setLayout(flayout);
-			p = new ScrollPane();
-			MyMouseComponent mouseClick = new MyMouseComponent();
-			p.setSize(WIN_WIDTH - 30, WIN_HEIGHT - 80);
-			frame.add(p);
-			// frame.setSize(200, 300);
-			frame.setSize(WIN_WIDTH, WIN_HEIGHT);
-			lbl = new JLabel();
-			lbl.addMouseListener((MouseListener) mouseClick);
-			// frame.add(lbl);
-			p.add(lbl);
-			frame.setVisible(true);
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		}
-		lbl.setIcon(icon);
-		frame.UpdateLabel(bufLogFinal.toString());
-
-	}
+	// voir:
+	// http://docs.oracle.com/javase/tutorial/uiswing/examples/components/index.html#SplitPaneDemo
+	// exemples SplitPaneDemo [Launch] Split Pane Demo Project
+	// SplitPaneDemo.java image files How to Use Split Panes
+	// SplitPaneDemo2 [Launch] Split Pane 2 Demo Project SplitPaneDemo2.java
+	// image files How to Use Split Panes
 
 	// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// FILE CHANGE DETECTION FOR INTERACTIVE MODE
@@ -318,6 +321,13 @@ public class FsmProcess {
 			System.out.println(file);
 			System.out.print(" CHANGED!!!!!!");
 			GenerateFiles(fsmInputName);
+			// Ask the swing GUI to display the new image
+			javax.swing.SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					Update();
+				}
+			});
+
 		}
 
 		@Override
@@ -342,6 +352,7 @@ public class FsmProcess {
 						// System.out.println(" poll");
 						key = watcher.poll(25, TimeUnit.MILLISECONDS);
 					} catch (InterruptedException e) {
+						System.err.println(e);
 						return;
 					}
 					if (key == null) {
@@ -371,6 +382,7 @@ public class FsmProcess {
 					Thread.yield();
 				}
 			} catch (Throwable e) {
+				System.err.println(e);
 				// Log or rethrow the error
 			}
 		}
@@ -398,6 +410,7 @@ public class FsmProcess {
 				System.out.println("Delete operation is failed.");
 			}
 		} catch (Exception e) {
+			System.err.println(e);
 			e.printStackTrace();
 		}
 	}
@@ -414,6 +427,7 @@ public class FsmProcess {
 			try {
 				is = new FileInputStream(fsmInputName);
 			} catch (FileNotFoundException e) {
+				System.err.println(e);
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
@@ -436,6 +450,7 @@ public class FsmProcess {
 		try {
 			input = new ANTLRInputStream(is);
 		} catch (IOException e) {
+			System.err.println(e);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -499,32 +514,29 @@ public class FsmProcess {
 					p.waitFor();// si l'application doit attendre a ce que ce
 								// process fini
 				} catch (Exception e) {
-					System.out.println("erreur d'execution " + cmd + e.toString());
+					System.err.println("erreur d'execution " + cmd + e.toString());
 				}
-				if (optionsDisplayResultImage) {
 
-					try {
-						DisplayImage(imageFileName);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-
-					// cmd = "display " + imageFileName + " & ";
-					// try {
-					// Runtime r = Runtime.getRuntime();
-					// Process p = r.exec(cmd);
-					// p.waitFor();// si l'application doit attendre a ce
-					// // que ce process fini
-					// } catch (Exception e) {
-					// System.out.println("erreur d'execution " + cmd +
-					// e.toString());
-					// }
-
-				}
+				/*
+				 * if (optionsDisplayResultImage) {
+				 * 
+				 * try { .. DisplayImage(imageFileName); } catch (IOException e)
+				 * { System.err.println(e); // TODO Auto-generated catch block
+				 * e.printStackTrace(); }
+				 */
+				// cmd = "display " + imageFileName + " & ";
+				// try {
+				// Runtime r = Runtime.getRuntime();
+				// Process p = r.exec(cmd);
+				// p.waitFor();// si l'application doit attendre a ce
+				// // que ce process fini
+				//
+				// } catch (Exception e) {
+				// System.out.println("erreur d'execution " + cmd +
+				// e.toString());
+				// }
 			}
 		}
-
 	}
 
 	// ///////////////////////////////////////////////
@@ -555,7 +567,6 @@ public class FsmProcess {
 							+ lineToRead.substring(lineToRead.lastIndexOf("<<FSM") + 6, lineToRead.lastIndexOf(">>"));
 					System.out.println(fsmDestName);
 					String lineToWrite = lineToRead.substring(lineToRead.lastIndexOf(">>") + 2, lineToRead.length());
-
 					System.out.println(lineToWrite);
 					String buf = "";
 					buf += lineToWrite + "\n";
@@ -578,6 +589,7 @@ public class FsmProcess {
 			}
 			fichier.close();
 		} catch (Exception e) {
+			System.err.println(e);
 			e.printStackTrace();
 		}
 	}
@@ -641,6 +653,7 @@ public class FsmProcess {
 			out.print(buf);
 			out.close();
 		} catch (IOException e) {
+			System.err.println(e);
 		} finally {
 			if (out != null)
 				out.close();
@@ -684,15 +697,15 @@ public class FsmProcess {
 		// TODO: set image size:
 		// http://stackoverflow.com/questions/17719467/graphviz-ignores-size-attribute-a4-page
 		// bufDot.append(" ratio=\"fill\";\n");
-		int w = 1680;
-		int h = 1024;
-		double sc = 50.0;
-		bufDot.append(" size=\"");
-		bufDot.append(w / sc);
-		bufDot.append(",");
-		bufDot.append(w / sc);
-		bufDot.append(" !\";\n");
-		bufDot.append(" margin=0;\n");
+		// int w = 1680;
+		// int h = 1024;
+		// double sc = 50.0;
+		// bufDot.append(" size=\"");
+		// bufDot.append(w / sc);
+		// bufDot.append(",");
+		// bufDot.append(w / sc);
+		// bufDot.append(" !\";\n");
+		// bufDot.append(" margin=0;\n");
 		// bufDot.append(" node[shape=point, height=0.02, width=0.01];\n");
 
 		// TODO: set all that trought pragma_dot ...
@@ -3572,11 +3585,14 @@ public class FsmProcess {
 			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
 			return;
 		}
-		if (optionsRealtime) {
-			File f = new File(fsmInputName);
-			FileWatcher fw = new FileWatcher(f);
-			fw.start();
+		if (optionsRealtime || optionsDisplayResultImage) {
+			// Schedule a job for the event-dispatching thread:
+			// creating and showing this application's GUI.
+			javax.swing.SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					createAndShowGUI();
+				}
+			});
 		}
 	}
-
 }
