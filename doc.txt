@@ -641,11 +641,6 @@ TODO: lequel utiliser quand une sortie est buffered ?? ordre???
 -- tata=3;
 -- }
 }#pragma
-#pragma_vhdl_generic_directive{ n:integer:=2;}#pragma
-#pragma_vhdl_generic_directive{ M:integer:=8;}#pragma
-#pragma_vhdl_generic_directive{ par1:integer:=3;
-                                par2:integer:=9;
-}#pragma
 // this a a pragma inserted inside entity
 // for instance to add inputs /outputs 
 // do no insert comments inside this pragmas
@@ -697,6 +692,25 @@ added_output<=signal_added_output;
 }#pragma
 
 
+<</FSM>>
+
+===Gestion des composants génériques===
+ 
+<<FSM ex_pragma_include_vhdl.fsm>>
+#pragma_vhdl_generic_directive{ par1:integer:=3;
+                                par2:integer:=9;
+}#pragma
+#pragma_vhdl_generic_directive{ n:integer:=2;}#pragma
+#pragma_vhdl_generic_directive{ m:integer:=3;
+G:integer:=10;
+F:integer:=5;
+}#pragma
+#pragma_vhdl_entity{ A : in std_logic_vector(N - 1 downto G- 4);}#pragma
+#pragma_vhdl_entity{ B : in std_logic_vector(N -1 downto M+2);}#pragma
+#pragma_vhdl_entity{ C : in std_logic_vector(N +1 downto F-1);}#pragma
+#pragma_vhdl_entity{ D : in std_logic_vector(N + 1 downto 0);}#pragma
+#pragma_vhdl_entity{ R : in std_logic_vector(3 downto M-2);}#pragma
+#pragma_vhdl_entity{ R : in std_logic_vector( 0  to M+12);}#pragma
 <</FSM>>
 
 

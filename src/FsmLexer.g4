@@ -92,7 +92,9 @@ PARENTHESISCLOSE:')' ;
 
 
 
-POSITIVE_INTEGER   :    DIGIT+    ;  
+POSITIVE_INTEGER   :    (PLUS)? DIGIT+    ;  
+NEGATIVE_INTEGER   :    (MINUS)? DIGIT+    ;  
+
 
 /** "a numeral [-]?(.[0-9]+ | [0-9]+(.[0-9]*)? )" */ 
 NUMBER

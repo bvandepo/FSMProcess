@@ -3540,20 +3540,15 @@ public class FsmProcess {
 			}
 		}
 
-		// ///////////////////////////////////////////////////////////////
-		public void enterGeneric_declaration(FsmParser.Generic_declarationContext ctx) {
-			fsm.currentGenericDeclarations = new GenericDeclaration();
-
-		}
-
+ 
 		// ///////////////////////////////////////////////////////////////
 		public void exitGeneric_declaration(FsmParser.Generic_declarationContext ctx) {
 			fsm.genericDeclarations.add(fsm.currentGenericDeclarations);
-
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterId_generic(FsmParser.Id_genericContext ctx) {
+			fsm.currentGenericDeclarations = new GenericDeclaration();
 			fsm.currentGenericDeclarations.Name = ctx.children.get(0).getText().toUpperCase();
 		}
 

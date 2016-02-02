@@ -189,8 +189,13 @@ interface_port_type:   interface_port_type_std_logic
 to_or_down_to :   TO
                 | DOWNTO;		      
 
-bus_begin: POSITIVE_INTEGER; //TODO:gérer N-1 downto 0 par ex...
-bus_end: POSITIVE_INTEGER;
+//bus_begin: POSITIVE_INTEGER | id_generic ( (PLUS POSITIVE_INTEGER) | (MINUS POSITIVE_INTEGER ) )?;  
+//bus_end:   POSITIVE_INTEGER | id_generic ( (PLUS POSITIVE_INTEGER) | (MINUS POSITIVE_INTEGER ) )?;  
+
+bus_begin:   POSITIVE_INTEGER 
+          |  ( id_generic  (MINUS| PLUS)? (NEGATIVE_INTEGER| POSITIVE_INTEGER) );  //if the - or + sign is attached to the number
+bus_end:     POSITIVE_INTEGER 
+          |  ( id_generic  (MINUS| PLUS)? (NEGATIVE_INTEGER| POSITIVE_INTEGER) );  //if the - or + sign is attached to the 
 
 interface_port_type_std_logic: STD_LOGIC;
 interface_port_type_std_logic_vector: STD_LOGIC_VECTOR ;
