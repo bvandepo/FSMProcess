@@ -167,7 +167,9 @@ input_or_output_to_demote_to_signal: ID   ;
 generic_declaration  : id_generic COLON type_generic COLONEQUAL default_generic SEMICOLON;
 
 id_generic: ID | TR | TS | TM | TI | TF;
-type_generic: INTEGER;
+
+type_generic: INTEGER | POSITIVE | NATURAL | REAL;
+
 default_generic: ID | NUMBER | POSITIVE_INTEGER;
 
 

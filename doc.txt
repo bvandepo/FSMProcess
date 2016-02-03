@@ -699,6 +699,9 @@ added_output<=signal_added_output;
 <<FSM ex_pragma_include_vhdl.fsm>>
 #pragma_vhdl_generic_directive{ par1:integer:=3;
                                 par2:integer:=9;
+                                m:positive:=7;
+                                o:natural:=7;
+                                r:real:=-4.23;
 }#pragma
 #pragma_vhdl_generic_directive{ n:integer:=2;}#pragma
 #pragma_vhdl_generic_directive{ m:integer:=3;
