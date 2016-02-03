@@ -30,7 +30,6 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -278,8 +277,9 @@ public class FsmProcess {
 	static int WIN_ORG_Y = 50;
 	static int WIN_WIDTH = 1285;
 	static int WIN_HEIGHT = 750;
-
 	private static FileWatcher watcher;
+	// number of different text files to display on the gui
+	static int NB_DISPLAY_TYPES = 6;
 	static int displayState = 0; // Dot image view by default
 
 	// ////////////////////////////////////////////////////////////////////
@@ -301,6 +301,7 @@ public class FsmProcess {
 
 	// ////////////////////////////////////////////////////////////////////
 	static void Update() {
+		StringBuilder buf = bufVhdl;
 		labelResultsCompile.setText(bufLogFinal.toString());
 		int IMG_WIDTH = WIN_WIDTH - 10;
 		int IMG_HEIGHT = WIN_HEIGHT - 80;
@@ -359,6 +360,7 @@ public class FsmProcess {
 			if (!autoResize) {
 				scrollPanel.setScrollPosition(xscroll, yscroll);
 			}
+			frame.setTitle(fsm.name + ".dot");
 			break;
 		case 1:// display log text
 			text.append("<html>");
@@ -369,46 +371,67 @@ public class FsmProcess {
 			text.append("</font><br><font color=#000000>");
 			text.append(bufLogInfo.toString().replace("\n", "<br>"));
 			text.append("</font>");
-			labelDisplayImage.setIcon(null);
-			labelDisplayImage.setText(text.toString());
-			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
-			labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
-			scrollPanel.revalidate();
+			frame.setTitle(fsm.name + ".log");
 			break;
 		case 2: // display vhdl text
+			buf = bufVhdl;
+			frame.setTitle(fsm.name + ".vhd");
+			break;
+		case 3: // display vhdl text
+			buf = bufVhdlPortMap;
+			frame.setTitle(fsm.name + "_portmap.vhd");
+			break;
+		case 4: // display vhdl text
+			buf = bufVhdlPack;
+			frame.setTitle(fsm.name + "_pack.vhd");
+			break;
+		case 5: // display vhdl text
+			buf = bufVhdlTb;
+			frame.setTitle(fsm.name + "_tb.vhd");
+			break;
 		default: // display text
+			break;
+		}
+		if (displayState > 1) { // VHDL
 			text.append("<html>");
-			String textVhdl = bufVhdl.toString().replace("\t", "    ");
+			String textVhdl = buf.toString().replace("\t", "    ");
 			// not so good, this replacement will replace tabs and multipes
 			// spaces by a single space caractère
 			for (String v : textVhdl.split("\n")) {
 				// si v commence par --, afficher en comment et ne pas surligner
 				// les mots clefs
-				for (String w : v.split(" ")) {
-					Boolean isVhdlReservedWord = false;
-					for (int i = 0; i < fsm.forbiddenNamesVHDL.size(); i++) {
-						if (w.compareToIgnoreCase(fsm.forbiddenNamesVHDL.get(i)) == 0) {
-							isVhdlReservedWord = true;
-							break;
+				if ((v.length() >= 2) && v.substring(0, 2).equals("--")) {
+					text.append("<font color=#00ff00>");
+					text.append(v);
+					text.append("</font>");
+				} else {
+					for (String w : v.split(" ")) {
+						Boolean isVhdlReservedWord = false;
+						for (int i = 0; i < fsm.forbiddenNamesVHDL.size(); i++) {
+							if (w.compareToIgnoreCase(fsm.forbiddenNamesVHDL.get(i)) == 0) {
+								isVhdlReservedWord = true;
+								break;
+							}
 						}
+						if (isVhdlReservedWord) {
+							text.append("<font color=#ff0000>");
+							text.append(w);
+							text.append("</font>");
+						} else {
+							text.append(w);
+						}
+						text.append(" ");
 					}
-					if (isVhdlReservedWord) {
-						text.append("<font color=#ff0000>");
-						text.append(w);
-						text.append("</font>");
-					} else {
-						text.append(w);
-					}
-					text.append(" ");
 				}
 				text.append("<br>");
 			}
+		}
+		if (displayState != 0) { // LOG OR VHDL
 			labelDisplayImage.setIcon(null);
 			labelDisplayImage.setText(text.toString());
 			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
 			labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
 			scrollPanel.revalidate();
-			break;
 		}
 	}
 
@@ -427,7 +450,7 @@ public class FsmProcess {
 				Update(); // redraw the GUI, no reloading of the image
 			}
 		});
-		// TO move it to the screen at top
+		// TO move it to the screen top left position of the window
 		frame.setLocation(WIN_ORG_X, WIN_ORG_Y);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		// frame.setLayout(new FlowLayout()); // set the layout manager
@@ -435,7 +458,7 @@ public class FsmProcess {
 		labelResultsCompile.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				displayState = (displayState + 1) % 3;
+				displayState = (displayState + 1) % NB_DISPLAY_TYPES;
 				Update(); // redraw the GUI, no reloading of the image
 			}
 		});
@@ -452,13 +475,17 @@ public class FsmProcess {
 		labelDisplayImage.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				autoResize = !autoResize;
-				percentWidth = 100.0 * e.getX() / (double) imageSizeWidth;
-				percentHeight = 100.0 * e.getY() / (double) imageSizeHeight;
-				// System.out.print("percentWidth: ");
-				// System.out.print(percentWidth);
-				// System.out.print("   percentHeight: ");
-				// System.out.println(percentHeight);
+				if (displayState == 0) {
+					autoResize = !autoResize;
+					percentWidth = 100.0 * e.getX() / (double) imageSizeWidth;
+					percentHeight = 100.0 * e.getY() / (double) imageSizeHeight;
+					// System.out.print("percentWidth: ");
+					// System.out.print(percentWidth);
+					// System.out.print("   percentHeight: ");
+					// System.out.println(percentHeight);
+				} else {
+					displayState = (displayState + 1) % NB_DISPLAY_TYPES;
+				}
 				Update(); // redraw the GUI, no reloading of the image
 			}
 		});
@@ -513,7 +540,6 @@ public class FsmProcess {
 					ImageUpdate();
 				}
 			});
-
 		}
 
 		@Override
@@ -539,10 +565,8 @@ public class FsmProcess {
 						Thread.yield();
 						continue;
 					}
-
 					for (WatchEvent<?> event : key.pollEvents()) {
 						WatchEvent.Kind<?> kind = event.kind();
-
 						@SuppressWarnings("unchecked")
 						WatchEvent<Path> ev = (WatchEvent<Path>) event;
 						Path filename = ev.context();
@@ -572,6 +596,9 @@ public class FsmProcess {
 	static String fsmInputName;
 	static StringBuilder bufDot;
 	static StringBuilder bufVhdl;
+	static StringBuilder bufVhdlTb;
+	static StringBuilder bufVhdlPortMap;
+	static StringBuilder bufVhdlPack;
 	static StringBuilder bufLogInfo;
 	static StringBuilder bufLogWarning;
 	static StringBuilder bufLogError;
@@ -595,9 +622,7 @@ public class FsmProcess {
 	// ///////////////////////////////////////////////
 
 	static public void GenerateFiles(String fsmInputName) {
-
 		fsm = new FiniteStateMachine();
-
 		// by default, the input stream is System.in
 		InputStream is = System.in;
 		if (fsmInputName != null)
@@ -640,9 +665,7 @@ public class FsmProcess {
 		EraseFile(fsmBaseName.concat(".log"));
 		imageFileName = fsmBaseName.concat(".").concat(fsm.imageFileExtension);
 		EraseFile(imageFileName);
-
 		FsmLexer lexer = new FsmLexer(input);
-
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		FsmParser parser = new FsmParser(tokens);
 		parser.setBuildParseTree(true);
@@ -651,6 +674,9 @@ public class FsmProcess {
 
 		FunctionListener collector = new FunctionListener(tokens);
 		bufVhdl = new StringBuilder();
+		bufVhdlTb = new StringBuilder();
+		bufVhdlPortMap = new StringBuilder();
+		bufVhdlPack = new StringBuilder();
 		bufDot = new StringBuilder();
 		bufLogInfo = new StringBuilder();
 		bufLogWarning = new StringBuilder();
@@ -663,20 +689,16 @@ public class FsmProcess {
 		// if ignoreErrors, then display and generate fsm that have errors
 		{
 			generateDot();
-			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot")); //
-			// System.out.println(bufDot.toString());
-			generateVhdl();
+			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot"));
+			generateVhdl(bufVhdl);
 			saveToFile(bufVhdl.toString(), fsmBaseName.concat(".vhd"));
-			bufVhdl.setLength(0);
-			generatePackageVhdl();
-			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_pack.vhd"));
-			bufVhdl.setLength(0);
-			generatePortMapFileVhdl();
-			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_portmap.vhd"));
-			bufVhdl.setLength(0);
-			generateVhdlTestBench();
+			generatePackageVhdl(bufVhdlPack);
+			saveToFile(bufVhdlPack.toString(), fsmBaseName.concat("_pack.vhd"));
+			generatePortMapFileVhdl(bufVhdlPortMap);
+			saveToFile(bufVhdlPortMap.toString(), fsmBaseName.concat("_portmap.vhd"));
+			generateVhdlTestBench(bufVhdlTb);
 			// TODO: compute name even if there is directory name before
-			saveToFile(bufVhdl.toString(), fsmBaseName.concat("_tb.vhd"));
+			saveToFile(bufVhdlTb.toString(), fsmBaseName.concat("_tb.vhd"));
 			saveToFile(
 					bufLogFinal.toString() + "\n\n\n" + bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n"
 							+ bufLogInfo.toString(), fsmBaseName.concat(".log"));
@@ -823,14 +845,28 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////
+	static public void GenerateHeader(StringBuilder buf, String text, char commentChar) {
+		for (int i = 0; i < 80; i++)
+			buf.append(commentChar);
+		buf.append("\n");
+		buf.append(commentChar);
+		buf.append(commentChar);
+		buf.append(" Finite State Machine ");
+		buf.append(text);
+		buf.append(" autogenerated by ");
+		buf.append(softNameAndVersion);
+		buf.append(" B. VANDEPORTAELE LAAS-CNRS 2016\n");
+		for (int i = 0; i < 80; i++)
+			buf.append(commentChar);
+		buf.append("\n");
+	}
+
+	// ////////////////////////////////////////////////
+
 	static public void generateDot() {
+		GenerateHeader(bufDot, ".dot diagram",'/');
 		// compute size of node from the longest state name
 		Double nodeWidth = 0.5 + State.longestName * 0.12;
-		bufDot.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
-		bufDot.append("// Finite State Machine .dot diagram autogenerated by ");
-		bufDot.append(softNameAndVersion);
-		bufDot.append(" B. VANDEPORTAELE LAAS-CNRS 2016\n");
-		bufDot.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
 		bufDot.append("digraph finite_state_machine {\n");
 		// TODO: deal with dot pragmas to set size etc...
 		// http://stackoverflow.com/questions/17719467/graphviz-ignores-size-attribute-a4-page
@@ -1540,99 +1576,95 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generateVhdlTestBenchAsciiStates() {
+	static public void generateVhdlTestBenchAsciiStates(StringBuilder buf) {
 		int numberOfStates = fsm.states.size();
-		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
-		bufVhdl.append("process (state_number)\n");
-		bufVhdl.append("begin\n");
-		bufVhdl.append("    case state_number is\n");
+		buf.append("-----------------------------------------------------------------------------------------------------------\n");
+		buf.append("process (state_number)\n");
+		buf.append("begin\n");
+		buf.append("    case state_number is\n");
 		for (int n = 0; n < numberOfStates; n++) {
-			bufVhdl.append("      when \"");
-			bufVhdl.append(fsm.states.get(n).stateCode);
-			bufVhdl.append("\"    => state_name <= \"");
-			bufVhdl.append(generateBinaryAsciiString(fsm.states.get(n).nameDisplay));
-			bufVhdl.append("\"; -- ");
-			bufVhdl.append(fsm.states.get(n).nameDisplay);
-			bufVhdl.append("\n");
+			buf.append("      when \"");
+			buf.append(fsm.states.get(n).stateCode);
+			buf.append("\"    => state_name <= \"");
+			buf.append(generateBinaryAsciiString(fsm.states.get(n).nameDisplay));
+			buf.append("\"; -- ");
+			buf.append(fsm.states.get(n).nameDisplay);
+			buf.append("\n");
 		}
-		bufVhdl.append("      when others   => state_name <= \"");
-		bufVhdl.append(generateBinaryAsciiString(fsm.stateNameDisplayError));
-		bufVhdl.append("\"; -- ");
-		bufVhdl.append(fsm.stateNameDisplayError);
-		bufVhdl.append("\n ");
-		bufVhdl.append("      end case;\n");
-		bufVhdl.append("end process;\n");
-		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
+		buf.append("      when others   => state_name <= \"");
+		buf.append(generateBinaryAsciiString(fsm.stateNameDisplayError));
+		buf.append("\"; -- ");
+		buf.append(fsm.stateNameDisplayError);
+		buf.append("\n ");
+		buf.append("      end case;\n");
+		buf.append("end process;\n");
+		buf.append("-----------------------------------------------------------------------------------------------------------\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generateVhdlTestBench() {
-		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
-		bufVhdl.append("-- Finite State Machine testbench.vhdl  autogenerated by ");
-		bufVhdl.append(softNameAndVersion);
-		bufVhdl.append(" B. VANDEPORTAELE LAAS-CNRS 2016\n");
-		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
-		bufVhdl.append("library ieee;\nuse        ieee.std_logic_1164.all;\nuse        ieee.std_logic_unsigned.all;\nuse        ieee.std_logic_arith.all;\n");
+	static public void generateVhdlTestBench(StringBuilder buf) {
+		GenerateHeader(buf, "testbench.vhdl",'-');
+		buf.append("library ieee;\nuse        ieee.std_logic_1164.all;\nuse        ieee.std_logic_unsigned.all;\nuse        ieee.std_logic_arith.all;\n");
 		if (!fsm.pragmaVhdlPreEntity.equals("")) {
-			bufVhdl.append("------------------------------pragma_vhdl_pre_entity-------------------------------------------------------\n");
-			bufVhdl.append(fsm.pragmaVhdlPreEntity);
-			bufVhdl.append("--------------------------end of pragma_vhdl_pre_entity----------------------------------------------------\n");
+			buf.append("------------------------------pragma_vhdl_pre_entity-------------------------------------------------------\n");
+			buf.append(fsm.pragmaVhdlPreEntity);
+			buf.append("--------------------------end of pragma_vhdl_pre_entity----------------------------------------------------\n");
 		}
-		bufVhdl.append("-- Uncomment the following library declaration if using\n");
-		bufVhdl.append("-- arithmetic functions with Signed or Unsigned values\n");
-		bufVhdl.append("--USE ieee.numeric_std.ALL;\n\n");
-		bufVhdl.append("ENTITY ");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append("_tb IS\n");
-		bufVhdl.append("END ");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append("_tb ;\n\n");
-		bufVhdl.append("ARCHITECTURE behavior OF ");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append("_tb IS\n");
-		bufVhdl.append("-- Component Declaration for the Unit Under Test (UUT)\n");
-		generateComponentVhdl(false);
-		bufVhdl.append("\n");
-		generateSignalsForInterfaceVhdl();
-		bufVhdl.append("\n--Clock period, should be settable through pragma_vhdl to get real time in simu\n");
-		bufVhdl.append("constant ck_period : time := 100 ns;\n\n");
-		bufVhdl.append("BEGIN\n");
-		bufVhdl.append("-- Instantiate the Unit Under Test (UUT)\n");
-		generatePortMapVhdl(bufVhdl);
-		generateVhdlTestBenchAsciiStates();
-		bufVhdl.append("\n-- Clock process definitions\n");
-		bufVhdl.append("ck_process :process\n");
-		bufVhdl.append("begin\n");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append(" <= '0';\n");
-		bufVhdl.append("wait for ck_period/2;\n");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append(" <= '1';\n");
-		bufVhdl.append("wait for ck_period/2;\n");
-		bufVhdl.append("end process;\n");
-		bufVhdl.append("\n");
-		bufVhdl.append("-- Stimulus process\n");
-		bufVhdl.append("stim_proc: process\n");
-		bufVhdl.append("--(ck,resetn)\n");
-		bufVhdl.append("  begin	\n");
-		bufVhdl.append("-- hold reset state for 100 ns.\n");
-		bufVhdl.append(fsm.aResetSignalName);
-		bufVhdl.append(" <='");
-		bufVhdl.append(fsm.aResetSignalLevel);
-		bufVhdl.append("';\n");
-		bufVhdl.append("wait for 100 ns;\n");
-		bufVhdl.append(fsm.aResetSignalName);
-		bufVhdl.append(" <= NOT '");
-		bufVhdl.append(fsm.aResetSignalLevel);
-		bufVhdl.append("';\n");
-		bufVhdl.append("wait for ck_period*2;\n");
-		bufVhdl.append("-- stimuli get from the testbench pragma:\n");
-		bufVhdl.append("------------------------------pragma_vhdl_testbench-------------------------------------------------------\n");
-		bufVhdl.append(fsm.pragmaVhdlTestbench);
-		bufVhdl.append("--------------------------end of pragma_vhdl_testbench----------------------------------------------------\n");
-		bufVhdl.append(" wait;\n");
-		bufVhdl.append("end process;\n");
-		bufVhdl.append("END;\n");
+		buf.append("-- Uncomment the following library declaration if using\n");
+		buf.append("-- arithmetic functions with Signed or Unsigned values\n");
+		buf.append("--USE ieee.numeric_std.ALL;\n\n");
+		buf.append("ENTITY ");
+		buf.append(fsm.name);
+		buf.append("_tb IS\n");
+		buf.append("END ");
+		buf.append(fsm.name);
+		buf.append("_tb ;\n\n");
+		buf.append("ARCHITECTURE behavior OF ");
+		buf.append(fsm.name);
+		buf.append("_tb IS\n");
+		buf.append("-- Component Declaration for the Unit Under Test (UUT)\n");
+		generateComponentVhdl(buf, false);
+		buf.append("\n");
+		generateSignalsForInterfaceVhdl(buf);
+		buf.append("\n--Clock period, should be settable through pragma_vhdl to get real time in simu\n");
+		buf.append("constant ck_period : time := 100 ns;\n\n");
+		buf.append("BEGIN\n");
+		buf.append("-- Instantiate the Unit Under Test (UUT)\n");
+		generatePortMapVhdl(buf);
+		generateVhdlTestBenchAsciiStates(buf);
+		buf.append("\n-- Clock process definitions\n");
+		buf.append("ck_process :process\n");
+		buf.append("begin\n");
+		buf.append(fsm.clkSignalName);
+		buf.append(" <= '0';\n");
+		buf.append("wait for ck_period/2;\n");
+		buf.append(fsm.clkSignalName);
+		buf.append(" <= '1';\n");
+		buf.append("wait for ck_period/2;\n");
+		buf.append("end process;\n");
+		buf.append("\n");
+		buf.append("-- Stimulus process\n");
+		buf.append("stim_proc: process\n");
+		buf.append("--(ck,resetn)\n");
+		buf.append("  begin	\n");
+		buf.append("-- hold reset state for 100 ns.\n");
+		buf.append(fsm.aResetSignalName);
+		buf.append(" <='");
+		buf.append(fsm.aResetSignalLevel);
+		buf.append("';\n");
+		buf.append("wait for 100 ns;\n");
+		buf.append(fsm.aResetSignalName);
+		buf.append(" <= NOT '");
+		buf.append(fsm.aResetSignalLevel);
+		buf.append("';\n");
+		buf.append("wait for ck_period*2;\n");
+		buf.append("-- stimuli get from the testbench pragma:\n");
+		buf.append("------------------------------pragma_vhdl_testbench-------------------------------------------------------\n");
+		buf.append(fsm.pragmaVhdlTestbench);
+		buf.append("--------------------------end of pragma_vhdl_testbench----------------------------------------------------\n");
+		buf.append(" wait;\n");
+		buf.append("end process;\n");
+		buf.append("END;\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
@@ -1673,176 +1705,178 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generateStateCodingVhdl(Boolean comment) {
-		bufVhdl.append("------------------  OUTPUTS FOR CURRENT STATE VISUALIZATION ------------\n");
+	static public void generateStateCodingVhdl(StringBuilder buf, Boolean comment) {
+		buf.append("------------------  OUTPUTS FOR CURRENT STATE VISUALIZATION ------------\n");
 		if (comment)
-			bufVhdl.append("--");
-		bufVhdl.append("	state_number <= \"");
+			buf.append("--");
+		buf.append("	state_number <= \"");
 		int numberOfStates = fsm.states.size();
 		for (int i = 0; i < numberOfStates; i++) {
 			if (i != 0) {
 				if (comment)
-					bufVhdl.append("--");
-				bufVhdl.append("                   else \"");
+					buf.append("--");
+				buf.append("                   else \"");
 			}
-			bufVhdl.append(fsm.states.get(i).stateCode);
-			bufVhdl.append("\" when ( current_state = ");
-			bufVhdl.append("state_");
-			bufVhdl.append(fsm.states.get(i).name);
-			bufVhdl.append(")\n");
+			buf.append(fsm.states.get(i).stateCode);
+			buf.append("\" when ( current_state = ");
+			buf.append("state_");
+			buf.append(fsm.states.get(i).name);
+			buf.append(")\n");
 		}
 		if (comment)
-			bufVhdl.append("--");
-		bufVhdl.append("                   else \"");
-		bufVhdl.append(fsm.stateCodeError);
-		bufVhdl.append("\";   -- coding for error\n");
+			buf.append("--");
+		buf.append("                   else \"");
+		buf.append(fsm.stateCodeError);
+		buf.append("\";   -- coding for error\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generateSignalsForInterfaceVhdl() {
+	static public void generateSignalsForInterfaceVhdl(StringBuilder buf) {
 		// ////////////////listing of inputs/outputs//////////////////
-		bufVhdl.append("signal ");
-		bufVhdl.append(fsm.clkSignalName);
-		bufVhdl.append(" :    std_logic;\n");
-		bufVhdl.append("signal ");
-		bufVhdl.append(fsm.aResetSignalName);
-		bufVhdl.append(" :    std_logic;\n");
+		buf.append("signal ");
+		buf.append(fsm.clkSignalName);
+		buf.append(" :    std_logic;\n");
+		buf.append("signal ");
+		buf.append(fsm.aResetSignalName);
+		buf.append(" :    std_logic;\n");
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
-			bufVhdl.append("signal		");
-			bufVhdl.append(" STATE_NUMBER");
-			bufVhdl.append(" :    std_logic_vector( ");
-			bufVhdl.append(fsm.numberOfBitsForStates - 1);
-			bufVhdl.append(" downto 0);\n");
+			buf.append("signal		");
+			buf.append(" STATE_NUMBER");
+			buf.append(" :    std_logic_vector( ");
+			buf.append(fsm.numberOfBitsForStates - 1);
+			buf.append(" downto 0);\n");
 		}
 		// ////////////////listing of inputs/outputs//////////////////
-		bufVhdl.append("--signals for inputs:  \n");
+		buf.append("--signals for inputs:  \n");
 		for (int n = 0; n < fsm.realInputs.size(); n++) {
-			bufVhdl.append("signal ");
-			bufVhdl.append(fsm.realInputs.get(n).paddedName);
-			bufVhdl.append(" :   ");
-			bufVhdl.append(fsm.realInputs.get(n).interfacePortTypes);
-			bufVhdl.append(";\n");
+			buf.append("signal ");
+			buf.append(fsm.realInputs.get(n).paddedName);
+			buf.append(" :   ");
+			buf.append(fsm.realInputs.get(n).interfacePortTypes);
+			buf.append(";\n");
 		}
-		bufVhdl.append("--signals for outputs:  \n");
+		buf.append("--signals for outputs:  \n");
 		for (int n = 0; n < fsm.realOutputs.size(); n++) {
-			bufVhdl.append("signal ");
-			bufVhdl.append(fsm.realOutputs.get(n).paddedName);
-			bufVhdl.append(" : ");
-			bufVhdl.append(fsm.realOutputs.get(n).interfacePortTypes);
-			bufVhdl.append(";\n");
+			buf.append("signal ");
+			buf.append(fsm.realOutputs.get(n).paddedName);
+			buf.append(" : ");
+			buf.append(fsm.realOutputs.get(n).interfacePortTypes);
+			buf.append(";\n");
 		}
-		bufVhdl.append("--signals for current state name visualization:  \n");
-		bufVhdl.append("signal state_name : std_logic_vector(");
-		bufVhdl.append((fsm.stateNameDisplayError.length() * 8) - 1);
-		bufVhdl.append(" downto 0 );\n");
+		buf.append("--signals for current state name visualization:  \n");
+		buf.append("signal state_name : std_logic_vector(");
+		buf.append((fsm.stateNameDisplayError.length() * 8) - 1);
+		buf.append(" downto 0 );\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generateInterfaceVhdl() {
+	static public void generateInterfaceVhdl(StringBuilder buf) {
 		// generics
 		if (fsm.genericDeclarations.size() > 0) {
-			bufVhdl.append("generic (\n		");
+			buf.append("generic (\n		");
 			for (int i = 0; i < fsm.genericDeclarations.size(); i++) {
 				if (i > 0)
-					bufVhdl.append(";\n		");
-				bufVhdl.append(fsm.genericDeclarations.get(i).Name);
-				bufVhdl.append(" : ");
-				bufVhdl.append(fsm.genericDeclarations.get(i).Type);
-				bufVhdl.append(" := ");
-				bufVhdl.append(fsm.genericDeclarations.get(i).Default);
+					buf.append(";\n		");
+				buf.append(fsm.genericDeclarations.get(i).Name);
+				buf.append(" : ");
+				buf.append(fsm.genericDeclarations.get(i).Type);
+				buf.append(" := ");
+				buf.append(fsm.genericDeclarations.get(i).Default);
 			}
-			bufVhdl.append(");\n");
+			buf.append(");\n");
 		}
 		// ports
-		bufVhdl.append("port (\n");
+		buf.append("port (\n");
 		if (!fsm.pragmaVhdlEntity.equals("")) {
-			bufVhdl.append("------------------------------pragma_vhdl_entity-----------------------------------------------------------\n");
-			bufVhdl.append(fsm.pragmaVhdlEntity);
-			bufVhdl.append("--------------------------end of pragma_vhdl_entity--------------------------------------------------------\n");
+			buf.append("------------------------------pragma_vhdl_entity-----------------------------------------------------------\n");
+			buf.append(fsm.pragmaVhdlEntity);
+			buf.append("--------------------------end of pragma_vhdl_entity--------------------------------------------------------\n");
 		}
-		bufVhdl.append("		");
-		bufVhdl.append(fillStringWithSpace2(fsm.clkSignalName, Input.longestName));
-		bufVhdl.append(" : in     std_logic;\n");
-		bufVhdl.append("		");
-		bufVhdl.append(fillStringWithSpace2(fsm.aResetSignalName, Input.longestName));
-		bufVhdl.append(" : in     std_logic");
+		buf.append("		");
+		buf.append(fillStringWithSpace2(fsm.clkSignalName, Input.longestName));
+		buf.append(" : in     std_logic;\n");
+		buf.append("		");
+		buf.append(fillStringWithSpace2(fsm.aResetSignalName, Input.longestName));
+		buf.append(" : in     std_logic");
 
 		if ((fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) || (fsm.realInputs.size() > 0) || (fsm.realOutputs.size() > 0))
-			bufVhdl.append(";\n");
+			buf.append(";\n");
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
-			bufVhdl.append("		");
-			bufVhdl.append(fillStringWithSpace2("STATE_NUMBER", Input.longestName));
-			bufVhdl.append(" : out    std_logic_vector( ");
-			bufVhdl.append(fsm.numberOfBitsForStates - 1);
-			bufVhdl.append(" downto 0)");
+			buf.append("		");
+			buf.append(fillStringWithSpace2("STATE_NUMBER", Input.longestName));
+			buf.append(" : out    std_logic_vector( ");
+			buf.append(fsm.numberOfBitsForStates - 1);
+			buf.append(" downto 0)");
 			if ((fsm.realInputs.size() > 0) || (fsm.realOutputs.size() > 0))
-				bufVhdl.append(";\n");
+				buf.append(";\n");
 		}
 		// ////////////////listing of inputs/outputs//////////////////
 		for (int n = 0; n < fsm.realInputs.size(); n++) {
-			bufVhdl.append("		");
-			bufVhdl.append(fsm.realInputs.get(n).paddedName);
-			bufVhdl.append(" : in     ");
-			bufVhdl.append(fsm.realInputs.get(n).interfacePortTypes);
+			buf.append("		");
+			buf.append(fsm.realInputs.get(n).paddedName);
+			buf.append(" : in     ");
+			buf.append(fsm.realInputs.get(n).interfacePortTypes);
 			if ((n != fsm.realInputs.size() - 1) || ((fsm.realOutputs.size() > 0)))
-				bufVhdl.append(";\n");
+				buf.append(";\n");
 		}
 		for (int n = 0; n < fsm.realOutputs.size(); n++) {
-			bufVhdl.append("		");
-			bufVhdl.append(fsm.realOutputs.get(n).paddedName);
-			bufVhdl.append(" : ");
+			buf.append("		");
+			buf.append(fsm.realOutputs.get(n).paddedName);
+			buf.append(" : ");
 			if (fsm.realOutputs.get(n).isBuffer)
-				bufVhdl.append("buffer ");
+				buf.append("buffer ");
 			else
-				bufVhdl.append("out    ");
-			bufVhdl.append(fsm.realOutputs.get(n).interfacePortTypes);
+				buf.append("out    ");
+			buf.append(fsm.realOutputs.get(n).interfacePortTypes);
 			if (n != fsm.realOutputs.size() - 1)
-				bufVhdl.append(";\n");
+				buf.append(";\n");
 		}
-		bufVhdl.append(");\n");
+		buf.append(");\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generateComponentVhdl(Boolean comment) {
-		bufVhdl.append("component ");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append("\n");
-		generateInterfaceVhdl();
-		bufVhdl.append("end component;\n");
+	static public void generateComponentVhdl(StringBuilder buf, Boolean comment) {
+		buf.append("component ");
+		buf.append(fsm.name);
+		buf.append("\n");
+		generateInterfaceVhdl(buf);
+		buf.append("end component;\n");
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0) && comment)
-			generateStateCodingVhdl(true);
+			generateStateCodingVhdl(buf, true);
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generatePackageVhdl() {
-		bufVhdl.append("library IEEE;\n");
-		bufVhdl.append("use IEEE.STD_LOGIC_1164.all;\n");
-		bufVhdl.append("package ");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append("_pack is\n");
-		generateComponentVhdl(true);
-		bufVhdl.append("end \n");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append("_pack;\n");
+	static public void generatePackageVhdl(StringBuilder buf) {
+		GenerateHeader(buf, "vhdl package file",'-');
+		buf.append("library IEEE;\n");
+		buf.append("use IEEE.STD_LOGIC_1164.all;\n");
+		buf.append("package ");
+		buf.append(fsm.name);
+		buf.append("_pack is\n");
+		generateComponentVhdl(buf, true);
+		buf.append("end \n");
+		buf.append(fsm.name);
+		buf.append("_pack;\n");
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generatePortMapVhdl(StringBuilder buf) {
+		GenerateHeader(buf, "port map vhdl file",'-');
 		buf.append(fsm.name);
 		buf.append("_u0 : ");
 		buf.append(fsm.name);
 		buf.append("\n");
 		// generics
 		if (fsm.genericDeclarations.size() > 0) {
-			bufVhdl.append("generic map (\n		");
+			buf.append("generic map (\n		");
 			for (int i = 0; i < fsm.genericDeclarations.size(); i++) {
 				if (i > 0)
-					bufVhdl.append(",\n		");
-				bufVhdl.append(fsm.genericDeclarations.get(i).Name);
-				bufVhdl.append(" => ");
-				bufVhdl.append(fsm.genericDeclarations.get(i).Default);
+					buf.append(",\n		");
+				buf.append(fsm.genericDeclarations.get(i).Name);
+				buf.append(" => ");
+				buf.append(fsm.genericDeclarations.get(i).Default);
 			}
-			bufVhdl.append(")\n");
+			buf.append(")\n");
 		}
 		// ports
 		buf.append("port map(\n");
@@ -1888,317 +1922,313 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generatePortMapFileVhdl() {
-		bufVhdl.append("library work;\n");
-		bufVhdl.append("use work.");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append("_pack.all;\n\n");
-		generatePortMapVhdl(bufVhdl);
+	static public void generatePortMapFileVhdl(StringBuilder buf) {
+		buf.append("library work;\n");
+		buf.append("use work.");
+		buf.append(fsm.name);
+		buf.append("_pack.all;\n\n");
+		generatePortMapVhdl(buf);
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	static public void generateVhdl() {
+	static public void generateVhdl(StringBuilder buf) {
 		int numberOfStates = fsm.states.size();
-		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
-		bufVhdl.append("-- Finite State Machine .vhdl  autogenerated by ");
-		bufVhdl.append(softNameAndVersion);
-		bufVhdl.append(" B. VANDEPORTAELE LAAS-CNRS 2016\n");
-		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
-		bufVhdl.append("library	ieee;\nuse		ieee.std_logic_1164.all;\nuse		ieee.std_logic_unsigned.all;\nuse		ieee.std_logic_arith.all;\n");
+		GenerateHeader(buf, "vhdl file",'-');
+		buf.append("library	ieee;\nuse		ieee.std_logic_1164.all;\nuse		ieee.std_logic_unsigned.all;\nuse		ieee.std_logic_arith.all;\n");
 		if (!fsm.pragmaVhdlPreEntity.equals("")) {
-			bufVhdl.append("------------------------------pragma_vhdl_pre_entity-------------------------------------------------------\n");
-			bufVhdl.append(fsm.pragmaVhdlPreEntity);
-			bufVhdl.append("--------------------------end of pragma_vhdl_pre_entity----------------------------------------------------\n");
+			buf.append("------------------------------pragma_vhdl_pre_entity-------------------------------------------------------\n");
+			buf.append(fsm.pragmaVhdlPreEntity);
+			buf.append("--------------------------end of pragma_vhdl_pre_entity----------------------------------------------------\n");
 		}
-		bufVhdl.append("entity ");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append(" is\n");
-		generateInterfaceVhdl();
-		bufVhdl.append("end ");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append(";\n\n");
-		bufVhdl.append("architecture ar of ");
-		bufVhdl.append(fsm.name);
-		bufVhdl.append(" is \n");
+		buf.append("entity ");
+		buf.append(fsm.name);
+		buf.append(" is\n");
+		generateInterfaceVhdl(buf);
+		buf.append("end ");
+		buf.append(fsm.name);
+		buf.append(";\n\n");
+		buf.append("architecture ar of ");
+		buf.append(fsm.name);
+		buf.append(" is \n");
 		if (!fsm.pragmaVhdlArchitecturePreBegin.equals("")) {
-			bufVhdl.append("------------------------------pragma_vhdl_architecture_pre_begin-------------------------------------------\n");
-			bufVhdl.append(fsm.pragmaVhdlArchitecturePreBegin);
-			bufVhdl.append("--------------------------end of pragma_vhdl_architecture_pre_begin----------------------------------------\n");
+			buf.append("------------------------------pragma_vhdl_architecture_pre_begin-------------------------------------------\n");
+			buf.append(fsm.pragmaVhdlArchitecturePreBegin);
+			buf.append("--------------------------end of pragma_vhdl_architecture_pre_begin----------------------------------------\n");
 		}
 		if (fsm.states.size() != 0) {
 			// ////// listing of possible values for state names
-			bufVhdl.append("type fsm_state is (");
+			buf.append("type fsm_state is (");
 			// print the asynchronous reset first, ISE needs it to code it state
 			// 0 and not emit a warning about it.
-			bufVhdl.append("state_");
-			bufVhdl.append(fsm.resetAsynchronousState.name);
+			buf.append("state_");
+			buf.append(fsm.resetAsynchronousState.name);
 			// print the others states names
 			int numberOfStatesStill = numberOfStates - 1;
 			int n = 0;
 			while (numberOfStatesStill > 0) {
 				if (!fsm.states.get(n).name.equalsIgnoreCase(fsm.resetAsynchronousState.name)) {
-					bufVhdl.append(", ");
-					bufVhdl.append("state_"); // prefix state name with state_
-					bufVhdl.append(fsm.states.get(n).name);
+					buf.append(", ");
+					buf.append("state_"); // prefix state name with state_
+					buf.append(fsm.states.get(n).name);
 					numberOfStatesStill--;
 				}
 				n++;
 			}
-			bufVhdl.append(");\n");
-			bufVhdl.append("signal current_state, next_state : fsm_state;\n");
+			buf.append(");\n");
+			buf.append("signal current_state, next_state : fsm_state;\n");
 		}
 		// //////// listing of internal signals for memorized outputs/
 		for (int n = 0; n < fsm.outputs.size(); n++) {
 			Output out = fsm.outputs.get(n);
 			if ((out.memorized) && (out.isUsedAsOutputInFSm)) {
-				bufVhdl.append("signal ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("_set, ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("_reset, ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("_mem : std_logic;\n");
-				bufVhdl.append("signal ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("_mem_value : std_logic;\n");
+				buf.append("signal ");
+				buf.append(out.name);
+				buf.append("_set, ");
+				buf.append(out.name);
+				buf.append("_reset, ");
+				buf.append(out.name);
+				buf.append("_mem : std_logic;\n");
+				buf.append("signal ");
+				buf.append(out.name);
+				buf.append("_mem_value : std_logic;\n");
 			}
 		}
-		bufVhdl.append("signal value_one_internal: std_logic;  --signal used internally to ease operation on conditions, to have a std_logic type '1' value\n");
+		buf.append("signal value_one_internal: std_logic;  --signal used internally to ease operation on conditions, to have a std_logic type '1' value\n");
 		int numberOfResetTransitions = fsm.resetTransitions.size();
 		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
 			if (numberOfResetTransitions > 0) {
-				bufVhdl.append("signal not_any_s_reset_internal: std_logic ;  --signal used internally to ease inhibition of actions when reset transitions occurs\n");
+				buf.append("signal not_any_s_reset_internal: std_logic ;  --signal used internally to ease inhibition of actions when reset transitions occurs\n");
 			}
 		}
 		if (fsm.demotedToSignalOutputs.size() > 0) {
-			bufVhdl.append("-----------------outputs demoted to internal signals through pragma-------------------------------------\n");
+			buf.append("-----------------outputs demoted to internal signals through pragma-------------------------------------\n");
 			for (int n = 0; n < fsm.demotedToSignalOutputs.size(); n++) {
 				if (fsm.demotedToSignalOutputs.get(n).isUsedAsOutputInFSm) {
-					bufVhdl.append("signal ");
-					bufVhdl.append(fsm.demotedToSignalOutputs.get(n).paddedName);
-					bufVhdl.append(" : ");
-					bufVhdl.append(" std_logic");
-					bufVhdl.append(";\n");
+					buf.append("signal ");
+					buf.append(fsm.demotedToSignalOutputs.get(n).paddedName);
+					buf.append(" : ");
+					buf.append(" std_logic");
+					buf.append(";\n");
 				}
 			}
 		}
 		if (fsm.demotedToSignalInputs.size() > 0) {
-			bufVhdl.append("-----------------inputs demoted to internal signals through pragma-------------------------------------\n");
+			buf.append("-----------------inputs demoted to internal signals through pragma-------------------------------------\n");
 			for (int n = 0; n < fsm.demotedToSignalInputs.size(); n++) {
 				if (fsm.demotedToSignalInputs.get(n).isUsedAsInputInFSm) {
-					bufVhdl.append("signal ");
-					bufVhdl.append(fsm.demotedToSignalInputs.get(n).paddedName);
-					bufVhdl.append(" : ");
-					bufVhdl.append(" std_logic");
-					bufVhdl.append(";\n");
+					buf.append("signal ");
+					buf.append(fsm.demotedToSignalInputs.get(n).paddedName);
+					buf.append(" : ");
+					buf.append(" std_logic");
+					buf.append(";\n");
 				}
 			}
 		}
 		// ////////////////let's animate all that stuff...//////////////////
-		bufVhdl.append("---------------------------------------------------------------------------------------\n");
-		bufVhdl.append("begin\n");
+		buf.append("---------------------------------------------------------------------------------------\n");
+		buf.append("begin\n");
 		if (!fsm.pragmaVhdlArchitecturePostBegin.equals("")) {
-			bufVhdl.append("------------------------------pragma_vhdl_architecture_post_begin-----------------------------------------\n");
-			bufVhdl.append(fsm.pragmaVhdlArchitecturePostBegin);
-			bufVhdl.append("--------------------------end of pragma_vhdl_architecture_post_begin--------------------------------------\n");
+			buf.append("------------------------------pragma_vhdl_architecture_post_begin-----------------------------------------\n");
+			buf.append(fsm.pragmaVhdlArchitecturePostBegin);
+			buf.append("--------------------------end of pragma_vhdl_architecture_post_begin--------------------------------------\n");
 		}
-		bufVhdl.append("value_one_internal <='1';\n");
+		buf.append("value_one_internal <='1';\n");
 		if (fsm.resetTransitionInhibatesTransitionActions || fsm.resetTransitionInhibatesActionsOnStates) {
 			if (numberOfResetTransitions > 0) {
-				bufVhdl.append("-----------------------Combination of sreset signal(s) to inhibate actions on states and/or transitions--------------\n");
-				bufVhdl.append("not_any_s_reset_internal<= '1' when ");
-				bufVhdl.append(fsm.resetConditionComplement);
-				bufVhdl.append(" else\n                           '0';\n");
+				buf.append("-----------------------Combination of sreset signal(s) to inhibate actions on states and/or transitions--------------\n");
+				buf.append("not_any_s_reset_internal<= '1' when ");
+				buf.append(fsm.resetConditionComplement);
+				buf.append(" else\n                           '0';\n");
 			}
 		}
 		if (fsm.states.size() != 0) {
-			bufVhdl.append("------------------------Process for the memorization of the state----------------------\n");
-			bufVhdl.append("process (");
-			bufVhdl.append(fsm.clkSignalName);
-			bufVhdl.append(", ");
-			bufVhdl.append(fsm.aResetSignalName);
-			bufVhdl.append(")\nbegin\n    if (");
-			bufVhdl.append(fsm.aResetSignalName);
-			bufVhdl.append("='");
-			bufVhdl.append(fsm.aResetSignalLevel);
-			bufVhdl.append("') then current_state <=");
-			bufVhdl.append("state_");
-			bufVhdl.append(fsm.resetAsynchronousState.name);
-			bufVhdl.append(";\n");
-			bufVhdl.append("    elsif ");
-			bufVhdl.append(fsm.clkSignalName);
-			bufVhdl.append("'event and ");
-			bufVhdl.append(fsm.clkSignalName);
-			bufVhdl.append("='1' then current_state<=next_state;\n");
-			bufVhdl.append("    end if;\n");
-			bufVhdl.append("end process;\n\n");
-			bufVhdl.append("-------------------Combinatorial process for the evolution of the state------------------\n");
-			bufVhdl.append("process (current_state");
+			buf.append("------------------------Process for the memorization of the state----------------------\n");
+			buf.append("process (");
+			buf.append(fsm.clkSignalName);
+			buf.append(", ");
+			buf.append(fsm.aResetSignalName);
+			buf.append(")\nbegin\n    if (");
+			buf.append(fsm.aResetSignalName);
+			buf.append("='");
+			buf.append(fsm.aResetSignalLevel);
+			buf.append("') then current_state <=");
+			buf.append("state_");
+			buf.append(fsm.resetAsynchronousState.name);
+			buf.append(";\n");
+			buf.append("    elsif ");
+			buf.append(fsm.clkSignalName);
+			buf.append("'event and ");
+			buf.append(fsm.clkSignalName);
+			buf.append("='1' then current_state<=next_state;\n");
+			buf.append("    end if;\n");
+			buf.append("end process;\n\n");
+			buf.append("-------------------Combinatorial process for the evolution of the state------------------\n");
+			buf.append("process (current_state");
 			// check inputs that are used by the fsm as inputs
 			for (int n = 0; n < fsm.inputs.size(); n++) {
 				if (fsm.inputs.get(n).isUsedAsInputInFSm) {
-					bufVhdl.append(", ");
-					bufVhdl.append(fsm.inputs.get(n).name);
+					buf.append(", ");
+					buf.append(fsm.inputs.get(n).name);
 				}
 			}
 			// check also buffered outputs that are used by the fsm as
 			// inputs
 			for (int n = 0; n < fsm.outputs.size(); n++) {
 				if (fsm.outputs.get(n).isUsedAsInputInFSm) {
-					bufVhdl.append(", ");
-					bufVhdl.append(fsm.outputs.get(n).name);
+					buf.append(", ");
+					buf.append(fsm.outputs.get(n).name);
 				}
 			}
 			if (fsm.bufferedOutputsAllowed) {
 				for (int n = 0; n < fsm.outputs.size(); n++) {
 					if ((fsm.outputs.get(n).isBuffer) && (fsm.outputs.get(n).isUsedAsOutputInFSm)) {
-						bufVhdl.append(", ");
-						bufVhdl.append(fsm.outputs.get(n).name);
+						buf.append(", ");
+						buf.append(fsm.outputs.get(n).name);
 					}
 				}
 			}
-			bufVhdl.append(")\n");
-			bufVhdl.append("begin\n");
+			buf.append(")\n");
+			buf.append("begin\n");
 			int nbResetTransitions = fsm.resetTransitions.size();
 			if (nbResetTransitions != 0) {
-				bufVhdl.append("-----------Synchronous RESETs has higher priority than standard transitions\n");
+				buf.append("-----------Synchronous RESETs has higher priority than standard transitions\n");
 				for (int m = 0; m < nbResetTransitions; m++) {
 					if (m == 0)
-						bufVhdl.append("   if    ( ");
+						buf.append("   if    ( ");
 					else
-						bufVhdl.append("   elsif ( ");
+						buf.append("   elsif ( ");
 					if (fsm.resetTransitions.get(m).condition.equals("1"))
 						// that would be dumb because the system should always
 						// be resetted...
-						bufVhdl.append(" true ");
+						buf.append(" true ");
 					else {
-						bufVhdl.append(" ( ");
-						bufVhdl.append(fsm.resetTransitions.get(m).condition);
-						bufVhdl.append(" ) ");
-						bufVhdl.append(" = '1' ");
+						buf.append(" ( ");
+						buf.append(fsm.resetTransitions.get(m).condition);
+						buf.append(" ) ");
+						buf.append(" = '1' ");
 					}
-					bufVhdl.append(")\n    then next_state <= state_");
-					bufVhdl.append(fsm.resetTransitions.get(m).destination);
-					bufVhdl.append(";");
+					buf.append(")\n    then next_state <= state_");
+					buf.append(fsm.resetTransitions.get(m).destination);
+					buf.append(";");
 					// show the priority order if its not the default value
 					if (fsm.resetTransitions.get(m).priorityOrder != 1000000) {
-						bufVhdl.append(" -- priority order set to: ");
-						bufVhdl.append(fsm.resetTransitions.get(m).priorityOrder);
+						buf.append(" -- priority order set to: ");
+						buf.append(fsm.resetTransitions.get(m).priorityOrder);
 					}
-					bufVhdl.append("\n");
+					buf.append("\n");
 				}
-				bufVhdl.append("   else \n");
+				buf.append("   else \n");
 			}
-			bufVhdl.append("------------------------------standard transitions---------------------\n");
-			bufVhdl.append("    case current_state is\n");
+			buf.append("------------------------------standard transitions---------------------\n");
+			buf.append("    case current_state is\n");
 			// pour chaque état, il peut y avoir plusieurs transitions, la
 			// première if, les suivantes elsif et finalement en plus le
 			// maintien dans l'état courant
 			for (int n = 0; n < numberOfStates; n++) {
-				bufVhdl.append("      when state_");
-				bufVhdl.append(fsm.states.get(n).paddedName);
+				buf.append("      when state_");
+				buf.append(fsm.states.get(n).paddedName);
 				int transitionFromThisStateNumber = fsm.states.get(n).transitionsFromThisState.size();
-				bufVhdl.append(" => ");
+				buf.append(" => ");
 				for (int m = 0; m < transitionFromThisStateNumber; m++) {
 					if (m == 0)
-						bufVhdl.append(" if ( ");
+						buf.append(" if ( ");
 					else {
-						bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
-						bufVhdl.append("elsif ( ");
+						buf.append(fillStringWithSpace2("", State.longestName + 22));
+						buf.append("elsif ( ");
 					}
 					if (fsm.states.get(n).transitionsFromThisState.get(m).condition.equals("1"))
-						bufVhdl.append(" true ");
+						buf.append(" true ");
 					else {
-						bufVhdl.append(" ( ");
-						bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
-						bufVhdl.append(" ) ");
-						bufVhdl.append(" = '1' ");
+						buf.append(" ( ");
+						buf.append(fsm.states.get(n).transitionsFromThisState.get(m).condition);
+						buf.append(" ) ");
+						buf.append(" = '1' ");
 					}
-					bufVhdl.append(") then next_state <= state_");
-					bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
-					bufVhdl.append(";");
+					buf.append(") then next_state <= state_");
+					buf.append(fsm.states.get(n).transitionsFromThisState.get(m).destination);
+					buf.append(";");
 					// show the priority order if its not the default value
 					if (fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder != 1000000) {
-						bufVhdl.append(" -- priority order set to: ");
-						bufVhdl.append(fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder);
+						buf.append(" -- priority order set to: ");
+						buf.append(fsm.states.get(n).transitionsFromThisState.get(m).priorityOrder);
 					}
-					bufVhdl.append("\n");
+					buf.append("\n");
 				}
 				if (transitionFromThisStateNumber != 0) {
-					bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
-					bufVhdl.append("else	");
+					buf.append(fillStringWithSpace2("", State.longestName + 22));
+					buf.append("else	");
 				}
-				bufVhdl.append("next_state <= state_");
-				bufVhdl.append(fsm.states.get(n).name);
-				bufVhdl.append(";\n");
+				buf.append("next_state <= state_");
+				buf.append(fsm.states.get(n).name);
+				buf.append(";\n");
 				if (transitionFromThisStateNumber != 0) {
-					bufVhdl.append(fillStringWithSpace2("", State.longestName + 22));
-					bufVhdl.append("end if;\n");
+					buf.append(fillStringWithSpace2("", State.longestName + 22));
+					buf.append("end if;\n");
 				}
 			}
-			bufVhdl.append("--    when others => next_state <= state_");
-			bufVhdl.append(fsm.states.get(0).name);
-			bufVhdl.append(";\n    end case;\n");
+			buf.append("--    when others => next_state <= state_");
+			buf.append(fsm.states.get(0).name);
+			buf.append(";\n    end case;\n");
 			// if there has been some synchronous reset transition, end if
 			// should be added
 			if (nbResetTransitions != 0)
-				bufVhdl.append("   end if;\n");
-			bufVhdl.append("end process;\n");
+				buf.append("   end if;\n");
+			buf.append("end process;\n");
 		}
-		bufVhdl.append("------------------FLIP FLOPS FOR MEMORIZED OUTPUTS ------------\n");
+		buf.append("------------------FLIP FLOPS FOR MEMORIZED OUTPUTS ------------\n");
 		for (int n = 0; n < fsm.outputs.size(); n++) {
 			Output out = fsm.outputs.get(n);
 			if ((out.memorized) && (out.isUsedAsOutputInFSm)) {
-				bufVhdl.append("------ FLIP FLOPS FOR ");
-				bufVhdl.append(out.name);
-				bufVhdl.append(" ------\n");
-				bufVhdl.append("process (");
-				bufVhdl.append(fsm.clkSignalName);
-				bufVhdl.append(", ");
-				bufVhdl.append(fsm.aResetSignalName);
-				bufVhdl.append(")\n");
-				bufVhdl.append("begin\n");
-				bufVhdl.append("   if (");
-				bufVhdl.append(fsm.aResetSignalName);
-				bufVhdl.append("='");
-				bufVhdl.append(fsm.aResetSignalLevel);
-				bufVhdl.append("') then ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("<=");
+				buf.append("------ FLIP FLOPS FOR ");
+				buf.append(out.name);
+				buf.append(" ------\n");
+				buf.append("process (");
+				buf.append(fsm.clkSignalName);
+				buf.append(", ");
+				buf.append(fsm.aResetSignalName);
+				buf.append(")\n");
+				buf.append("begin\n");
+				buf.append("   if (");
+				buf.append(fsm.aResetSignalName);
+				buf.append("='");
+				buf.append(fsm.aResetSignalLevel);
+				buf.append("') then ");
+				buf.append(out.name);
+				buf.append("<=");
 				if (out.asyncResetExpression == null)
-					bufVhdl.append("'0'");
+					buf.append("'0'");
 				else if (out.asyncResetExpression.equals("0"))
-					bufVhdl.append("'0'");
+					buf.append("'0'");
 				else if (out.asyncResetExpression.equals("1"))
-					bufVhdl.append("'1'");
+					buf.append("'1'");
 				else
-					bufVhdl.append(out.asyncResetExpression);
-				bufVhdl.append(";\n");
-				bufVhdl.append("    elsif ");
-				bufVhdl.append(fsm.clkSignalName);
-				bufVhdl.append("'event and ");
-				bufVhdl.append(fsm.clkSignalName);
-				bufVhdl.append("='1' then  \n");
-				bufVhdl.append("      if ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("_set ='1' then ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("<='1';\n");
-				bufVhdl.append("      elsif ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("_reset ='1' then ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("<='0';\n");
-				bufVhdl.append("      elsif ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("_mem ='1' then ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("<= ");
-				bufVhdl.append(out.name);
-				bufVhdl.append("_mem_value;\n");
-				bufVhdl.append("      end if;\n");
-				bufVhdl.append("    end if;\n");
-				bufVhdl.append("end process;\n");
+					buf.append(out.asyncResetExpression);
+				buf.append(";\n");
+				buf.append("    elsif ");
+				buf.append(fsm.clkSignalName);
+				buf.append("'event and ");
+				buf.append(fsm.clkSignalName);
+				buf.append("='1' then  \n");
+				buf.append("      if ");
+				buf.append(out.name);
+				buf.append("_set ='1' then ");
+				buf.append(out.name);
+				buf.append("<='1';\n");
+				buf.append("      elsif ");
+				buf.append(out.name);
+				buf.append("_reset ='1' then ");
+				buf.append(out.name);
+				buf.append("<='0';\n");
+				buf.append("      elsif ");
+				buf.append(out.name);
+				buf.append("_mem ='1' then ");
+				buf.append(out.name);
+				buf.append("<= ");
+				buf.append(out.name);
+				buf.append("_mem_value;\n");
+				buf.append("      end if;\n");
+				buf.append("    end if;\n");
+				buf.append("end process;\n");
 			}
 		}
 		for (int cptActionType = 0; cptActionType < 5; cptActionType++) {
@@ -2210,42 +2240,42 @@ public class FsmProcess {
 				processMemorizedOutput = false;
 				typeFilter = "I"; // only I
 				signalSuffix = "";
-				bufVhdl.append("------------------ NON MEMORIZED OUTPUTS ------------\n");
+				buf.append("------------------ NON MEMORIZED OUTPUTS ------------\n");
 				break;
 			case 1:
 				processMemorizedOutput = true;
 				typeFilter = "R"; // Reset or memorized copy
 				signalSuffix = "_reset";
-				bufVhdl.append("------------------  FLIP FLOPS MEMORIZED RESET OUTPUT CONTROL------------\n");
+				buf.append("------------------  FLIP FLOPS MEMORIZED RESET OUTPUT CONTROL------------\n");
 				break;
 			case 2:
 				processMemorizedOutput = true;
 				typeFilter = "S"; // Set or memorized copy
 				signalSuffix = "_set";
-				bufVhdl.append("------------------  FLIP FLOPS MEMORIZED SET OUTPUT CONTROL------------\n");
+				buf.append("------------------  FLIP FLOPS MEMORIZED SET OUTPUT CONTROL------------\n");
 				break;
 			case 3:
 				processMemorizedOutput = true;
 				typeFilter = "M"; // Memorize copy
 				signalSuffix = "_mem";
-				bufVhdl.append("------------------  FLIP FLOPS MEMORIZED OUTPUT CONTROL------------\n");
+				buf.append("------------------  FLIP FLOPS MEMORIZED OUTPUT CONTROL------------\n");
 				break;
 			case 4:
 			default:
 				processMemorizedOutput = true;
 				typeFilter = "M"; // Memorize copy
 				signalSuffix = "_mem_value";
-				bufVhdl.append("------------------  FLIP FLOPS MEMORIZED OUTPUT VALUE CONTROL------------\n");
+				buf.append("------------------  FLIP FLOPS MEMORIZED OUTPUT VALUE CONTROL------------\n");
 				break;
 			}
 			for (int n = 0; n < fsm.outputs.size(); n++)
 				if ((fsm.outputs.get(n).memorized == processMemorizedOutput) && (fsm.outputs.get(n).isUsedAsOutputInFSm)) {
 					String currentOutputName = fsm.outputs.get(n).name;
-					bufVhdl.append("    ");
-					bufVhdl.append(fsm.outputs.get(n).name);
-					bufVhdl.append(signalSuffix);
-					bufVhdl.append(fillStringWithSpace2("", Output.longestName - fsm.outputs.get(n).name.length()));
-					bufVhdl.append("  <=  ");
+					buf.append("    ");
+					buf.append(fsm.outputs.get(n).name);
+					buf.append(signalSuffix);
+					buf.append(fillStringWithSpace2("", Output.longestName - fsm.outputs.get(n).name.length()));
+					buf.append("  <=  ");
 					// look for actions in the fsm that deals with this output
 					// /////// repeatedly action from any state//
 					int nbRepeatedlyAction = fsm.repeatedlyActions.size();
@@ -2255,15 +2285,15 @@ public class FsmProcess {
 							if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
 								if ((!a.expression.equals("")) && (cptActionType != 3)) {
 									// if there is an expression
-									bufVhdl.append(" ( ");
-									bufVhdl.append(a.expression);
-									bufVhdl.append(" ) ");
+									buf.append(" ( ");
+									buf.append(a.expression);
+									buf.append(" ) ");
 								} else {
-									bufVhdl.append(" '1' ");
+									buf.append(" '1' ");
 								}
 								// this action is always true
-								bufVhdl.append("when ( true)   else  \n");
-								bufVhdl.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
+								buf.append("when ( true)   else  \n");
+								buf.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
 							}
 						}
 					}
@@ -2280,21 +2310,21 @@ public class FsmProcess {
 									if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
 										if ((!a.expression.equals("")) && (cptActionType != 3)) {
 											// if there is an expression
-											bufVhdl.append(" ( ");
-											bufVhdl.append(a.expression);
-											bufVhdl.append(" ) ");
+											buf.append(" ( ");
+											buf.append(a.expression);
+											buf.append(" ) ");
 										} else {
-											bufVhdl.append(" '1' ");
+											buf.append(" '1' ");
 										}
 										// rt.conditionWithPriorities should
 										// be!='1' by construction
-										bufVhdl.append("when ( ( ");
-										bufVhdl.append(rt.conditionWithPriorities);
-										bufVhdl.append(") = \'1\' )");
-										bufVhdl.append("   else --action on reset transition to state ");
-										bufVhdl.append(rt.destination);
-										bufVhdl.append(" \n");
-										bufVhdl.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
+										buf.append("when ( ( ");
+										buf.append(rt.conditionWithPriorities);
+										buf.append(") = \'1\' )");
+										buf.append("   else --action on reset transition to state ");
+										buf.append(rt.destination);
+										buf.append(" \n");
+										buf.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
 									}
 								}
 							}
@@ -2313,29 +2343,29 @@ public class FsmProcess {
 										if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
 											if ((!a.expression.equals("")) && (cptActionType != 3)) {
 												// if there is an expression
-												bufVhdl.append(" ( ");
-												bufVhdl.append(a.expression);
-												bufVhdl.append(" ) ");
+												buf.append(" ( ");
+												buf.append(a.expression);
+												buf.append(" ) ");
 											} else {
-												bufVhdl.append(" '1' ");
+												buf.append(" '1' ");
 											}
-											bufVhdl.append("when ( (current_state = ");
-											bufVhdl.append("state_");
-											bufVhdl.append(fsm.states.get(m).name);
-											bufVhdl.append(") ");
-											bufVhdl.append(" and  (");
-											bufVhdl.append(" ( ");
-											bufVhdl.append(t.conditionWithPriorities);
-											bufVhdl.append(") = \'1\' ");
-											bufVhdl.append(") ");
+											buf.append("when ( (current_state = ");
+											buf.append("state_");
+											buf.append(fsm.states.get(m).name);
+											buf.append(") ");
+											buf.append(" and  (");
+											buf.append(" ( ");
+											buf.append(t.conditionWithPriorities);
+											buf.append(") = \'1\' ");
+											buf.append(") ");
 											if (fsm.resetTransitionInhibatesTransitionActions == true)
-												bufVhdl.append(a.condition);
-											bufVhdl.append(")  else --action on transition from state ");
-											bufVhdl.append(t.origin);
-											bufVhdl.append(" to ");
-											bufVhdl.append(t.destination);
-											bufVhdl.append("\n");
-											bufVhdl.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
+												buf.append(a.condition);
+											buf.append(")  else --action on transition from state ");
+											buf.append(t.origin);
+											buf.append(" to ");
+											buf.append(t.destination);
+											buf.append("\n");
+											buf.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
 										}
 									}
 								}
@@ -2350,22 +2380,22 @@ public class FsmProcess {
 									if (a.name.equals(currentOutputName) && (a.type.equals(typeFilter))) {
 										// if there is an expression
 										if ((!a.expression.equals("")) && (cptActionType != 3)) {
-											bufVhdl.append(" ( ");
-											bufVhdl.append(a.expression);
-											bufVhdl.append(" ) ");
+											buf.append(" ( ");
+											buf.append(a.expression);
+											buf.append(" ) ");
 										} else {
-											bufVhdl.append(" '1' ");
+											buf.append(" '1' ");
 										}
-										bufVhdl.append("when ( (current_state = ");
-										bufVhdl.append("state_");
-										bufVhdl.append(fsm.states.get(m).name);
-										bufVhdl.append(") ");
+										buf.append("when ( (current_state = ");
+										buf.append("state_");
+										buf.append(fsm.states.get(m).name);
+										buf.append(") ");
 										if (fsm.resetTransitionInhibatesActionsOnStates == true)
-											bufVhdl.append(a.condition);
-										bufVhdl.append(")   else  --action on state ");
-										bufVhdl.append(fsm.states.get(m).name);
-										bufVhdl.append("\n");
-										bufVhdl.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
+											buf.append(a.condition);
+										buf.append(")   else  --action on state ");
+										buf.append(fsm.states.get(m).name);
+										buf.append("\n");
+										buf.append(fillStringWithSpace2("", Output.longestName + 10 + signalSuffix.length()));
 									}
 								}
 							}
@@ -2374,15 +2404,15 @@ public class FsmProcess {
 					// this is the default value for all outputs.
 					// A S action is automatically added when there is no
 					// corresponding R action and vice versa
-					bufVhdl.append(" \'0\'; \n");
+					buf.append(" \'0\'; \n");
 					// TODO: deal with a non default value here, to get outputs
 					// at 1 by default for instance
 				}
 		}
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
-			generateStateCodingVhdl(false);
+			generateStateCodingVhdl(buf, false);
 		}
-		bufVhdl.append("end ar;\n");
+		buf.append("end ar;\n");
 
 	} // ///////////////////////////////////////////////////////////////
 
