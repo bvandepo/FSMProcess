@@ -30,6 +30,7 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -51,6 +52,9 @@ import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+
+//TODO: afficher le texte de log quand la souris clique sur le label error
+//ou qu'on passe dessus, visualiser aussi le log, vhd, tb portmap etc...
 
 // sudo apt-get install libgetopt-java
 //et ajouter dans referenced Libraries /usr/share/gnu-getopt-1.0.13.jar
@@ -87,9 +91,12 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 // TODO : inout????
 // TODO check to et downto que les bornes sont compatibles
-// pragmaCleaned + ";\n";
 
-//TODO: merger inputs et outputs
+//TODO: merger inputs et outputs; ca permettrait de résoudre le pb:
+// bizarre sans ce pragma, probleme... dans filteredge...
+//#pragma_vhdl_allow_automatic_buffering
+//%S,delay_ended=COUNT_EQUAL;  
+//%R,delay_ended=srazcpt; 
 
 //TODO: pour les AMZI, ajouter une commande qui permet de les définir active à 0... rien ne change dans le code sauf ca...
 
@@ -100,26 +107,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //TODO: ajouter pragma pour imposer le Statenumber d'un etat d'apres son nom
 //TODO: comprendre pourquoi antlr ne genere par le fichier FsmParser.java  mais uniquement le class...
 
-//TODO: bizarre sans ce pragma, probleme... dans filteredge...
-//#pragma_vhdl_allow_automatic_buffering
-//%S,delay_ended=COUNT_EQUAL;  
-//%R,delay_ended=srazcpt;  
-
 //TODO: gérer que l'on puisse ajouter des commentaires dans les pragmas entity
 //TODO: parser le pragma entity pour detecter E/S (ou alors add/remove..) + bus
-
-//TODO: afficher le texte de log quand la souris clique sur le label error
-//ou qu'on passe dessus
-
-//TODO: récupérer les dimensions de la fenêtre lorsque on la redimensionne
-
-//TODO: positionner la fenetre automatiquement
-
-// EASY TODOS:
-
-// TODO: make Boolean ResetTransitionInhibatesTransitionActions = true;
-// and Boolean ResetTransitionInhibatesActionsOnStates = true
-// configurable through pragma
 
 // TODO: add pragma for dot to colorize some node or arcs and make
 // animations in gif
@@ -290,8 +279,8 @@ public class FsmProcess {
 	static int WIN_WIDTH = 1285;
 	static int WIN_HEIGHT = 750;
 
-
 	private static FileWatcher watcher;
+	static int displayState = 0; // Dot image view by default
 
 	// ////////////////////////////////////////////////////////////////////
 	public FsmProcess() {
@@ -316,55 +305,110 @@ public class FsmProcess {
 		int IMG_WIDTH = WIN_WIDTH - 10;
 		int IMG_HEIGHT = WIN_HEIGHT - 80;
 		scrollPanel.setSize(WIN_WIDTH - 30, WIN_HEIGHT - 80);
-		imageSizeWidth = img.getWidth();
-		imageSizeHeight = img.getHeight();
-		if (autoResize) {
-			IMG_WIDTH = WIN_WIDTH - 30 - 5;
-			IMG_HEIGHT = WIN_HEIGHT - 80;
-			double aspectRatioOrg = (double) img.getWidth() / (double) img.getHeight();
-			double aspectRatioDest = (double) IMG_WIDTH / (double) IMG_HEIGHT;
-			int IMG_WIDTH_dest = IMG_WIDTH;
-			int IMG_HEIGHT_dest = IMG_HEIGHT;
-			if (aspectRatioOrg > aspectRatioDest)
-				IMG_HEIGHT_dest = (int) ((double) IMG_WIDTH_dest / aspectRatioOrg);
-			else
-				IMG_WIDTH_dest = (int) ((double) IMG_HEIGHT_dest * aspectRatioOrg);
-			imageSizeWidth = IMG_WIDTH_dest;
-			imageSizeHeight = IMG_HEIGHT_dest;
-			resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
-			g = resizedImage.createGraphics();
-			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			// g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-			// RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-			// g.setRenderingHint(RenderingHints.KEY_RENDERING,
-			// RenderingHints.VALUE_RENDER_QUALITY);
-			g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
-			g.dispose();
-			icon = new ImageIcon(resizedImage);
-		} else {
-			icon = new ImageIcon(img);
-		}
-		xscroll = (int) (percentWidth * img.getWidth() / 100.);
-		yscroll = (int) (percentHeight * img.getHeight() / 100.);
-		// without this, the zoomed zone has its upper left corner at the
-		// click position, with this, the zoomed zone has its upper left
-		// corner at the central position
-		xscroll -= IMG_WIDTH / 2;
-		yscroll -= IMG_HEIGHT / 2;
-		// System.out.print("xscroll: ");
-		// System.out.print(xscroll);
-		// System.out.print("   yscroll: ");
-		// System.out.println(yscroll);
-		labelDisplayImage.setIcon(icon);
-		labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
-		labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
-		// probleme au moment ou setScrollPosition s'execute, le scroll est
-		// encore desactivé car on est en mode autoresize.., il faut
-		// appeler le p.revalidate() avant pour que le scroller prenne
-		// la bonne taille
-		scrollPanel.revalidate();
-		if (!autoResize) {
-			scrollPanel.setScrollPosition(xscroll, yscroll);
+		StringBuilder text = new StringBuilder();
+		switch (displayState) {
+		case 0: // display the dot image
+			imageSizeWidth = img.getWidth();
+			imageSizeHeight = img.getHeight();
+			if (autoResize) {
+				IMG_WIDTH = WIN_WIDTH - 30 - 5;
+				IMG_HEIGHT = WIN_HEIGHT - 80;
+				double aspectRatioOrg = (double) img.getWidth() / (double) img.getHeight();
+				double aspectRatioDest = (double) IMG_WIDTH / (double) IMG_HEIGHT;
+				int IMG_WIDTH_dest = IMG_WIDTH;
+				int IMG_HEIGHT_dest = IMG_HEIGHT;
+				if (aspectRatioOrg > aspectRatioDest)
+					IMG_HEIGHT_dest = (int) ((double) IMG_WIDTH_dest / aspectRatioOrg);
+				else
+					IMG_WIDTH_dest = (int) ((double) IMG_HEIGHT_dest * aspectRatioOrg);
+				imageSizeWidth = IMG_WIDTH_dest;
+				imageSizeHeight = IMG_HEIGHT_dest;
+				resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
+				g = resizedImage.createGraphics();
+				g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				// g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+				// RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+				// g.setRenderingHint(RenderingHints.KEY_RENDERING,
+				// RenderingHints.VALUE_RENDER_QUALITY);
+				g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
+				g.dispose();
+				icon = new ImageIcon(resizedImage);
+			} else {
+				icon = new ImageIcon(img);
+			}
+			xscroll = (int) (percentWidth * img.getWidth() / 100.);
+			yscroll = (int) (percentHeight * img.getHeight() / 100.);
+			// without this, the zoomed zone has its upper left corner at the
+			// click position, with this, the zoomed zone has its upper left
+			// corner at the central position
+			xscroll -= IMG_WIDTH / 2;
+			yscroll -= IMG_HEIGHT / 2;
+			// System.out.print("xscroll: ");
+			// System.out.print(xscroll);
+			// System.out.print("   yscroll: ");
+			// System.out.println(yscroll);
+			labelDisplayImage.setIcon(icon);
+			labelDisplayImage.setText(null);
+			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
+			labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
+			// probleme au moment ou setScrollPosition s'execute, le scroll est
+			// encore desactivé car on est en mode autoresize.., il faut
+			// appeler le p.revalidate() avant pour que le scroller prenne
+			// la bonne taille
+			scrollPanel.revalidate();
+			if (!autoResize) {
+				scrollPanel.setScrollPosition(xscroll, yscroll);
+			}
+			break;
+		case 1:// display log text
+			text.append("<html>");
+			text.append("<font color=#ff0000>");
+			text.append(bufLogError.toString().replace("\n", "<br>"));
+			text.append("</font><br><font color=#0000ff>");
+			text.append(bufLogWarning.toString().replace("\n", "<br>"));
+			text.append("</font><br><font color=#000000>");
+			text.append(bufLogInfo.toString().replace("\n", "<br>"));
+			text.append("</font>");
+			labelDisplayImage.setIcon(null);
+			labelDisplayImage.setText(text.toString());
+			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
+			labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
+			scrollPanel.revalidate();
+			break;
+		case 2: // display vhdl text
+		default: // display text
+			text.append("<html>");
+			String textVhdl = bufVhdl.toString().replace("\t", "    ");
+			// not so good, this replacement will replace tabs and multipes
+			// spaces by a single space caractère
+			for (String v : textVhdl.split("\n")) {
+				// si v commence par --, afficher en comment et ne pas surligner
+				// les mots clefs
+				for (String w : v.split(" ")) {
+					Boolean isVhdlReservedWord = false;
+					for (int i = 0; i < fsm.forbiddenNamesVHDL.size(); i++) {
+						if (w.compareToIgnoreCase(fsm.forbiddenNamesVHDL.get(i)) == 0) {
+							isVhdlReservedWord = true;
+							break;
+						}
+					}
+					if (isVhdlReservedWord) {
+						text.append("<font color=#ff0000>");
+						text.append(w);
+						text.append("</font>");
+					} else {
+						text.append(w);
+					}
+					text.append(" ");
+				}
+				text.append("<br>");
+			}
+			labelDisplayImage.setIcon(null);
+			labelDisplayImage.setText(text.toString());
+			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
+			labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
+			scrollPanel.revalidate();
+			break;
 		}
 	}
 
@@ -388,6 +432,13 @@ public class FsmProcess {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		// frame.setLayout(new FlowLayout()); // set the layout manager
 		labelResultsCompile = new JLabel(bufLogFinal.toString());
+		labelResultsCompile.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				displayState = (displayState + 1) % 3;
+				Update(); // redraw the GUI, no reloading of the image
+			}
+		});
 		panel = new JPanel(); // Panel
 		panel.add(labelResultsCompile); // add the label to the JFrame
 		flayout = new FlowLayout(FlowLayout.CENTER);
@@ -1147,7 +1198,6 @@ public class FsmProcess {
 					bufLogInfo.append(name);
 					bufLogInfo
 							.append(" has been promoted to buffer because it is used in conditions or expression. So it is also removed from the list of inputs.\n");
-					// }
 				}
 			}
 		}
@@ -1447,6 +1497,10 @@ public class FsmProcess {
 							bufLogInfo.append(fsm.resetConditionComplement);
 							bufLogInfo.append(" because of a reset transition(s)\n");
 							a.condition = " AND (not_any_s_reset_internal = '1' ) ";
+							// TODO; also add all the possible transitions from
+							// that state and inhibate action on state. Usefull
+							// for memorized outputs, see <<FSM
+							// priority_action_2.fsm>> in the doc
 						}
 					}
 			}
@@ -1514,11 +1568,11 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateVhdlTestBench() {
 		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
-		bufVhdl.append("-- Finite State Machine testbench .vhdl  autogenerated by ");
+		bufVhdl.append("-- Finite State Machine testbench.vhdl  autogenerated by ");
 		bufVhdl.append(softNameAndVersion);
 		bufVhdl.append(" B. VANDEPORTAELE LAAS-CNRS 2016\n");
 		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
-		bufVhdl.append("library	ieee;\nuse		ieee.std_logic_1164.all;\nuse		ieee.std_logic_unsigned.all;\nuse		ieee.std_logic_arith.all;\n");
+		bufVhdl.append("library ieee;\nuse        ieee.std_logic_1164.all;\nuse        ieee.std_logic_unsigned.all;\nuse        ieee.std_logic_arith.all;\n");
 		if (!fsm.pragmaVhdlPreEntity.equals("")) {
 			bufVhdl.append("------------------------------pragma_vhdl_pre_entity-------------------------------------------------------\n");
 			bufVhdl.append(fsm.pragmaVhdlPreEntity);
@@ -3407,7 +3461,7 @@ public class FsmProcess {
 			case 'r':
 				System.out.print(" Option: Realtime process of the input file\n");
 				optionsRealtime = true;
-				optionsDisplayResultImage=true;
+				optionsDisplayResultImage = true;
 				optionsComputeResultImage = true;
 				break;
 			default:
@@ -3424,7 +3478,8 @@ public class FsmProcess {
 		System.out.println("    -i: ignore error in the model and try to continue");
 		System.out.println("    -c: create output gif image file from the dot file");
 		System.out.println("    -f filename.fsm: provide the input file name to process");
-		System.out.println("    -r: realtime process, regenerate the files when the input file content changes and  display the output gif image");
+		System.out
+				.println("    -r: realtime process, regenerate the files when the input file content changes and  display the output gif image");
 		System.out.println("  THE GENERATED FILES SHOULD NOT BE EDITED BY HAND, AS THEY MAY BE DELETED AUTOMATICALLY!!!!");
 		parseArgs(args);
 
@@ -3440,7 +3495,7 @@ public class FsmProcess {
 			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
 			return;
 		}
-		if (optionsRealtime ) {
+		if (optionsRealtime) {
 			// Schedule a job for the event-dispatching thread:
 			// creating and showing this application's GUI.
 			javax.swing.SwingUtilities.invokeLater(new Runnable() {
