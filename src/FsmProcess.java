@@ -76,6 +76,18 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+// TODO: inclure numero de version dans l'affichage
+// TODO: est ce que j'ai le droit d'integrer le jar d'antlr dans mon
+// jar?
+// TODO: quest ce que je dois afficher relativement à l'utilisation de
+// GetOpt et antlr
+// TODO: rendre la generation de la doc sous windows possible / \
+// TODO: insérer des \n ou \r en fin de ligne selon l'os
+
+// TODO : inout????
+// TODO check to et downto que les bornes sont compatibles
+// pragmaCleaned + ";\n";
+
 //TODO: merger inputs et outputs
 
 //TODO: pour les AMZI, ajouter une commande qui permet de les définir active à 0... rien ne change dans le code sauf ca...
@@ -96,6 +108,157 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 //TODO: gérer que l'on puisse ajouter des commentaires dans les pragmas entity
 //TODO: parser le pragma entity pour detecter E/S (ou alors add/remove..) + bus
+
+//TODO: afficher le texte de log quand la souris clique sur le label error
+//ou qu'on passe dessus
+
+//TODO: récupérer les dimensions de la fenêtre lorsque on la redimensionne
+
+//TODO: positionner la fenetre automatiquement
+
+// EASY TODOS:
+
+// TODO: make Boolean ResetTransitionInhibatesTransitionActions = true;
+// and Boolean ResetTransitionInhibatesActionsOnStates = true
+// configurable through pragma
+
+// TODO: add pragma for dot to colorize some node or arcs and make
+// animations in gif
+
+// TODO: add xilinx synthesis in command line to test the generated vhd
+// files automatically
+
+// TODO: catch error from the parser:
+// and stop here if error!!!!
+
+// TODO: definition de constante (bit/valeurs)
+
+// DOC DOT: http://www.graphviz.org/Documentation/dotguide.pdf
+// graphviz.org/Documentation.php
+// http://www.graphviz.org/doc/info/lang.html
+// http://www.tonyballantyne.com/graphs.html
+
+// TODO: pour les comparaisons de valeurs sur des bus d'entrée, utiliser
+// une syntaxe particulière (ajouter à la grammaire) puis générer dans
+// le vhdl un signal qui prendra la valeur 1 quand la condition est
+// vraie
+
+// TODO; regler les problèmes de fichier unix/windows pour ne pas avoir
+// à utiliser unix2dos
+
+// HARD TODOS:
+
+// TODO: pragma pour enlever des entrees/sorties, changer leur taille
+
+// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
+// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
+// et
+// pour spécifier que des E ou S sont des bus de n bits
+
+// TODO: que faire quand une action sur état est incompatible avec une
+// action sur une transition émanant de cet état??? -> afficher erreur
+// ou warning
+// -->in this release, priority= regularly > reset transition >
+// transition > state
+
+// TODODOC: dans la doc sur les (reset) transitions, bien indiquer que
+// l'ordre de définition ne définit en rien les priorités (pour les
+// actions!!!!!).
+// Indique que l'on peut utiliser les priorités pour simplifier le
+// modele, par exemple priorité 1 pour une condition complique et
+// condition 1 pour une moins prioritaire qui sera effective que si la +
+// prioritaire ne l'est pas
+
+// TODO: add variable bus size to inputs and outputs in the grammar...
+// hard... : have multi bits outputs (size could be automatically
+// determined
+// or given in code
+// TODO: ajouter automatiquement les définition de port par pragma 
+// aux listes Inputs/outputs!!!!!!->
+// ajouter des champs pour les vecteurs
+// si le signal existe dejà, updater le caractère vecteur et la taille
+// si pas d'action associée, vérifier qu'il n'y a pas de code vhdl
+// caculé par fsm ou alors juste <='0' ?
+// TODO: check the file exists BEFORE REMOVING:
+// TODO: gestion des erreurs de parsing: // if (false) {
+// System.out.println(pragma);
+//
+// // DEBUG harder way
+// Token semi = ctx.getStop();
+// int i = semi.getTokenIndex();
+// System.out.print("detected a Pragma_directive at token ");
+// System.out.println(i);
+//
+// // intégralité des tokens
+// // System.out.println(tokens.getText());
+// // the pragma token
+// System.out.println(tokens.get(i));
+//
+// // to localize in the input file for errors
+// System.out.println(tokens.get(i).getLine());
+// System.out.println(tokens.get(i).getCharPositionInLine());
+//
+// // whats inside token
+// System.out.println(tokens.get(i).getText());
+//
+// // whats inside token without #pragma{ and #pragma}
+// pragma = tokens.get(i).getText();
+// }
+
+//////////////////////////////////////////////////////////
+// doc:
+// http://codes-sources.commentcamarche.net/faq/360-swinguez-jframe-jpanel-jcomponent-layoutmanager-borderlayout
+// get from:
+// http://stackoverflow.com/questions/14353302/displaying-image-in-java
+// http://stackoverflow.com/questions/15685502/jframe-mouse-click-using-jcomponent-and-mouselistener
+// http://chortle.ccsu.edu/java5/notes/chap56/ch56_11.html
+// Panel:
+// https://docs.oracle.com/javase/7/docs/api/javax/swing/JScrollPane.html
+// voir:
+// http://docs.oracle.com/javase/tutorial/uiswing/examples/components/index.html#SplitPaneDemo
+// exemples SplitPaneDemo [Launch] Split Pane Demo Project
+// SplitPaneDemo.java image files How to Use Split Panes
+// SplitPaneDemo2 [Launch] Split Pane 2 Demo Project SplitPaneDemo2.java
+// image files How to Use Split Panes
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// FILE CHANGE DETECTION FOR INTERACTIVE MODE got from:
+// http://stackoverflow.com/questions/16251273/can-i-watch-for-single-file-change-with-watchservice-not-the-whole-directory
+
+// //////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////
+// doc de ArrayList :
+// http://imss-www.upmf-grenoble.fr/prevert/Prog/Java/Conteneurs/ArrayList.html
+// et
+// https://openclassrooms.com/courses/apprenez-a-programmer-en-java/les-collections-d-objets
+
+// hash map:
+// http://stackoverflow.com/questions/14836870/java-arraylist-adding-object-using-string-name
+// Map<String, Integer> map = new HashMap<String, Integer>();
+// which will contain the mapping of itemName to respective Item, and then
+// getting the Item for a particular itemName is as simple as
+// map.get(itemName).
+// exemple: http://beginnersbook.com/2013/12/hashmap-in-java-with-example/
+// doc complete:
+// https://docs.oracle.com/javase/7/docs/api/java/util/HashMap.html
+
+//////GETOPT
+// look at~/antlr/getopts/gnu/getopt/Getopt.java
+// https://en.wikipedia.org/wiki/Getopt
+// There is no implementation of getopt in the Java standard library.
+// Several open source modules exist, including gnu.getopt.Getopt, which
+// is ported from GNU getopt,[3] and Apache Commons CLI.[4]
+
+// ftp://ftp.urbanophile.com/pub/arenn/software/sources/java-getopt-1.0.13.tar.gz
+// http://pkgs.fedoraproject.org/repo/pkgs/gnu-getopt/java-getopt-1.0.13.tar.gz/46336d9bc055900f0320e5c378d7bfb2/
+
+// http://www.urbanophile.com/arenn/hacking/getopt/
+// http://www.urbanophile.com/arenn/hacking/download.html
+
+// https://www.gnu.org/software/gnuprologjava/api/gnu/getopt/Getopt.html
+
+// http://www.java2s.com/Code/Java/Development-Class/HandlesprogramargumentslikeUnixgetopt.htm
+// moins bien
+
 //////////////////////////////////////////////////////////
 
 public class FsmProcess {
@@ -192,11 +355,9 @@ public class FsmProcess {
 		// System.out.print(xscroll);
 		// System.out.print("   yscroll: ");
 		// System.out.println(yscroll);
-
 		labelDisplayImage.setIcon(icon);
 		labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
 		labelDisplayImage.setVerticalAlignment(SwingConstants.TOP);
-
 		// probleme au moment ou setScrollPosition s'execute, le scroll est
 		// encore desactivé car on est en mode autoresize.., il faut
 		// appeler le p.revalidate() avant pour que le scroller prenne
@@ -205,25 +366,13 @@ public class FsmProcess {
 		if (!autoResize) {
 			scrollPanel.setScrollPosition(xscroll, yscroll);
 		}
-
 	}
 
-	/**
-	 * Create the GUI and show it. For thread safety, this method should be
-	 * invoked from the event-dispatching thread.
-	 */
-
-	// doc:
-	// http://codes-sources.commentcamarche.net/faq/360-swinguez-jframe-jpanel-jcomponent-layoutmanager-borderlayout
-
-	// TODO: voir attachement evenement souris et timer (via action)
-	// http://stackoverflow.com/questions/14068472/java-mouselistener-action-event-in-paintcomponent
-
+	// /////////////////////////////////////////////////////////
 	private static void createAndShowGUI() {
 		// Create and set up the window.
 		frame = new JFrame(fsm.name);
 		frame.setSize(WIN_WIDTH, WIN_HEIGHT);
-
 		frame.addComponentListener(new ComponentAdapter() {
 			public void componentResized(ComponentEvent evt) {
 				Component c = (Component) evt.getSource();
@@ -234,7 +383,6 @@ public class FsmProcess {
 				Update(); // redraw the GUI, no reloading of the image
 			}
 		});
-
 		// TO move it to the screen at top
 		frame.setLocation(WIN_ORG_X, WIN_ORG_Y);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -276,48 +424,14 @@ public class FsmProcess {
 		watcher.start();
 	}
 
+	// ////////////////////////////////////////////////////////
 	public static Boolean optionsIgnoreErrors = false;
 	public static Boolean optionsDisplayResultImage = false;
 	public static Boolean optionsComputeResultImage = false;
 	public static Boolean optionsRealtime = false;
-
 	public static String imageFileName;
 
-	// get from:
-	// http://stackoverflow.com/questions/14353302/displaying-image-in-java
-
-	// //////////////////////////////////////////////////////////////////////
-	// http://stackoverflow.com/questions/15685502/jframe-mouse-click-using-jcomponent-and-mouselistener
-	// //////////////////////////////////////////////////////////////////////
-	// http://stackoverflow.com/questions/15685502/jframe-mouse-click-using-jcomponent-and-mouselistener
-
-	// //////////////////////////////////////////////////////////////////////
-	// http://chortle.ccsu.edu/java5/notes/chap56/ch56_11.html
-
-	// TODO: afficher le texte de log quand la souris clique sur le label error
-	// ou qu'on passe dessus
-
-	// TODO: récupérer les dimensions de la fenêtre lorsque on la redimensionne
-
-	// TODO: positionner la fenetre automatiquement
-
-	// //////////////////////////////////////////////////////////////////////
-	// Panel:
-	// https://docs.oracle.com/javase/7/docs/api/javax/swing/JScrollPane.html
-	// voir:
-	// http://docs.oracle.com/javase/tutorial/uiswing/examples/components/index.html#SplitPaneDemo
-	// exemples SplitPaneDemo [Launch] Split Pane Demo Project
-	// SplitPaneDemo.java image files How to Use Split Panes
-	// SplitPaneDemo2 [Launch] Split Pane 2 Demo Project SplitPaneDemo2.java
-	// image files How to Use Split Panes
-
-	// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	// FILE CHANGE DETECTION FOR INTERACTIVE MODE
-	// got from:
-	// http://stackoverflow.com/questions/16251273/can-i-watch-for-single-file-change-with-watchservice-not-the-whole-directory
-	// new FileWatcher(new File("/home/me/myfile")).start() and stop it by
-	// calling stopThread() on the thread.
-
+	// ////////////////////////////////////////////////////////
 	static public class FileWatcher extends Thread {
 		private final File file;
 		private AtomicBoolean stop = new AtomicBoolean(false);
@@ -356,11 +470,7 @@ public class FsmProcess {
 			try (WatchService watcher = FileSystems.getDefault().newWatchService()) {
 				// System.out.println(" WatchService watcher = FileSystems.getDefault().newWatchService()");
 				Path path = file.toPath().getParent();
-
 				// TODO: detect if file is relative!!!
-				// TODO: reuse the image viewer windows instead of create a new
-				// one at each change
-				// TODO: reinit fsm at each file change
 				// if (path==null) //Probleme si nom de fichier sans le dossier
 				// devant...
 				System.out.print("path: ");
@@ -368,16 +478,13 @@ public class FsmProcess {
 				path.register(watcher, StandardWatchEventKinds.ENTRY_MODIFY);
 				while (!isStopped()) {
 					WatchKey key;
-					// System.out.println(" !isStoped");
 					try {
-						// System.out.println(" poll");
 						key = watcher.poll(25, TimeUnit.MILLISECONDS);
 					} catch (InterruptedException e) {
 						System.err.println(e);
 						return;
 					}
 					if (key == null) {
-						// System.out.println("key == null ");
 						Thread.yield();
 						continue;
 					}
@@ -418,10 +525,8 @@ public class FsmProcess {
 	static StringBuilder bufLogWarning;
 	static StringBuilder bufLogError;
 	static StringBuilder bufLogFinal;
-
 	static FiniteStateMachine fsm;
 
-	// static public void processASingleFSM(String fsmBaseName) {}
 	static public void EraseFile(String name) {
 		try {
 			File file = new File(name);
@@ -455,8 +560,8 @@ public class FsmProcess {
 		// file location and name without extension
 		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4);
 		// extract fsm.name from the fsmInputName file name
-		if (fsmInputName.contains("/")) // it contains a unix based
-										// directory name
+		// does it contains a unix based directory name?
+		if (fsmInputName.contains("/"))
 			fsm.name = fsmInputName.substring(fsmInputName.lastIndexOf("/") + 1, fsmInputName.length() - 4);
 		else if (fsmInputName.contains("\\")) // it contains a windows based
 												// directory name
@@ -526,36 +631,17 @@ public class FsmProcess {
 							+ bufLogInfo.toString(), fsmBaseName.concat(".log"));
 
 			if (optionsComputeResultImage) {
-				// Execute external program to compute png and display it
+				// Execute external program to compute gif image
 				// http://ydisanto.developpez.com/tutoriels/java/runtime-exec/
 				String cmd = "dot -T" + fsm.imageFileExtension + " " + fsmBaseName.concat(".dot") + " -o " + imageFileName;
 				try {
 					Runtime r = Runtime.getRuntime();
 					Process p = r.exec(cmd);
-					p.waitFor();// si l'application doit attendre a ce que ce
-								// process fini
+					// wait until graphwiz dot has finished
+					p.waitFor();
 				} catch (Exception e) {
-					System.err.println("erreur d'execution " + cmd + e.toString());
+					System.err.println("Error executing: " + cmd + e.toString());
 				}
-
-				/*
-				 * if (optionsDisplayResultImage) {
-				 * 
-				 * try { .. DisplayImage(imageFileName); } catch (IOException e)
-				 * { System.err.println(e); // TODO Auto-generated catch block
-				 * e.printStackTrace(); }
-				 */
-				// cmd = "display " + imageFileName + " & ";
-				// try {
-				// Runtime r = Runtime.getRuntime();
-				// Process p = r.exec(cmd);
-				// p.waitFor();// si l'application doit attendre a ce
-				// // que ce process fini
-				//
-				// } catch (Exception e) {
-				// System.out.println("erreur d'execution " + cmd +
-				// e.toString());
-				// }
 			}
 		}
 	}
@@ -563,6 +649,7 @@ public class FsmProcess {
 	// ///////////////////////////////////////////////
 
 	static public void processTheDoc() {
+		// TODO: don't use absolute file locations
 		String source = "/home/bvandepo/antlr/fsm/doc.txt";
 		String directoryName = "/home/bvandepo/antlr/fsm/doc_generated/";
 		System.out.print("Generating the FSMProcess Documentation from ");
@@ -576,7 +663,6 @@ public class FsmProcess {
 			System.out.println("creating directory: " + directoryName);
 			theDir.mkdir();
 		}
-
 		try {
 			String lineToRead;
 			BufferedReader fichier = new BufferedReader(new FileReader(source));
@@ -615,24 +701,6 @@ public class FsmProcess {
 		}
 	}
 
-	/*
-	 * try { InputStream docStream = new FileInputStream(source); } catch
-	 * (FileNotFoundException e) { // TODO Auto-generated catch block
-	 * e.printStackTrace(); }
-	 * 
-	 * // FilteredStream doc = new FilteredStream(docStream); }
-	 * 
-	 * /* // is = new FileInputStream();
-	 * 
-	 * try { String ligne; BufferedReader fichier = new BufferedReader(new
-	 * FileReader(source)); FilteredStream fs=new FilteredStream (new
-	 * FileInputStream(new File(source))); ile ((ligne = fichier.readLine()) !=
-	 * null) { System.out.println(ligne);
-	 * 
-	 * // ligne. } fichier.close(); } catch (Exception e) { e.printStackTrace();
-	 * }
-	 */
-
 	// ///////////////////////////////////////////////
 	static public String intToDecimalString(int i, int digits) {
 		return String.format("%" + digits + "s", Integer.toString(i)).replace(" ", "0");
@@ -657,12 +725,10 @@ public class FsmProcess {
 		t += intToDecimalString(0, nbdigits);
 		t += "?EN:ENDED;\n";
 		bufGenerated.append(t);
-
 		t = "->";
 		t += intToDecimalString(0, nbdigits);
 		t += "?SRESET;\n";
 		bufGenerated.append(t);
-
 		saveToFile(bufGenerated.toString(), "/home/bvandepo/antlr/examples/test.fsm");
 	}
 
@@ -715,7 +781,7 @@ public class FsmProcess {
 		bufDot.append(" B. VANDEPORTAELE LAAS-CNRS 2016\n");
 		bufDot.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
 		bufDot.append("digraph finite_state_machine {\n");
-		// TODO: set image size:
+		// TODO: deal with dot pragmas to set size etc...
 		// http://stackoverflow.com/questions/17719467/graphviz-ignores-size-attribute-a4-page
 		// bufDot.append(" ratio=\"fill\";\n");
 		// int w = 1680;
@@ -728,21 +794,14 @@ public class FsmProcess {
 		// bufDot.append(" !\";\n");
 		// bufDot.append(" margin=0;\n");
 		// bufDot.append(" node[shape=point, height=0.02, width=0.01];\n");
-
-		// TODO: set all that trought pragma_dot ...
-
-		// should be setable in the command line
+		// TODO: read it from optional command line args
 		bufDot.append("    	rankdir=LR;\n");
 		// bufDot.append("    	rankdir=TB;\n");
-		// TODO: read it from optional command line args
-		bufDot.append("    	ranksep=0.5;\n"); // separation between different
-												// ranks
-		// TODO: read it from optional command line args
-		bufDot.append("    	nodesep=0.1;\n"); // separation between nodes in
-												// same rank (state and
-												// corresponding action)
-												// between 3 and 0.1
-		// TODO: read it from optional command line args
+		// separation between different ranks
+		bufDot.append("    	ranksep=0.5;\n");
+		// separation between nodes in same rank (state and corresponding
+		// action) between 3 and 0.1
+		bufDot.append("    	nodesep=0.1;\n");
 		// bufDot.append("    	size=\"10\";\n");
 		// bufDot.append("    	ranksep=equally;\n");
 		bufDot.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
@@ -764,8 +823,7 @@ public class FsmProcess {
 				bufDot.append("    -----------------\n");
 				bufDot.append(" {");
 				// very important, thanks to this, the state and action nodes
-				// are on
-				// the same line or column, orthogonally of the rankdir
+				// are on the same line or column, orthogonally of the rankdir
 				bufDot.append(" rank = same;\n");
 				bufDot.append("    	");
 				bufDot.append(fsm.states.get(n).name);
@@ -968,67 +1026,6 @@ public class FsmProcess {
 
 	// ////////////////////////////////////////////////
 	static public Boolean checkModel() {
-		// this method returns false and exit as soon as there is a critical
-		// error for which it is not possible to continue
-
-		// EASY TODOS:
-
-		// TODO: make Boolean ResetTransitionInhibatesTransitionActions = true;
-		// and Boolean ResetTransitionInhibatesActionsOnStates = true
-		// configurable through pragma
-
-		// TODO: add pragma for dot to colorize some node or arcs and make
-		// animations in gif
-
-		// TODO: add xilinx synthesis in command line to test the generated vhd
-		// files automatically
-
-		// TODO: catch error from the parser:
-		// and stop here if error!!!!
-
-		// TODO: definition de constante (bit/valeurs)
-
-		// DOC DOT: http://www.graphviz.org/Documentation/dotguide.pdf
-		// graphviz.org/Documentation.php
-		// http://www.graphviz.org/doc/info/lang.html
-		// http://www.tonyballantyne.com/graphs.html
-
-		// TODO: pour les comparaisons de valeurs sur des bus d'entrée, utiliser
-		// une syntaxe particulière (ajouter à la grammaire) puis générer dans
-		// le vhdl un signal qui prendra la valeur 1 quand la condition est
-		// vraie
-
-		// TODO; regler les problèmes de fichier unix/windows pour ne pas avoir
-		// à utiliser unix2dos
-
-		// HARD TODOS:
-
-		// TODO: pragma pour enlever des entrees/sorties, changer leur taille
-
-		// TODO: Ajouter la notion d'overide: pour regler ls AMZI à 1 par
-		// défaut, les AMZE en AMUE et donner des valeurs d'init aux sorties M
-		// et
-		// pour spécifier que des E ou S sont des bus de n bits
-
-		// TODO: que faire quand une action sur état est incompatible avec une
-		// action sur une transition émanant de cet état??? -> afficher erreur
-		// ou warning
-		// -->in this release, priority= regularly > reset transition >
-		// transition > state
-
-		// TODODOC: dans la doc sur les (reset) transitions, bien indiquer que
-		// l'ordre de définition ne définit en rien les priorités (pour les
-		// actions!!!!!).
-		// Indique que l'on peut utiliser les priorités pour simplifier le
-		// modele, par exemple priorité 1 pour une condition complique et
-		// condition 1 pour une moins prioritaire qui sera effective que si la +
-		// prioritaire ne l'est pas
-
-		// TODO: add variable bus size to inputs and outputs in the grammar...
-		// hard... : have multi bits outputs (size could be automatically
-		// determined
-		// or given in code
-
 		Boolean modelOk = true; // until we found some errors....
 		// //////////////////////////////////////////////////////////////////:
 		// check actions coherence. actions of a given name have to be
@@ -1330,8 +1327,6 @@ public class FsmProcess {
 		Collections.sort(fsm.states);
 
 		// /////////////////// Transitions priorities ///////
-		// Collections.sort(fsm.transitions); //it can not be done globaly but
-		// it has to be done state by state
 		// sort the transition by priority for each state (origin)
 		for (int m = 0; m < numberOfStates; m++) {
 			int numberOfTransitionsFromThisState = fsm.states.get(m).transitionsFromThisState.size();
@@ -1481,10 +1476,6 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
-	// ////////////////////////////////////////////////////////////////////////////////////
-	// ////////////////////////////////////////////////////////////////////////////////////
-	// ////////////////////////////////////////////////////////////////////////////////////
-
 	static public String generateBinaryAsciiString(String s) {
 		String sout;
 		sout = "";
@@ -1554,9 +1545,7 @@ public class FsmProcess {
 		bufVhdl.append("BEGIN\n");
 		bufVhdl.append("-- Instantiate the Unit Under Test (UUT)\n");
 		generatePortMapVhdl(bufVhdl);
-
 		generateVhdlTestBenchAsciiStates();
-
 		bufVhdl.append("\n-- Clock process definitions\n");
 		bufVhdl.append("ck_process :process\n");
 		bufVhdl.append("begin\n");
@@ -1583,20 +1572,10 @@ public class FsmProcess {
 		bufVhdl.append(fsm.aResetSignalLevel);
 		bufVhdl.append("';\n");
 		bufVhdl.append("wait for ck_period*2;\n");
-		bufVhdl.append("-- insert stimuli here \n");
-		bufVhdl.append("-- TODO: the content of the simu should be settable by vhdl pragma or from an external tb.fsm file provided through command line\n");
-		bufVhdl.append("---------------------------------------	\n");
-		// bufVhdl.append("wait until (");
-		// bufVhdl.append(fsm.clkSignalName);
-		// bufVhdl.append("'event and ");
-		// bufVhdl.append(fsm.clkSignalName);
-		// bufVhdl.append("='0' );\n");
-		// bufVhdl.append("wait for ck_period;\n");
-		// bufVhdl.append("wait for ck_period*20;\n");
+		bufVhdl.append("-- stimuli get from the testbench pragma:\n");
 		bufVhdl.append("------------------------------pragma_vhdl_testbench-------------------------------------------------------\n");
 		bufVhdl.append(fsm.pragmaVhdlTestbench);
 		bufVhdl.append("--------------------------end of pragma_vhdl_testbench----------------------------------------------------\n");
-
 		bufVhdl.append(" wait;\n");
 		bufVhdl.append("end process;\n");
 		bufVhdl.append("END;\n");
@@ -1606,8 +1585,8 @@ public class FsmProcess {
 
 	static public void computeStateCodingVhdl() {
 		int numberOfStates = fsm.states.size();
-		int longest = 1; // compute longest state name, at least 1 chars to
-							// display Error as !
+		// compute longest state name, at least 1 chars to display Error as !
+		int longest = 1;
 		for (int i = 0; i < numberOfStates; i++) {
 			String code = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(i)).replace(" ",
 					"0");
@@ -1623,7 +1602,6 @@ public class FsmProcess {
 		for (int i = 0; i < numberOfStates; i++) {
 			fsm.states.get(i).nameDisplay = fillStringWithSpace2(fsm.states.get(i).name, longest);
 		}
-
 		String codeError = String.format("%" + Integer.toString(fsm.numberOfBitsForStatesMax) + "s", Integer.toBinaryString(1))
 				.replace(" ", "1").replace("0", "1");// all at '1'
 		if (fsm.numberOfBitsForStatesMax > fsm.numberOfBitsForStates)
@@ -1654,7 +1632,6 @@ public class FsmProcess {
 				bufVhdl.append("                   else \"");
 			}
 			bufVhdl.append(fsm.states.get(i).stateCode);
-			// bufVhdl.append( Integer.toBinaryString(i));
 			bufVhdl.append("\" when ( current_state = ");
 			bufVhdl.append("state_");
 			bufVhdl.append(fsm.states.get(i).name);
@@ -1676,7 +1653,6 @@ public class FsmProcess {
 		bufVhdl.append("signal ");
 		bufVhdl.append(fsm.aResetSignalName);
 		bufVhdl.append(" :    std_logic;\n");
-
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
 			bufVhdl.append("signal		");
 			bufVhdl.append(" STATE_NUMBER");
@@ -1684,7 +1660,6 @@ public class FsmProcess {
 			bufVhdl.append(fsm.numberOfBitsForStates - 1);
 			bufVhdl.append(" downto 0);\n");
 		}
-
 		// ////////////////listing of inputs/outputs//////////////////
 		bufVhdl.append("--signals for inputs:  \n");
 		for (int n = 0; n < fsm.realInputs.size(); n++) {
@@ -1703,10 +1678,6 @@ public class FsmProcess {
 			bufVhdl.append(";\n");
 		}
 		bufVhdl.append("--signals for current state name visualization:  \n");
-		// bufVhdl.append("signal state_name : string(");
-		// bufVhdl.append(fsm.stateNameDisplayError.length());
-		// bufVhdl.append(" downto 1 );\n");
-		// or use std.textio.all;
 		bufVhdl.append("signal state_name : std_logic_vector(");
 		bufVhdl.append((fsm.stateNameDisplayError.length() * 8) - 1);
 		bufVhdl.append(" downto 0 );\n");
@@ -1826,7 +1797,6 @@ public class FsmProcess {
 			buf.append(fsm.pragmaVhdlEntity);
 			buf.append("--------------------------end of pragma_vhdl_entity--------------------------------------------------------\n");
 		}
-
 		buf.append("		");
 		buf.append(fsm.clkSignalName);
 		buf.append(" => ");
@@ -1843,7 +1813,6 @@ public class FsmProcess {
 			buf.append("		state_number =>  state_number");
 			if ((fsm.realInputs.size() > 0) || (fsm.realOutputs.size() > 0))
 				buf.append(",\n");
-
 		}
 		for (int n = 0; n < fsm.realInputs.size(); n++) {
 			buf.append("		");
@@ -1876,7 +1845,6 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateVhdl() {
 		int numberOfStates = fsm.states.size();
-
 		bufVhdl.append("-----------------------------------------------------------------------------------------------------------\n");
 		bufVhdl.append("-- Finite State Machine .vhdl  autogenerated by ");
 		bufVhdl.append(softNameAndVersion);
@@ -1904,23 +1872,19 @@ public class FsmProcess {
 			bufVhdl.append("--------------------------end of pragma_vhdl_architecture_pre_begin----------------------------------------\n");
 		}
 		if (fsm.states.size() != 0) {
-			// ////////////////listing of possible values for state
-			// names//////////////////
+			// ////// listing of possible values for state names
 			bufVhdl.append("type fsm_state is (");
 			// print the asynchronous reset first, ISE needs it to code it state
 			// 0 and not emit a warning about it.
 			bufVhdl.append("state_");
 			bufVhdl.append(fsm.resetAsynchronousState.name);
 			// print the others states names
-			// change from for loop to deal with a problem if the asynchronous
-			// reset state appears at the end of alphabetical order
 			int numberOfStatesStill = numberOfStates - 1;
 			int n = 0;
 			while (numberOfStatesStill > 0) {
 				if (!fsm.states.get(n).name.equalsIgnoreCase(fsm.resetAsynchronousState.name)) {
 					bufVhdl.append(", ");
-					// prefix state name with state_
-					bufVhdl.append("state_");
+					bufVhdl.append("state_"); // prefix state name with state_
 					bufVhdl.append(fsm.states.get(n).name);
 					numberOfStatesStill--;
 				}
@@ -1929,8 +1893,7 @@ public class FsmProcess {
 			bufVhdl.append(");\n");
 			bufVhdl.append("signal current_state, next_state : fsm_state;\n");
 		}
-		// ////////////////listing of internal signals for memorized
-		// outputs//////////////////
+		// //////// listing of internal signals for memorized outputs/
 		for (int n = 0; n < fsm.outputs.size(); n++) {
 			Output out = fsm.outputs.get(n);
 			if ((out.memorized) && (out.isUsedAsOutputInFSm)) {
@@ -1944,13 +1907,6 @@ public class FsmProcess {
 				bufVhdl.append("signal ");
 				bufVhdl.append(out.name);
 				bufVhdl.append("_mem_value : std_logic;\n");
-				// if the signal is buffered, add the corresponding signal
-				/*
-				 * if (fsm.bufferedOutputsAllowed) { if
-				 * (fsm.outputs.get(n).isBuffer) { bufVhdl.append("signal ");
-				 * bufVhdl.append(fsm.outputs.get(n).name);
-				 * bufVhdl.append("_signal_buffered : std_logic;\n"); } }
-				 */
 			}
 		}
 		bufVhdl.append("signal value_one_internal: std_logic;  --signal used internally to ease operation on conditions, to have a std_logic type '1' value\n");
@@ -2038,20 +1994,17 @@ public class FsmProcess {
 					bufVhdl.append(", ");
 					bufVhdl.append(fsm.outputs.get(n).name);
 				}
-
 			}
 			if (fsm.bufferedOutputsAllowed) {
 				for (int n = 0; n < fsm.outputs.size(); n++) {
 					if ((fsm.outputs.get(n).isBuffer) && (fsm.outputs.get(n).isUsedAsOutputInFSm)) {
 						bufVhdl.append(", ");
-						// bufVhdl.append("	signal_buffered_");
 						bufVhdl.append(fsm.outputs.get(n).name);
 					}
 				}
 			}
 			bufVhdl.append(")\n");
 			bufVhdl.append("begin\n");
-
 			int nbResetTransitions = fsm.resetTransitions.size();
 			if (nbResetTransitions != 0) {
 				bufVhdl.append("-----------Synchronous RESETs has higher priority than standard transitions\n");
@@ -2060,14 +2013,10 @@ public class FsmProcess {
 						bufVhdl.append("   if    ( ");
 					else
 						bufVhdl.append("   elsif ( ");
-
 					if (fsm.resetTransitions.get(m).condition.equals("1"))
-						bufVhdl.append(" true "); // that would be dumb because
-													// the
-													// system should always be
-													// resetted, but if it is
-													// asked,
-													// I do it...
+						// that would be dumb because the system should always
+						// be resetted...
+						bufVhdl.append(" true ");
 					else {
 						bufVhdl.append(" ( ");
 						bufVhdl.append(fsm.resetTransitions.get(m).condition);
@@ -2084,25 +2033,18 @@ public class FsmProcess {
 					}
 					bufVhdl.append("\n");
 				}
-				// bufVhdl.append("   end if; --no else, so next_state is not modified here if there is no synchronous reset\n");
 				bufVhdl.append("   else \n");
 			}
-			// else
-			// bufVhdl.append("   if ( ");
 			bufVhdl.append("------------------------------standard transitions---------------------\n");
 			bufVhdl.append("    case current_state is\n");
 			// pour chaque état, il peut y avoir plusieurs transitions, la
-			// première
-			// if, les suivantes elsif et finalement en plus le maintien dans
-			// l'état
-			// courant
+			// première if, les suivantes elsif et finalement en plus le
+			// maintien dans l'état courant
 			for (int n = 0; n < numberOfStates; n++) {
-				bufVhdl.append("      when state_"); // prefix state name with
-														// state_
+				bufVhdl.append("      when state_");
 				bufVhdl.append(fsm.states.get(n).paddedName);
 				int transitionFromThisStateNumber = fsm.states.get(n).transitionsFromThisState.size();
-				bufVhdl.append(" => "); // if (transitionFromThisStateNumber==0)
-										// //stay always in that state
+				bufVhdl.append(" => ");
 				for (int m = 0; m < transitionFromThisStateNumber; m++) {
 					if (m == 0)
 						bufVhdl.append(" if ( ");
@@ -2193,7 +2135,6 @@ public class FsmProcess {
 				bufVhdl.append("_reset ='1' then ");
 				bufVhdl.append(out.name);
 				bufVhdl.append("<='0';\n");
-
 				bufVhdl.append("      elsif ");
 				bufVhdl.append(out.name);
 				bufVhdl.append("_mem ='1' then ");
@@ -2201,7 +2142,6 @@ public class FsmProcess {
 				bufVhdl.append("<= ");
 				bufVhdl.append(out.name);
 				bufVhdl.append("_mem_value;\n");
-
 				bufVhdl.append("      end if;\n");
 				bufVhdl.append("    end if;\n");
 				bufVhdl.append("end process;\n");
@@ -2253,8 +2193,7 @@ public class FsmProcess {
 					bufVhdl.append(fillStringWithSpace2("", Output.longestName - fsm.outputs.get(n).name.length()));
 					bufVhdl.append("  <=  ");
 					// look for actions in the fsm that deals with this output
-					// ////////////////////repeatedly action from any
-					// state//////////////////////
+					// /////// repeatedly action from any state//
 					int nbRepeatedlyAction = fsm.repeatedlyActions.size();
 					for (int j = 0; j < nbRepeatedlyAction; j++) {
 						Action a = fsm.repeatedlyActions.get(j);
@@ -2294,8 +2233,7 @@ public class FsmProcess {
 											bufVhdl.append(" '1' ");
 										}
 										// rt.conditionWithPriorities should
-										// be!='1' by
-										// construction
+										// be!='1' by construction
 										bufVhdl.append("when ( ( ");
 										bufVhdl.append(rt.conditionWithPriorities);
 										bufVhdl.append(") = \'1\' )");
@@ -2309,8 +2247,7 @@ public class FsmProcess {
 						}
 					}
 					for (int m = 0; m < fsm.states.size(); m++) {
-						// ////////////////////action on transition from this
-						// state//////////////////////
+						// ///// action on transition from this state///
 						int nbTransitionInThatState = fsm.states.get(m).transitionsFromThisState.size();
 						for (int j = 0; j < nbTransitionInThatState; j++) {
 							Transition t = fsm.states.get(m).transitionsFromThisState.get(j);
@@ -2333,14 +2270,9 @@ public class FsmProcess {
 											bufVhdl.append(fsm.states.get(m).name);
 											bufVhdl.append(") ");
 											bufVhdl.append(" and  (");
-											// if (t.condition.equals("1"))
-											// bufVhdl.append(" true ");
-											// else {
 											bufVhdl.append(" ( ");
-											// bufVhdl.append(t.condition);
 											bufVhdl.append(t.conditionWithPriorities);
 											bufVhdl.append(") = \'1\' ");
-											// }
 											bufVhdl.append(") ");
 											if (fsm.resetTransitionInhibatesTransitionActions == true)
 												bufVhdl.append(a.condition);
@@ -2355,8 +2287,7 @@ public class FsmProcess {
 								}
 							}
 						}
-						// ////////////////////action on
-						// state//////////////////////
+						// ///// action on state/////////////
 						int nbActionInThatState = fsm.states.get(m).attachedActions.size();
 						if (nbActionInThatState != 0) {
 							for (int l = 0; l < nbActionInThatState; l++) {
@@ -2390,7 +2321,8 @@ public class FsmProcess {
 					// A S action is automatically added when there is no
 					// corresponding R action and vice versa
 					bufVhdl.append(" \'0\'; \n");
-					// TODO: deal with a generic value here
+					// TODO: deal with a non default value here, to get outputs
+					// at 1 by default for instance
 				}
 		}
 		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
@@ -2411,8 +2343,8 @@ public class FsmProcess {
 		// using the complements of higher priority condition
 		String conditionWithPriorities;
 		ArrayList<Action> attachedActions = new ArrayList<Action>();
-		int priorityOrder = 1000000; // by default, low priority, 1 is the
-										// higher priority
+		// by default, low priority, 1 is the higher priority
+		int priorityOrder = 1000000;
 
 		public int compareTo(Object o) {
 			ResetTransition a = (ResetTransition) o;
@@ -2432,8 +2364,8 @@ public class FsmProcess {
 		// using the complements of higher priority condition
 		String conditionWithPriorities;
 		ArrayList<Action> attachedActions = new ArrayList<Action>();
-		int priorityOrder = 1000000; // by default, low priority, 1 is the
-										// higher priority
+		// by default, low priority, 1 is the higher priority
+		int priorityOrder = 1000000;
 
 		public int compareTo(Transition o) {
 			Transition a = (Transition) o;
@@ -2459,13 +2391,12 @@ public class FsmProcess {
 		String type;
 		String name;
 		String paddedName;
-		Boolean isDemotedToSignal = false; // true if the input as been demoted
-											// to be only used internaly and not
-											// generate a real input in the
-											// entity
-		Boolean isUsedAsInputInFSm = false; // set to true when the input is
-		// effectively used in the FSM, not only
+		// true if the input as been demoted to be only used internaly and not
+		// generate a real input in the entity
+		Boolean isDemotedToSignal = false;
+		// set to true when the input is effectively used in the FSM, not only
 		// in pragma
+		Boolean isUsedAsInputInFSm = false;
 		String interfacePortTypes = "std_logic"; // default
 
 		public int compareTo(Input o) {
@@ -2507,13 +2438,9 @@ public class FsmProcess {
 		// to store the longest names
 		static int longestName = 12; // to be at least as long as "STATE_NUMBER"
 		Boolean isInit; // initial state or not
-		// String name=new String("");
 		String name;
 		String paddedName;
-		// static ArrayList<Action> attachedActions=new ArrayList<Action>() ;
 		ArrayList<Action> attachedActions = new ArrayList<Action>();
-		// static ArrayList<Transition> transitionFromThisState=new
-		// ArrayList<Transition>() ;
 		ArrayList<Transition> transitionsFromThisState = new ArrayList<Transition>();
 		// true if there is no (reset) transition or asynchronous reset to that
 		// state
@@ -2529,29 +2456,6 @@ public class FsmProcess {
 			return name.compareTo(a.name);// par ordre alphabétique
 		}
 	}
-
-	// //////////////////////////////////////////////////////////////////
-	// //////////////////////////////////////////////////////////////////
-	// doc de ArrayList :
-	// http://imss-www.upmf-grenoble.fr/prevert/Prog/Java/Conteneurs/ArrayList.html
-	// et
-	// https://openclassrooms.com/courses/apprenez-a-programmer-en-java/les-collections-d-objets
-	/*
-	 * public class ArrayListWithAccesFromNames<E> extends ArrayList<E>
-	 * implementsList<E>, RandomAccess, Cloneable, java.io.Serializable{
-	 * 
-	 * 
-	 * }
-	 */
-	// hash map:
-	// http://stackoverflow.com/questions/14836870/java-arraylist-adding-object-using-string-name
-	// Map<String, Integer> map = new HashMap<String, Integer>();
-	// which will contain the mapping of itemName to respective Item, and then
-	// getting the Item for a particular itemName is as simple as
-	// map.get(itemName).
-	// exemple: http://beginnersbook.com/2013/12/hashmap-in-java-with-example/
-	// doc complete:
-	// https://docs.oracle.com/javase/7/docs/api/java/util/HashMap.html
 
 	// //////////////////////////////////////////////////////////////////
 
@@ -2592,9 +2496,6 @@ public class FsmProcess {
 		// conditions and expressions
 		public Boolean bufferedOutputsAllowed = false;
 
-		ArrayList<GenericDeclaration> genericDeclarations = new ArrayList<GenericDeclaration>();
-		GenericDeclaration currentGenericDeclarations;
-
 		ArrayList<ResetTransition> resetTransitions = new ArrayList<ResetTransition>();
 		ArrayList<State> states = new ArrayList<State>();
 		HashMap<String, State> hmapState = new HashMap<String, State>();
@@ -2624,19 +2525,15 @@ public class FsmProcess {
 		ArrayList<Input> realInputs = new ArrayList<Input>();
 		ArrayList<Input> demotedToSignalInputs = new ArrayList<Input>();
 
-		// on stocke juste la liste pour pouvoir balayer et verifier les
-		// compatibilités, pas besoin de hashtable
-		// HashMap<String,Transition > hmapTransition = new
-		// HashMap<String,Transition>();
+		ArrayList<GenericDeclaration> genericDeclarations = new ArrayList<GenericDeclaration>();
+		GenericDeclaration currentGenericDeclarations;
 
 		public Boolean GenerateNumberOfStateOutput = true;
-		public int numberOfBitsForStates = 0; // default value if not given in
-												// the fsm file, can be set
-												// through pragma
-		public int numberOfBitsForStatesMax; // value computed from the actual
-												// number of state or the given
-												// numberOfBitsForStates it is
-												// bigger
+		// default value if not given in the fsm file, can be set through pragma
+		public int numberOfBitsForStates = 0;
+		// value computed from the actual number of state or the given
+		// numberOfBitsForStates it is bigger
+		public int numberOfBitsForStatesMax;
 		// member variables for parsing
 		int numberOfResetAsynchronousDefinitions = 0;
 
@@ -2768,20 +2665,6 @@ public class FsmProcess {
 				return true;
 		}
 
-		// to know when parsing a condition if it should be added to
-		// ResetTransition or Transition
-
-		// public static int cptStates = 0;
-		// public static Boolean inState = false; // set to true when inside a
-		// state, false elsewhere
-		// public static Boolean inTransition = false; // set to true when
-		// inside a transistion,false elsewhere
-		// public static Boolean transitionIsReset=false;
-		// public static Boolean inAction = false; // set to true when inside an
-		// action, false elsewhere
-		// public static Boolean conditionDefined;
-		// public static String currentStateName = null;
-
 		public State getStateFromName(String name) {
 			if (!hmapState.containsKey(name))
 				return null;
@@ -2907,8 +2790,7 @@ public class FsmProcess {
 	// ///////////////////////////////////////////////////////////////
 	static class FunctionListener extends FsmParserBaseListener {
 		// TODO: keep the tokens list availabe to get them and extract some info
-		// (such
-		// as line numbers for errors, pragmas etc...
+		// (such as line numbers for errors, pragmas etc...
 		BufferedTokenStream tokens;
 
 		MultiTransitions multiTransitions = new MultiTransitions();
@@ -2991,19 +2873,16 @@ public class FsmProcess {
 			t.origin = ctx.children.get(0).getText().toUpperCase();
 			t.destination = ctx.children.get(2).getText().toUpperCase();
 			// add the transition in its origin state, first get the state from
-			// its name
-			// if the states do not yet exist, create them
+			// its name if the states do not yet exist, create them
 			State so = fsm.getStateOrCreateAndAdd(t.origin);
 			fsm.getStateOrCreateAndAdd(t.destination);
-
 			so.transitionsFromThisState.add(t);
-			fsm.transitions.add(t); // also add it to the global transitions
-									// list
+			// also add it to the global transitions list
+			fsm.transitions.add(t);
 		}
 
 		// //////////////////////////////////////////////////////////////
 		public void enterReset_transition_priority(FsmParser.Reset_transition_priorityContext ctx) {
-			// int priority = ctx.children.get(0).getText().;
 			fsm.currentResetTransition.priorityOrder = Integer.parseInt(ctx.children.get(0).getText());
 		}
 
@@ -3016,9 +2895,9 @@ public class FsmProcess {
 		public void enterAction_expression(FsmParser.Action_expressionContext ctx) {
 			String reconstructedExpression = new String("");
 			int nbChildren = ctx.getChildCount();
-			for (int n = 0; n < nbChildren; n++)
-			// reconstruct the condition, adding space characters between terms.
-			{
+			for (int n = 0; n < nbChildren; n++) {
+				// reconstruct the condition, adding space characters between
+				// terms.
 				reconstructedExpression += ctx.children.get(n).getText().toUpperCase();
 				if (n != nbChildren - 1)
 					reconstructedExpression += " ";
@@ -3040,14 +2919,13 @@ public class FsmProcess {
 		public void enterAction_expression_reset_asynchronous(FsmParser.Action_expression_reset_asynchronousContext ctx) {
 			String reconstructedExpression = new String("");
 			int nbChildren = ctx.getChildCount();
-			for (int n = 0; n < nbChildren; n++)
-			// reconstruct the condition, adding space characters between terms.
-			{
+			for (int n = 0; n < nbChildren; n++) {
+				// reconstruct the condition, adding space characters between
+				// terms.
 				reconstructedExpression += ctx.children.get(n).getText().toUpperCase();
 				if (n != nbChildren - 1)
 					reconstructedExpression += " ";
 			}
-			// TODO: pour les bus???
 			if (!reconstructedExpression.equals("0") && !reconstructedExpression.equals("1")) {
 				bufLogWarning.append("Warning:   Asynchronous reset value for output ");
 				bufLogWarning.append(fsm.currentOutput.name);
@@ -3160,11 +3038,7 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterInterface_name(FsmParser.Interface_nameContext ctx) {
-			// if (!pragmaCleaned.equals("")) {
-			// pragmaCleaned += ", ";
-			// }
 			String interface_name = ctx.children.get(0).getText();
-			// pragmaCleaned += interface_name + " ";
 			fsm.listOfInterfaceNamesToAddThroughPragma.add(interface_name.toUpperCase());
 		}
 
@@ -3179,44 +3053,21 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterInterface_port_type(FsmParser.Interface_port_typeContext ctx) {
-			// fsm.listOfInterfacePortTypesToAddThroughPragma.clear();
 			int nbTokens = ctx.children.size();
 			for (int i = 0; i < nbTokens; i++) {
 				String stToken = ctx.children.get(i).getText();
-				// pragmaCleaned += stToken + " ";
 				fsm.listOfInterfacePortTypesToAddThroughPragma.add(stToken);
 			}
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterInterface_port_declaration(FsmParser.Interface_port_declarationContext ctx) {
-			// pragmaCleaned = "";
 			fsm.listOfInterfaceNamesToAddThroughPragma.clear();
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void exitInterface_port_declaration(FsmParser.Interface_port_declarationContext ctx) {
-			// fsm.pragmaVhdlEntity += pragmaCleaned + ";\n";
 			int nb = fsm.listOfInterfaceNamesToAddThroughPragma.size();
-			// for (int k = 0; k < nb; k++) {
-			// String name = fsm.listOfInterfaceNamesToAddThroughPragma.get(k);
-			// fsm.pragmaVhdlEntity += "-- ";
-			// fsm.pragmaVhdlEntity += name;
-			// fsm.pragmaVhdlEntity += " : ";
-			// fsm.pragmaVhdlEntity += fsm.InterfacePortModeToAddThroughPragma;
-			// int nbtokens =
-			// fsm.listOfInterfacePortTypesToAddThroughPragma.size();
-			// String interfacePortTypes = " ";
-			// for (int j = 0; j < nbtokens; j++) {
-			// interfacePortTypes +=
-			// fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
-			// interfacePortTypes += " ";
-			// }
-			// fsm.pragmaVhdlEntity += interfacePortTypes;
-			// fsm.pragmaVhdlEntity += ";\n";
-			// }
-
-			// fsm.pragmaVhdlEntity += pragmaCleaned + ";\n";
 			for (int k = 0; k < nb; k++) {
 				String name = fsm.listOfInterfaceNamesToAddThroughPragma.get(k);
 				int nbtokens = fsm.listOfInterfacePortTypesToAddThroughPragma.size();
@@ -3233,7 +3084,6 @@ public class FsmProcess {
 						i.type = "I";
 						i.isDemotedToSignal = false;
 						fsm.addInput(i.name, i);
-						// i.isUsedInFSm=false;
 					}
 					i.interfacePortTypes = interfacePortTypes;
 				} else if (fsm.InterfacePortModeToAddThroughPragma.equals("OUT")
@@ -3245,55 +3095,30 @@ public class FsmProcess {
 						o.type = "I";
 						o.isDemotedToSignal = false;
 						fsm.addOutput(o.name, o);
-						// o.isUsedInFSm=false;
 					}
 					if (fsm.InterfacePortModeToAddThroughPragma.equals("BUFFER"))
 						o.isBuffer = true;
 					o.interfacePortTypes = interfacePortTypes;
 				}
-				// TODOO: inout????
-				// TODO check to et downto que les bornes sont compatibles
-				// pragmaCleaned + ";\n";
 			}
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void exitInterface_port_type(FsmParser.Interface_port_typeContext ctx) {
-
 		}
-
-		// TODO: ajouter automatiquement aux listes Inputs/outputs!!!!!!->
-		// ajouter des champs pour les vecteurs
-		// si le signal existe dejà, updater le caractère vecteur et la taille
-		// si pas d'action associée, vérifier qu'il n'y a pas de code vhdl
-		// caculé par fsm ou alors juste <='0' ?
 
 		// ///////////////////////////////////////////////////////////////
 		public void exitPragma_vhdl_entity_directive(FsmParser.Pragma_vhdl_entity_directiveContext ctx) {
-			/*
-			 * for (int i = 1; i < ctx.children.size() - 1; i++) { String pragma
-			 * = ctx.children.get(i).getText(); pragmaCleaned += pragma + "\n";
-			 * } System.out.println(pragmaCleaned); fsm.pragmaVhdlEntity +=
-			 * pragmaCleaned; // + "\n";
-			 */
-			// fsm.pragmaVhdlEntity += pragmaCleaned + "\n";
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterPragma_vhdl_entity_directive(FsmParser.Pragma_vhdl_entity_directiveContext ctx) {
-			/*
-			 * for (int i = 1; i < ctx.children.size() - 1; i++) { String pragma
-			 * = ctx.children.get(i).getText(); pragmaCleaned += pragma + "\n";
-			 * } System.out.println(pragmaCleaned); fsm.pragmaVhdlEntity +=
-			 * pragmaCleaned; // + "\n";
-			 */
 		}
 
 		// ///////////////////////////////////////////////////////////////
 		public void enterPragma_vhdl_architecture_pre_begin_directive(FsmParser.Pragma_vhdl_architecture_pre_begin_directiveContext ctx) {
 			String pragma = ctx.children.get(1).getText();
 			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
-			// System.out.println(pragmaCleaned);
 			fsm.pragmaVhdlArchitecturePreBegin += pragmaCleaned;
 		}
 
@@ -3301,7 +3126,6 @@ public class FsmProcess {
 		public void enterPragma_vhdl_architecture_post_begin_directive(FsmParser.Pragma_vhdl_architecture_post_begin_directiveContext ctx) {
 			String pragma = ctx.children.get(1).getText();
 			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
-			// System.out.println(pragmaCleaned);
 			fsm.pragmaVhdlArchitecturePostBegin += pragmaCleaned;
 		}
 
@@ -3309,7 +3133,6 @@ public class FsmProcess {
 		public void enterPragma_vhdl_testbench(FsmParser.Pragma_vhdl_testbenchContext ctx) {
 			String pragma = ctx.children.get(1).getText();
 			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
-			// System.out.println(pragmaCleaned);
 			fsm.pragmaVhdlTestbench += pragmaCleaned;
 		}
 
@@ -3319,32 +3142,7 @@ public class FsmProcess {
 			// simple way to get the pragma
 			String pragma = ctx.children.get(1).getText();
 			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
-			// System.out.println(pragmaCleaned);
 			fsm.pragmaVhdlPreEntity += pragmaCleaned;
-			// if (false) {
-			// System.out.println(pragma);
-			//
-			// // DEBUG harder way
-			// Token semi = ctx.getStop();
-			// int i = semi.getTokenIndex();
-			// System.out.print("detected a Pragma_directive at token ");
-			// System.out.println(i);
-			//
-			// // intégralité des tokens
-			// // System.out.println(tokens.getText());
-			// // the pragma token
-			// System.out.println(tokens.get(i));
-			//
-			// // to localize in the input file for errors
-			// System.out.println(tokens.get(i).getLine());
-			// System.out.println(tokens.get(i).getCharPositionInLine());
-			//
-			// // whats inside token
-			// System.out.println(tokens.get(i).getText());
-			//
-			// // whats inside token without #pragma{ and #pragma}
-			// pragma = tokens.get(i).getText();
-			// }
 		}
 
 		// ///////////////////////////////////////////////////////////////
@@ -3358,9 +3156,9 @@ public class FsmProcess {
 					bufLogWarning.append(inputOrOutputName);
 					bufLogWarning.append(" cannot be taken into account as this name is not yet defined as an input or output...\n");
 				} else {
-					Output o = new Output(); // create a new output with the
-												// same name, the 2 will be
-												// merge in checkModel()
+					// create a new output with the same name, the 2 will be
+					// merge in checkModel()
+					Output o = new Output();
 					o.name = inputOrOutputName;
 					fsm.addOutput(inputOrOutputName, o);
 					fsm.currentOutput = o;
@@ -3400,10 +3198,6 @@ public class FsmProcess {
 					bufLogInfo.append(" has been demoted to an internal signal through pragma directive.\n");
 				}
 			} else {
-				// Output o = new Output();
-				// o.name = outputName;
-				// fsm.addOutput(outputName, o);
-				// fsm.currentOutput = o;
 				fsm.currentOutput.isUsedAsOutputInFSm = true;
 				fsm.currentOutput.isDemotedToSignal = true;
 				bufLogInfo.append("Info: The output ");
@@ -3464,9 +3258,9 @@ public class FsmProcess {
 		public void enterCondition_multi_transitions(FsmParser.Condition_multi_transitionsContext ctx) {
 			String reconstructedCondition = new String("");
 			int nbChildren = ctx.getChildCount();
-			for (int n = 0; n < nbChildren; n++)
-			// reconstruct the condition, adding space characters between terms.
-			{
+			for (int n = 0; n < nbChildren; n++) {
+				// reconstruct the condition, adding space characters between
+				// terms.
 				reconstructedCondition += ctx.children.get(n).getText().toUpperCase();
 				if (n != nbChildren - 1)
 					reconstructedCondition += " ";
@@ -3491,9 +3285,8 @@ public class FsmProcess {
 				State s1 = fsm.getStateOrCreateAndAdd(t.origin);
 				fsm.getStateOrCreateAndAdd(t.destination);
 				s1.transitionsFromThisState.add(t);
-				fsm.transitions.add(t); // also add it to the global
-										// transitions
-										// list
+				// also add it to the global transitions / list
+				fsm.transitions.add(t);
 			}
 		}
 
@@ -3540,7 +3333,6 @@ public class FsmProcess {
 			}
 		}
 
- 
 		// ///////////////////////////////////////////////////////////////
 		public void exitGeneric_declaration(FsmParser.Generic_declarationContext ctx) {
 			fsm.genericDeclarations.add(fsm.currentGenericDeclarations);
@@ -3567,24 +3359,6 @@ public class FsmProcess {
 
 	// ///////////////////////////////////////////////////////////////
 	public static void parseArgs(String[] args) {
-		// look at~/antlr/getopts/gnu/getopt/Getopt.java
-
-		// https://en.wikipedia.org/wiki/Getopt
-		// There is no implementation of getopt in the Java standard library.
-		// Several open source modules exist, including gnu.getopt.Getopt, which
-		// is ported from GNU getopt,[3] and Apache Commons CLI.[4]
-
-		// ftp://ftp.urbanophile.com/pub/arenn/software/sources/java-getopt-1.0.13.tar.gz
-		// http://pkgs.fedoraproject.org/repo/pkgs/gnu-getopt/java-getopt-1.0.13.tar.gz/46336d9bc055900f0320e5c378d7bfb2/
-
-		// http://www.urbanophile.com/arenn/hacking/getopt/
-		// http://www.urbanophile.com/arenn/hacking/download.html
-
-		// https://www.gnu.org/software/gnuprologjava/api/gnu/getopt/Getopt.html
-
-		// http://www.java2s.com/Code/Java/Development-Class/HandlesprogramargumentslikeUnixgetopt.htm
-		// moins bien
-
 		int c;
 		String arg;
 		Getopt g = new Getopt("FsmProcess", args, "if:cdr");
@@ -3623,20 +3397,8 @@ public class FsmProcess {
 
 	// ///////////////////////////////////////////////////////////////
 	public static void main(String[] args) throws Exception {
-
-		/*
-		 * if (args.length > 0) inputFile = args[0]; InputStream is = System.in;
-		 * if (inputFile != null) { is = new FileInputStream(inputFile); }
-		 */
 		System.out.println(softNameAndVersion);
 		System.out.println("Created by B. Vandeportaele IUT GEII TOULOUSE, LAAS/CNRS 01/2016");
-		// TODO: inclure numero de version dans l'affichage
-		// TODO: est ce que j'ai le droit d'integrer le jar d'antlr dans mon
-		// jar?
-		// TODO: quest ce que je dois afficher relativement à l'utilisation de
-		// GetOpt et antlr
-		// TODO: rendre la generation de la doc sous windows possible / \
-		// TODO: insérer des \n ou \r en fin de ligne selon l'os
 		System.out.println("usage: java -jar FsmProcess.jar -i -c -d -r -f fichier.fsm");
 		System.out.println("    -i: ignore error in the model and try to continue");
 		System.out.println("    -c: create output gif image file from the dot file");
@@ -3644,19 +3406,12 @@ public class FsmProcess {
 		System.out.println("    -f filename.fsm: provide the input file name to process");
 		System.out.println("    -r: realtime process, regenerate the files when the input file content changes");
 		System.out.println("  THE GENERATED FILES SHOULD NOT BE EDITED BY HAND, AS THEY MAY BE DELETED AUTOMATICALLY!!!!");
-
-		// generateCounter(10);
-
 		parseArgs(args);
 
-		// TODO: check the file exists BEFORE REMOVING:
-		/*
-		 * File f = new File(args[0]); System.out.println(f.getPath());
-		 * System.out.println(f.getAbsolutePath()); try {
-		 * System.out.println(f.getCanonicalPath()); } catch ( IOException e) {
-		 * System.out.println("f.getCanonicalPath() failed"); }
-		 */
-
+		// File f = new File(args[0]); System.out.println(f.getPath());
+		// System.out.println(f.getAbsolutePath()); try {
+		// System.out.println(f.getCanonicalPath()); } catch ( IOException e) {
+		// System.out.println("f.getCanonicalPath() failed"); }
 		if (fsmInputName.endsWith(".fsm"))
 			GenerateFiles(fsmInputName);
 		else if (fsmInputName.endsWith("doc.txt"))
