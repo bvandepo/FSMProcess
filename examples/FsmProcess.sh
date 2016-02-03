@@ -1,2 +1,3 @@
 #!/bin/sh
-java -jar ../bin/FsmProcess.jar -i -d -f $1
+java -jar ../bin/FsmProcess.jar -i -r -p  0x50x1285x750  -f /home/bvandepo/antlr/fsm/examples/$1
+ 

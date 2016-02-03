@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -104,8 +105,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //%S,delay_ended=COUNT_EQUAL;  
 //%R,delay_ended=srazcpt;  
 
-//TODO: positionner et dimensionner la fenetre interactive par args
-
 //TODO: gérer que l'on puisse ajouter des commentaires dans les pragmas entity
 //TODO: parser le pragma entity pour detecter E/S (ou alors add/remove..) + bus
 
@@ -161,7 +160,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 // -->in this release, priority= regularly > reset transition >
 // transition > state
 
-// TODODOC: dans la doc sur les (reset) transitions, bien indiquer que
+// TODO DOC: dans la doc sur les (reset) transitions, bien indiquer que
 // l'ordre de définition ne définit en rien les priorités (pour les
 // actions!!!!!).
 // Indique que l'on peut utiliser les priorités pour simplifier le
@@ -286,10 +285,11 @@ public class FsmProcess {
 	// static int WIN_ORG_X = -800;
 	// static int WIN_ORG_Y = 0;
 	// monoscreen 13"
-	static int WIN_WIDTH = 1285;
-	static int WIN_HEIGHT = 750;
 	static int WIN_ORG_X = 0;
 	static int WIN_ORG_Y = 50;
+	static int WIN_WIDTH = 1285;
+	static int WIN_HEIGHT = 750;
+
 
 	private static FileWatcher watcher;
 
@@ -3361,21 +3361,40 @@ public class FsmProcess {
 	public static void parseArgs(String[] args) {
 		int c;
 		String arg;
-		Getopt g = new Getopt("FsmProcess", args, "if:cdr");
+		Getopt g = new Getopt("FsmProcess", args, "if:crp:");
 		g.setOpterr(false); // We'll do our own error handling
 		while ((c = g.getopt()) != -1)
 			switch (c) {
+			case 'p':
+				arg = g.getOptarg().replace('x', ' ');
+				Scanner sc = new Scanner(arg);
+				try {
+					WIN_ORG_X = sc.nextInt();
+					WIN_ORG_Y = sc.nextInt();
+					WIN_WIDTH = sc.nextInt();
+					WIN_HEIGHT = sc.nextInt();
+				} catch (Exception e) {
+					System.out.println("Error: argument -f should be followed by a quadruplet of integer separated by x characters");
+					System.out.println(e.toString());
+					System.out.println(" ");
+					System.out.println("printStackTrace");
+					e.printStackTrace();
+				}
+				System.out.print("Desired windows position: ");
+				System.out.print(WIN_ORG_X);
+				System.out.print(" x ");
+				System.out.println(WIN_ORG_Y);
+				System.out.print("Desired windows size: ");
+				System.out.print(WIN_WIDTH);
+				System.out.print(" x ");
+				System.out.println(WIN_HEIGHT);
+				break;
 			case 'i':
 				System.out.print(" Option: Ignore Errors\n");
 				optionsIgnoreErrors = true;
 				break;
 			case 'c':
 				System.out.print(" Option: Compute result image\n");
-				optionsComputeResultImage = true;
-				break;
-			case 'd':
-				System.out.print(" Option: Compute and Display result image\n");
-				optionsDisplayResultImage = true;
 				optionsComputeResultImage = true;
 				break;
 			case 'f':
@@ -3388,6 +3407,8 @@ public class FsmProcess {
 			case 'r':
 				System.out.print(" Option: Realtime process of the input file\n");
 				optionsRealtime = true;
+				optionsDisplayResultImage=true;
+				optionsComputeResultImage = true;
 				break;
 			default:
 				System.out.println("getopt() returned " + c);
@@ -3402,9 +3423,8 @@ public class FsmProcess {
 		System.out.println("usage: java -jar FsmProcess.jar -i -c -d -r -f fichier.fsm");
 		System.out.println("    -i: ignore error in the model and try to continue");
 		System.out.println("    -c: create output gif image file from the dot file");
-		System.out.println("    -d: display the output gif image with image magick (linux support only)");
 		System.out.println("    -f filename.fsm: provide the input file name to process");
-		System.out.println("    -r: realtime process, regenerate the files when the input file content changes");
+		System.out.println("    -r: realtime process, regenerate the files when the input file content changes and  display the output gif image");
 		System.out.println("  THE GENERATED FILES SHOULD NOT BE EDITED BY HAND, AS THEY MAY BE DELETED AUTOMATICALLY!!!!");
 		parseArgs(args);
 
@@ -3420,7 +3440,7 @@ public class FsmProcess {
 			System.out.println("Error: Please provide the filename of the fsm file to process with .fsm extension");
 			return;
 		}
-		if (optionsRealtime || optionsDisplayResultImage) {
+		if (optionsRealtime ) {
 			// Schedule a job for the event-dispatching thread:
 			// creating and showing this application's GUI.
 			javax.swing.SwingUtilities.invokeLater(new Runnable() {
