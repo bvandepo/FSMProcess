@@ -80,6 +80,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+// TODO: demote to signal de bus définis par pragma ou alors pragma pour définir signaux
+
 // TODO: inclure numero de version dans l'affichage
 // TODO: est ce que j'ai le droit d'integrer le jar d'antlr dans mon
 // jar?
@@ -393,19 +395,26 @@ public class FsmProcess {
 			break;
 		}
 		if (displayState > 1) { // VHDL
+			int lineNumber = 0;
 			text.append("<html>");
-			String textVhdl = buf.toString().replace("\t", "    ");
-			// not so good, this replacement will replace tabs and multipes
-			// spaces by a single space caractère
+			// replace special html caracters. the & has to be processed firstly
+			// so the added one used to escape the special caracters won't be
+			// replaced...
+			// warning: this methods don't preserve the number of spaces
+			String textVhdl = buf.toString().replace("&", "&#38;").replace("<", "&#60;").replace(">", "&#62;").replace("\"", "&#34;")
+					.replace("\t", "&#160;&#160;&#160;&#160;");
 			for (String v : textVhdl.split("\n")) {
-				// si v commence par --, afficher en comment et ne pas surligner
-				// les mots clefs
-				if ((v.length() >= 2) && v.substring(0, 2).equals("--")) {
-					text.append("<font color=#00ff00>");
-					text.append(v);
-					text.append("</font>");
-				} else {
-					for (String w : v.split(" ")) {
+				Boolean lineCommented = false;
+				lineNumber++;
+				text.append(String.format("%5s : ", Integer.toString(lineNumber)));
+				for (String w : v.split(" ")) {
+					if (lineCommented)
+						text.append(w);
+					else if ((w.length() >= 2) && w.substring(0, 2).equals("--")) {
+						text.append("<font color=#00ff00>");
+						text.append(w);
+						lineCommented = true;
+					} else {
 						Boolean isVhdlReservedWord = false;
 						for (int i = 0; i < fsm.forbiddenNamesVHDL.size(); i++) {
 							if (w.compareToIgnoreCase(fsm.forbiddenNamesVHDL.get(i)) == 0) {
@@ -420,9 +429,11 @@ public class FsmProcess {
 						} else {
 							text.append(w);
 						}
-						text.append(" ");
 					}
+					text.append(" ");
 				}
+				if (lineCommented)
+					text.append("</font>");
 				text.append("<br>");
 			}
 		}
@@ -864,7 +875,7 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////
 
 	static public void generateDot() {
-		GenerateHeader(bufDot, ".dot diagram",'/');
+		GenerateHeader(bufDot, ".dot diagram", '/');
 		// compute size of node from the longest state name
 		Double nodeWidth = 0.5 + State.longestName * 0.12;
 		bufDot.append("digraph finite_state_machine {\n");
@@ -1603,7 +1614,7 @@ public class FsmProcess {
 
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateVhdlTestBench(StringBuilder buf) {
-		GenerateHeader(buf, "testbench.vhdl",'-');
+		GenerateHeader(buf, "testbench.vhdl", '-');
 		buf.append("library ieee;\nuse        ieee.std_logic_1164.all;\nuse        ieee.std_logic_unsigned.all;\nuse        ieee.std_logic_arith.all;\n");
 		if (!fsm.pragmaVhdlPreEntity.equals("")) {
 			buf.append("------------------------------pragma_vhdl_pre_entity-------------------------------------------------------\n");
@@ -1847,7 +1858,7 @@ public class FsmProcess {
 
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generatePackageVhdl(StringBuilder buf) {
-		GenerateHeader(buf, "vhdl package file",'-');
+		GenerateHeader(buf, "vhdl package file", '-');
 		buf.append("library IEEE;\n");
 		buf.append("use IEEE.STD_LOGIC_1164.all;\n");
 		buf.append("package ");
@@ -1861,7 +1872,7 @@ public class FsmProcess {
 
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generatePortMapVhdl(StringBuilder buf) {
-		GenerateHeader(buf, "port map vhdl file",'-');
+		GenerateHeader(buf, "port map vhdl file", '-');
 		buf.append(fsm.name);
 		buf.append("_u0 : ");
 		buf.append(fsm.name);
@@ -1933,7 +1944,7 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////////////////////////////////////////
 	static public void generateVhdl(StringBuilder buf) {
 		int numberOfStates = fsm.states.size();
-		GenerateHeader(buf, "vhdl file",'-');
+		GenerateHeader(buf, "vhdl file", '-');
 		buf.append("library	ieee;\nuse		ieee.std_logic_1164.all;\nuse		ieee.std_logic_unsigned.all;\nuse		ieee.std_logic_arith.all;\n");
 		if (!fsm.pragmaVhdlPreEntity.equals("")) {
 			buf.append("------------------------------pragma_vhdl_pre_entity-------------------------------------------------------\n");
