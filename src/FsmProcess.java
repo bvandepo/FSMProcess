@@ -51,7 +51,7 @@ import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
- 
+
 // sudo apt-get install libgetopt-java
 //et ajouter dans referenced Libraries /usr/share/gnu-getopt-1.0.13.jar
 
@@ -871,6 +871,7 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////
 
 	static public void generateDot() {
+		Boolean sResetInSameRank = false;
 		GenerateHeader(bufDot, ".dot diagram", '/');
 		// compute size of node from the longest state name
 		Double nodeWidth = 0.5 + State.longestName * 0.13;
@@ -957,6 +958,8 @@ public class FsmProcess {
 					// bufDot.append("  [arrowhead=none, len=0.01,weight=100 ]     ;\n");
 					bufDot.append("  [arrowhead=none ]     ;\n");
 				}
+				if (!sResetInSameRank)
+					bufDot.append(" }; \n"); // close rank...
 				int nbResetTransitions = fsm.resetTransitions.size();
 				for (int k = 0; k < nbResetTransitions; k++) {
 					ResetTransition rt = fsm.resetTransitions.get(k);
@@ -1005,7 +1008,8 @@ public class FsmProcess {
 						bufDot.append("style=\"dashed\"];\n");
 					}
 				}
-				bufDot.append(" }; \n"); // close rank...
+				if (sResetInSameRank)
+					bufDot.append(" }; \n"); // close rank...
 			}
 		}
 		bufDot.append("//////////////////display  transitions//////////////////\n");
@@ -1080,6 +1084,7 @@ public class FsmProcess {
 			bufDot.append("    	r");
 			bufDot.append(cptResetStates);
 			bufDot.append(" -> ");
+			bufDot.append("state_");
 			bufDot.append(fsm.resetAsynchronousState.name);
 			bufDot.append(" [style=\"bold\"];\n  ");
 		}
