@@ -51,10 +51,7 @@ import org.antlr.v4.runtime.BufferedTokenStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-
-//TODO: afficher le texte de log quand la souris clique sur le label error
-//ou qu'on passe dessus, visualiser aussi le log, vhd, tb portmap etc...
-
+ 
 // sudo apt-get install libgetopt-java
 //et ajouter dans referenced Libraries /usr/share/gnu-getopt-1.0.13.jar
 
@@ -926,20 +923,25 @@ public class FsmProcess {
 				// are on the same line or column, orthogonally of the rankdir
 				bufDot.append(" rank = same;\n");
 				bufDot.append("    	");
+				bufDot.append("state_"); // Append state before the node name to
+											// be able to deal with node names
+											// like 0bis
 				bufDot.append(fsm.states.get(n).name);
-				if (fsm.states.get(n).isInit) {
+				if (fsm.states.get(n).isInit)
 					bufDot.append(" [shape=doublecircle, fixedsize=true, width=");
-					bufDot.append(nodeWidth);
-					bufDot.append(" ];\n");
-				} else {
+				else
 					bufDot.append(" [shape=circle,fixedsize=true,width=");
-					bufDot.append(nodeWidth);
-					bufDot.append(" ];\n");
-				}
+				bufDot.append(nodeWidth);
+				// specify the name of the node as a label to be able to deal
+				// with node names like 0bis
+				bufDot.append(", label= \"");
+				bufDot.append(fsm.states.get(n).name);
+				bufDot.append("\"");
+				bufDot.append(" ];\n");
 				// add actions states to the dot file if necessary
 				if (nbAttachedActions != 0) {
 					bufDot.append("    	//Action on state:\n");
-					bufDot.append("    	stateaction");
+					bufDot.append("    	stateaction_");
 					bufDot.append(fsm.states.get(n).name);
 					bufDot.append("  [shape=box,label=  ");
 					bufDot.append(" <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
@@ -947,9 +949,10 @@ public class FsmProcess {
 						GenerateDotForAction(fsm.states.get(n).attachedActions.get(m));
 					bufDot.append("    	    	</TABLE>>  ];\n");
 					bufDot.append("    	//attach the action on the state\n    	");
+					bufDot.append("state_");
 					bufDot.append(fsm.states.get(n).name);
 					bufDot.append(" ->");
-					bufDot.append("stateaction");
+					bufDot.append("stateaction_");
 					bufDot.append(fsm.states.get(n).name);
 					// bufDot.append("  [arrowhead=none, len=0.01,weight=100 ]     ;\n");
 					bufDot.append("  [arrowhead=none ]     ;\n");
@@ -989,6 +992,7 @@ public class FsmProcess {
 						bufDot.append("    	r");
 						bufDot.append(cptResetStates);
 						bufDot.append(" -> ");
+						bufDot.append("state_");
 						bufDot.append(rt.destination);
 						bufDot.append("  ");
 						bufDot.append(" [ ");
@@ -1011,8 +1015,10 @@ public class FsmProcess {
 				for (int m = 0; m < nbTransitions; m++) {
 					Transition t = fsm.states.get(n).transitionsFromThisState.get(m);
 					bufDot.append("    	");
+					bufDot.append("state_");
 					bufDot.append(t.origin);
 					bufDot.append(" -> ");
+					bufDot.append("state_");
 					bufDot.append(t.destination);
 					// to add a line between the box and the transition edge
 					// bufDot.append("[shape=box, decorate=true, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
@@ -1078,49 +1084,51 @@ public class FsmProcess {
 			bufDot.append(" [style=\"bold\"];\n  ");
 		}
 		// to make repeatedly actions and clkSignalName on the same rank
-		bufDot.append(" {");
 		// very important, thanks to this, the state and action nodes are on the
 		// same line or column, orthogonally of the rankdir
-		bufDot.append(" rank = same;\n");
 		int nbRepeatedlyActions = fsm.repeatedlyActions.size();
-		if (nbRepeatedlyActions != 0) {
-			bufDot.append("//////////////////display repeatedly actions//////////////////\n");
-			bufDot.append("    	emptyrepeatedly");
-			bufDot.append("  ");
-			bufDot.append("[  shape= 	octagon, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
-			bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
-			bufDot.append("2");
-			bufDot.append("\">");
-			bufDot.append(" Always "); // rt.condition);
-			bufDot.append("</TD> </TR>\n");
-			for (int l = 0; l < nbRepeatedlyActions; l++) {
-				Action a = fsm.repeatedlyActions.get(l);
-				bufDot.append("    	    	<TR><TD>");
-				bufDot.append(a.type);
-				bufDot.append("</TD><TD>");
-				bufDot.append(a.name);
-				if (!a.expression.equals("")) {
-					bufDot.append("=");
-					bufDot.append(a.expression);
-				}
+		if (fsm.clkSignalNameSpecified || (nbRepeatedlyActions != 0)) {
+			bufDot.append(" {");
+			bufDot.append(" rank = same;\n");
+			if (nbRepeatedlyActions != 0) {
+				bufDot.append("//////////////////display repeatedly actions//////////////////\n");
+				bufDot.append("    	emptyrepeatedly");
+				bufDot.append("  ");
+				bufDot.append("[  shape= 	octagon, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
+				bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
+				bufDot.append("2");
+				bufDot.append("\">");
+				bufDot.append(" Always "); // rt.condition);
 				bufDot.append("</TD> </TR>\n");
+				for (int l = 0; l < nbRepeatedlyActions; l++) {
+					Action a = fsm.repeatedlyActions.get(l);
+					bufDot.append("    	    	<TR><TD>");
+					bufDot.append(a.type);
+					bufDot.append("</TD><TD>");
+					bufDot.append(a.name);
+					if (!a.expression.equals("")) {
+						bufDot.append("=");
+						bufDot.append(a.expression);
+					}
+					bufDot.append("</TD> </TR>\n");
+				}
+				bufDot.append("    	    	</TABLE>>  ];\n");
 			}
-			bufDot.append("    	    	</TABLE>>  ];\n");
+			if (fsm.clkSignalNameSpecified) {
+				bufDot.append("///////Show the clock signal name if it has been specified////////\n");
+				bufDot.append("    	emptyclock");
+				bufDot.append("  ");
+				bufDot.append("[  shape= 	diamond, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
+				bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
+				bufDot.append("1");
+				bufDot.append("\">");
+				bufDot.append(" Clock signal: ");
+				bufDot.append(fsm.clkSignalName);
+				bufDot.append("</TD> </TR>\n");
+				bufDot.append("    	    	</TABLE>>  ];\n");
+			}
+			bufDot.append(" };");
 		}
-		if (fsm.clkSignalNameSpecified) {
-			bufDot.append("///////Show the clock signal name if it has been specified////////\n");
-			bufDot.append("    	emptyclock");
-			bufDot.append("  ");
-			bufDot.append("[  shape= 	diamond, label=  <<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\" CELLPADDING=\"4\">\n");
-			bufDot.append("    	    	<TR>   <TD COLSPAN=\"");
-			bufDot.append("1");
-			bufDot.append("\">");
-			bufDot.append(" Clock signal: ");
-			bufDot.append(fsm.clkSignalName);
-			bufDot.append("</TD> </TR>\n");
-			bufDot.append("    	    	</TABLE>>  ];\n");
-		}
-		bufDot.append(" };");
 		bufDot.append("}\n"); // end of the DOT file content
 	}
 
@@ -2570,11 +2578,11 @@ public class FsmProcess {
 
 	static class FiniteStateMachine {
 		public FiniteStateMachine() {
-			//set sub members values
+			// set sub members values
 			State.longestName = 1;
 			Output.longestName = 12;
 			Input.longestName = 1;
-			//set members values
+			// set members values
 			clkSignalName = "CK";
 			aResetSignalName = "ARAZB";
 			clkSignalNameSpecified = false;
