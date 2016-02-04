@@ -329,27 +329,27 @@ public class FsmProcess {
 				resizedImage = new BufferedImage(IMG_WIDTH_dest, IMG_HEIGHT_dest, img.getType());
 				g = resizedImage.createGraphics();
 				g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				// g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-				// RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-				// g.setRenderingHint(RenderingHints.KEY_RENDERING,
-				// RenderingHints.VALUE_RENDER_QUALITY);
+				g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+				g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+				g.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
 				g.drawImage(img, 0, 0, IMG_WIDTH_dest, IMG_HEIGHT_dest, 0, 0, img.getWidth(), img.getHeight(), null);
 				g.dispose();
 				icon = new ImageIcon(resizedImage);
 			} else {
 				icon = new ImageIcon(img);
+				xscroll = (int) (percentWidth * img.getWidth() / 100.);
+				yscroll = (int) (percentHeight * img.getHeight() / 100.);
+				// without this, the zoomed zone has its upper left corner at
+				// the
+				// click position, with this, the zoomed zone has its upper left
+				// corner at the central position
+				xscroll -= IMG_WIDTH / 2;
+				yscroll -= IMG_HEIGHT / 2;
+				// System.out.print("xscroll: ");
+				// System.out.print(xscroll);
+				// System.out.print("   yscroll: ");
+				// System.out.println(yscroll);
 			}
-			xscroll = (int) (percentWidth * img.getWidth() / 100.);
-			yscroll = (int) (percentHeight * img.getHeight() / 100.);
-			// without this, the zoomed zone has its upper left corner at the
-			// click position, with this, the zoomed zone has its upper left
-			// corner at the central position
-			xscroll -= IMG_WIDTH / 2;
-			yscroll -= IMG_HEIGHT / 2;
-			// System.out.print("xscroll: ");
-			// System.out.print(xscroll);
-			// System.out.print("   yscroll: ");
-			// System.out.println(yscroll);
 			labelDisplayImage.setIcon(icon);
 			labelDisplayImage.setText(null);
 			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
