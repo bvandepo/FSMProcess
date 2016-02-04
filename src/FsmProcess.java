@@ -581,7 +581,6 @@ public class FsmProcess {
 						@SuppressWarnings("unchecked")
 						WatchEvent<Path> ev = (WatchEvent<Path>) event;
 						Path filename = ev.context();
-
 						if (kind == StandardWatchEventKinds.OVERFLOW) {
 							Thread.yield();
 							continue;
@@ -877,7 +876,7 @@ public class FsmProcess {
 	static public void generateDot() {
 		GenerateHeader(bufDot, ".dot diagram", '/');
 		// compute size of node from the longest state name
-		Double nodeWidth = 0.5 + State.longestName * 0.12;
+		Double nodeWidth = 0.5 + State.longestName * 0.13;
 		bufDot.append("digraph finite_state_machine {\n");
 		// TODO: deal with dot pragmas to set size etc...
 		// http://stackoverflow.com/questions/17719467/graphviz-ignores-size-attribute-a4-page
@@ -892,9 +891,7 @@ public class FsmProcess {
 		// bufDot.append(" !\";\n");
 		// bufDot.append(" margin=0;\n");
 		// bufDot.append(" node[shape=point, height=0.02, width=0.01];\n");
-		// TODO: read it from optional command line args
 		bufDot.append("    	rankdir=LR;\n");
-		// bufDot.append("    	rankdir=TB;\n");
 		// separation between different ranks
 		bufDot.append("    	ranksep=0.5;\n");
 		// separation between nodes in same rank (state and corresponding
@@ -902,6 +899,11 @@ public class FsmProcess {
 		bufDot.append("    	nodesep=0.1;\n");
 		// bufDot.append("    	size=\"10\";\n");
 		// bufDot.append("    	ranksep=equally;\n");
+		if (!fsm.pragmaDotGlobal.equals("")) {
+			bufDot.append("////////// added through pragma, replaces previous set parameters  ////////////////////////////////////////\n");
+			bufDot.append(fsm.pragmaDotGlobal);
+			bufDot.append("\n");
+		}
 		bufDot.append("///////////////////////////////////////////////////////////////////////////////////////////////////////////\n");
 		bufDot.append("// Finite State Machine Name: ");
 		bufDot.append(fsm.name);
@@ -2482,7 +2484,7 @@ public class FsmProcess {
 
 	static class Input implements Comparable<Input> {
 		// to store the longest names
-		static int longestName = 0;
+		public static int longestName = 0;
 		String type;
 		String name;
 		String paddedName;
@@ -2503,7 +2505,8 @@ public class FsmProcess {
 	// //////////////////////////////////////////////////////////////////
 	static class Output implements Comparable<Output> {
 		// to store the longest names
-		static int longestName = 12; // to be at least as long as "STATE_NUMBER"
+		public static int longestName = 12; // to be at least as long as
+											// "STATE_NUMBER"
 		String type = "I";
 		String name;
 		String paddedName;
@@ -2531,7 +2534,7 @@ public class FsmProcess {
 	// //////////////////////////////////////////////////////////////////
 	static class State implements Comparable<State> {
 		// to store the longest names
-		static int longestName = 12; // to be at least as long as "STATE_NUMBER"
+		public static int longestName = 1;
 		Boolean isInit; // initial state or not
 		String name;
 		String paddedName;
@@ -2566,97 +2569,160 @@ public class FsmProcess {
 	}
 
 	static class FiniteStateMachine {
+		public FiniteStateMachine() {
+			//set sub members values
+			State.longestName = 1;
+			Output.longestName = 12;
+			Input.longestName = 1;
+			//set members values
+			clkSignalName = "CK";
+			aResetSignalName = "ARAZB";
+			clkSignalNameSpecified = false;
+			pragmaVhdlPreEntity = "";
+			pragmaVhdlEntity = "";
+			pragmaVhdlArchitecturePreBegin = "";
+			pragmaVhdlArchitecturePostBegin = "";
+			pragmaVhdlTestbench = "";
+			pragmaDotGlobal = "";
+			stateCodeError = "";
+			bufferedOutputsAllowed = false;
+			resetTransitions = new ArrayList<ResetTransition>();
+			states = new ArrayList<State>();
+			hmapState = new HashMap<String, State>();
+			inputs = new ArrayList<Input>();
+			hmapInput = new HashMap<String, Input>();
+			outputs = new ArrayList<Output>();
+			hmapOutput = new HashMap<String, Output>();
+			transitions = new ArrayList<Transition>();
+			hmapTransition = new HashMap<String, Transition>();
+			actions = new ArrayList<Action>();
+			repeatedlyActions = new ArrayList<Action>();
+			noRepeatedlyActions = new ArrayList<Action>();
+			outputsWithAsynchronousResetValue = new ArrayList<Output>();
+			listOfInterfaceNamesToAddThroughPragma = new ArrayList<String>();
+			listOfInterfacePortTypesToAddThroughPragma = new ArrayList<String>();
+			realOutputs = new ArrayList<Output>();
+			demotedToSignalOutputs = new ArrayList<Output>();
+			realInputs = new ArrayList<Input>();
+			demotedToSignalInputs = new ArrayList<Input>();
+			genericDeclarations = new ArrayList<GenericDeclaration>();
+			GenerateNumberOfStateOutput = true;
+			numberOfBitsForStates = 0;
+			numberOfResetAsynchronousDefinitions = 0;
+			resetAsynchronousState = null;
+			resetTransitionInhibatesTransitionActions = true;
+			resetTransitionInhibatesActionsOnStates = true;
+			currentState = null;
+			currentAction = null;
+			currentOutput = null;
+			currentInput = null;
+			currentTransition = null;
+			currentResetTransition = null;
+			inputsOrderedNamesList = new ArrayList<String>();
+			outputsOrderedNamesList = new ArrayList<String>();
+			imageFileExtension = "gif";
+		}
+
 		// member variables for storing the fsm model
 		public String name;
-		public String clkSignalName = "CK"; // caps to be compared with parsed
-											// names
-		public Boolean clkSignalNameSpecified = false;
-		public String aResetSignalName = "ARAZB"; // caps to be compared with
-													// parsed names
+		public String clkSignalName;// = "CK"; // caps to be compared with
+									// parsed
+									// names
+		public Boolean clkSignalNameSpecified;// = false;
+		public String aResetSignalName;// = "ARAZB"; // caps to be compared with
+										// parsed names
 		public String aResetSignalLevel = "0";
 
 		// to contain added vhdl code
-		public String pragmaVhdlPreEntity = "";
-		public String pragmaVhdlEntity = "";
-		public String pragmaVhdlArchitecturePreBegin = "";
-		public String pragmaVhdlArchitecturePostBegin = "";
-		public String pragmaVhdlTestbench = "";
-
+		public String pragmaVhdlPreEntity;
+		public String pragmaVhdlEntity;
+		public String pragmaVhdlArchitecturePreBegin;
+		public String pragmaVhdlArchitecturePostBegin;
+		public String pragmaVhdlTestbench;
+		public String pragmaDotGlobal;
 		// to store the binary value that is put on state_number output when
 		// error
-		public String stateCodeError = "";
+		public String stateCodeError;
 		public String stateNameDisplayError;
 
 		// global flag to allow the reuse of memorized outputs as inputs in
 		// conditions and expressions
-		public Boolean bufferedOutputsAllowed = false;
+		public Boolean bufferedOutputsAllowed;// = false;
 
-		ArrayList<ResetTransition> resetTransitions = new ArrayList<ResetTransition>();
-		ArrayList<State> states = new ArrayList<State>();
-		HashMap<String, State> hmapState = new HashMap<String, State>();
-		ArrayList<Input> inputs = new ArrayList<Input>();
-		HashMap<String, Input> hmapInput = new HashMap<String, Input>();
-		ArrayList<Output> outputs = new ArrayList<Output>();
-		HashMap<String, Output> hmapOutput = new HashMap<String, Output>();
-		ArrayList<Transition> transitions = new ArrayList<Transition>();
-		HashMap<String, Transition> hmapTransition = new HashMap<String, Transition>();
+		ArrayList<ResetTransition> resetTransitions;// = new
+													// ArrayList<ResetTransition>();
+		ArrayList<State> states;// = new ArrayList<State>();
+		HashMap<String, State> hmapState;// = new HashMap<String, State>();
+		ArrayList<Input> inputs;// = new ArrayList<Input>();
+		HashMap<String, Input> hmapInput;// = new HashMap<String, Input>();
+		ArrayList<Output> outputs;// = new ArrayList<Output>();
+		HashMap<String, Output> hmapOutput;// = new HashMap<String, Output>();
+		ArrayList<Transition> transitions;// = new ArrayList<Transition>();
+		HashMap<String, Transition> hmapTransition;// = new HashMap<String,
+													// Transition>();
 		// global actions list
-		ArrayList<Action> actions = new ArrayList<Action>();
+		ArrayList<Action> actions;// = new ArrayList<Action>();
 		// each Action in actions list is either one of the 2 following:
-		ArrayList<Action> repeatedlyActions = new ArrayList<Action>();
-		ArrayList<Action> noRepeatedlyActions = new ArrayList<Action>();
+		ArrayList<Action> repeatedlyActions;// = new ArrayList<Action>();
+		ArrayList<Action> noRepeatedlyActions;// = new ArrayList<Action>();
 
-		ArrayList<Output> outputsWithAsynchronousResetValue = new ArrayList<Output>();
+		ArrayList<Output> outputsWithAsynchronousResetValue;// = new
+															// ArrayList<Output>();
 
-		ArrayList<String> listOfInterfaceNamesToAddThroughPragma = new ArrayList<String>();
-		ArrayList<String> listOfInterfacePortTypesToAddThroughPragma = new ArrayList<String>();
+		ArrayList<String> listOfInterfaceNamesToAddThroughPragma;// = new
+																	// ArrayList<String>();
+		ArrayList<String> listOfInterfacePortTypesToAddThroughPragma;// = new
+																		// ArrayList<String>();
 		String InterfacePortModeToAddThroughPragma;
 
 		// each output in outputs list is also located in one of this two lists
-		ArrayList<Output> realOutputs = new ArrayList<Output>();
-		ArrayList<Output> demotedToSignalOutputs = new ArrayList<Output>();
+		ArrayList<Output> realOutputs;// = new ArrayList<Output>();
+		ArrayList<Output> demotedToSignalOutputs;// = new ArrayList<Output>();
 
 		// each input in inputs list is also located in one of this two lists
-		ArrayList<Input> realInputs = new ArrayList<Input>();
-		ArrayList<Input> demotedToSignalInputs = new ArrayList<Input>();
+		ArrayList<Input> realInputs;// = new ArrayList<Input>();
+		ArrayList<Input> demotedToSignalInputs;// = new ArrayList<Input>();
 
-		ArrayList<GenericDeclaration> genericDeclarations = new ArrayList<GenericDeclaration>();
+		ArrayList<GenericDeclaration> genericDeclarations;// = new
+															// ArrayList<GenericDeclaration>();
 		GenericDeclaration currentGenericDeclarations;
 
-		public Boolean GenerateNumberOfStateOutput = true;
+		public Boolean GenerateNumberOfStateOutput;// = true;
 		// default value if not given in the fsm file, can be set through pragma
-		public int numberOfBitsForStates = 0;
+		public int numberOfBitsForStates;// = 0;
 		// value computed from the actual number of state or the given
 		// numberOfBitsForStates it is bigger
 		public int numberOfBitsForStatesMax;
 		// member variables for parsing
-		int numberOfResetAsynchronousDefinitions = 0;
+		int numberOfResetAsynchronousDefinitions;// = 0;
 
-		public State resetAsynchronousState = null;
+		public State resetAsynchronousState;// = null;
 
 		// if set to true, will make the actions on transition to be inhibated
 		// during reset
-		Boolean resetTransitionInhibatesTransitionActions = true;
+		Boolean resetTransitionInhibatesTransitionActions;// = true;
 		// if set to true, will make the actions on state to be inhibated
 		// during reset
-		Boolean resetTransitionInhibatesActionsOnStates = true;
+		Boolean resetTransitionInhibatesActionsOnStates;// = true;
 		// this string is computed only if there are some reset transition(s)
 		// and either resetTransitionInhibatesTransitionActions or
 		// resetTransitionInhibatesActionsOnStates is true
 		String resetConditionComplement;
 
-		public State currentState = null;
-		public Action currentAction = null;
-		public Output currentOutput = null;
-		public Input currentInput = null;
-		public Transition currentTransition = null;
-		public ResetTransition currentResetTransition = null;
+		public State currentState;// = null;
+		public Action currentAction;// = null;
+		public Output currentOutput;// = null;
+		public Input currentInput;// = null;
+		public Transition currentTransition;// = null;
+		public ResetTransition currentResetTransition;// = null;
 		public boolean currentTransitionIsReset;
 
-		public ArrayList<String> inputsOrderedNamesList = new ArrayList<String>();
-		public ArrayList<String> outputsOrderedNamesList = new ArrayList<String>();
+		public ArrayList<String> inputsOrderedNamesList;// = new
+														// ArrayList<String>();
+		public ArrayList<String> outputsOrderedNamesList;// = new
+															// ArrayList<String>();
 
-		public String imageFileExtension = "gif";
+		public String imageFileExtension;// = "gif";
 
 		List<String> forbiddenNamesVHDL = Arrays.asList("ABS", "ACCESS", "AFTER", "ALIAS", "ALL", "AND", "ARCHITECTURE", "ARRAY", "ASSERT",
 				"ATTRIBUTE", "BEGIN", "BLOCK", "BODY", "BUFFER", "BUS", "CASE", "COMPONENT", "CONFIGURATION", "CONSTANT", "DISCONNECT",
@@ -3447,6 +3513,15 @@ public class FsmProcess {
 		// ///////////////////////////////////////////////////////////////
 		public void enterDefault_generic(FsmParser.Default_genericContext ctx) {
 			fsm.currentGenericDeclarations.Default = ctx.children.get(0).getText().toUpperCase();
+		}
+
+		// ///////////////////////////////////////////////////////////////
+
+		public void enterPragma_dot_global_directive(FsmParser.Pragma_dot_global_directiveContext ctx) {
+			// simple way to get the pragma
+			String pragma = ctx.children.get(1).getText();
+			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
+			fsm.pragmaDotGlobal += pragmaCleaned;
 		}
 		// ///////////////////////////////////////////////////////////////
 

@@ -154,6 +154,7 @@ PRAGMA_VHDL_GENERIC_DIRECTIVE                  :  '#pragma_vhdl_generic_directiv
 
 PRAGMA_WITH_BEGINING_AND_ENDING: '{' SOMECARS  '}#pragma' ; 
 
+PRAGMA_DOT_GLOBAL_DIRECTIVE                    :  '#pragma_dot_global_directive' ;
 
 //LEFT_CURLY_BRACE: '{';
 //RIGHT_CURLY_BRACE: '}';

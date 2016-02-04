@@ -18,8 +18,9 @@ line : state
      | multi_transitions_to_same_directive
      | pragma_directive;
 
-pragma_directive:
-       pragma_vhdl_directive;
+pragma_directive: 
+       pragma_dot_directive
+     | pragma_vhdl_directive;
 
 pragma_vhdl_directive:
        pragma_vhdl_pre_entity_directive
@@ -34,8 +35,9 @@ pragma_vhdl_directive:
      | pragma_vhdl_testbench
      ;
 
-
-
+pragma_dot_directive:
+       pragma_dot_global_directive;
+   
 multi_transitions_directive:
 SHARP (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number TO multi_transitions_last_state_number PARENTHESISCLOSE ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)?  SEMICOLON;
 multi_transitions_base_state_name:id;
@@ -142,6 +144,9 @@ pragma_vhdl_generic_directive                 : PRAGMA_VHDL_GENERIC_DIRECTIVE
 						(generic_declaration)*
 				                PRAGMA_ENDING;
 
+
+pragma_dot_global_directive                   : PRAGMA_DOT_GLOBAL_DIRECTIVE  
+                                                PRAGMA_WITH_BEGINING_AND_ENDING;
 
 
 bit_size_for_output_state_number: POSITIVE_INTEGER;
