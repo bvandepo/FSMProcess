@@ -8,7 +8,7 @@ tokens {  WHITESPACE_CHANNEL, COMMENTS_CHANNEL,PRAGMAS_CHANNEL}
 SEMICOLON            : ';'   ;
 COLON                : ':'   ;
 SLASH                : '/'   ; 
-ANTISLASH            : '\\'   ; 
+ANTISLASH            : '\\'  ; 
 SHARP                : '#'   ; 
 CONDITION            : '?'   ;
 COMMA                : ','   ;
@@ -19,11 +19,15 @@ DOUBLEARROW          : '=>'  ;
 STAR                 : '*'   ;
 COLONEQUAL           : ':='  ;
 DOT                  : '.'   ;
-DOUBLEEQUAL :  '==';
-NOTEQUAL    :  '!=';
-PLUS        :  '+' ; 
-MINUS       :  '-'; 
-
+DOUBLEEQUAL          :  '==' ;
+NOTEQUAL             :  '!=' ;
+PLUS                 :  '+'  ; 
+MINUS                :  '-'  ; 
+UNDERSCORE           :  '_'  ; 
+LEFT_CURLY_BRACE     :  '{'  ;
+RIGHT_CURLY_BRACE    :  '}'  ;
+PARENTHESISOPEN      :  '('  ;
+PARENTHESISCLOSE     :  ')'  ;
 
 // case insensitive chars
   A:('a'|'A');
@@ -52,18 +56,16 @@ MINUS       :  '-';
   X:('x'|'X');
   Y:('y'|'Y');
   Z:('z'|'Z');
-  UNDERSCORE:'_';
- 
-LEFT_CURLY_BRACE: '{';
-RIGHT_CURLY_BRACE: '}';
-  
-PARENTHESISOPEN: '(';
-PARENTHESISCLOSE:')' ;
 
-
+//Added space to avoid tokenizing when these appears inside names
+AND         :  ' ' A N D ' ';
+NAND        :  ' ' N A N D ' ';
+OR          :  ' ' O R  ' ';
+NOR         :  ' ' N O R ' ';
+XOR         :  ' ' X O R ' ';
+XNOR        :  ' ' X N O R ' ';
+NOT         :  N O T ' ';
 //TEXT  : ~'<'+ ;                         // clump all text together
-
- DIGIT  : [0-9]   ;
 
 /** "any double-quoted string ("...") possibly containing escaped quotes" */ 
 STRING   : '"' ( '\\"' | . )*? '"'    ;
@@ -72,8 +74,24 @@ STRING   : '"' ( '\\"' | . )*? '"'    ;
  *  ('_') or digits ([0-9]), not beginning with a digit"
  */ 
 //ID   : LETTER ( LETTER | DIGIT )*    ;
+
+
+//obligé de faire le token à ce niveau la, sinon ACTION_NON_MEMORISEE est vu comme 
+//ACTION_NON_MEM OR ISEE
+ //ID   :  (LETTER | DIGIT) ( LETTER | DIGIT | UNDERSCORE)*    ;
  
- LETTER   : [a-zA-Z\u0080-\u00FF_]   ;
+// ID   :  (LETTER | DIGIT) ( LETTER | DIGIT | UNDERSCORE)*    ;
+//  ID   :  (LETTER ) ( LETTER | DIGIT | UNDERSCORE)*    ;
+ 
+ 
+ //ID   :   DIGIT   ;
+ 
+
+//doivent être décrit après ID !!!
+   DIGIT  : [0-9]   ;
+
+ 
+// LETTER   : [a-zA-Z\u0080-\u00FF_]   ;
 
 /** "HTML strings, angle brackets must occur in matched pairs, and
  *  unescaped newlines are allowed."
@@ -114,6 +132,37 @@ COMMENT      : '/*' .*? '*/'       -> channel(COMMENTS_CHANNEL)   ;
 LINE_COMMENT : '//' .*? '\r'? '\n' -> channel(COMMENTS_CHANNEL)   ; 
  
 
+
+/*
+EXPONENT
+  :  ('E'|'e') ( '+' | '-' )? INTEGER
+  ;
+
+
+HEXDIGIT
+    :	('A'..'F'|'a'..'f')
+    ;
+
+
+INTEGER
+  :  DIGIT ( '_' | DIGIT )*
+  ;
+
+ 
+
+BASED_INTEGER
+  : EXTENDED_DIGIT ('_' | EXTENDED_DIGIT)*
+  ;
+
+EXTENDED_DIGIT
+  : (DIGIT | LETTER)
+  ;
+
+APOSTROPHE
+  : '\''
+  ;
+  
+  */
 
 
 // -----------------------Pragma mode rules  -----------------------
