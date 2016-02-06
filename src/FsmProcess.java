@@ -77,6 +77,10 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+// TODO: afficher le numéros de ligne sur un nombre de digit constant dans la gui
+
+// TODO: prendre en compte les pragma demote et promote avant que le signal ne soit utilisé dans le modele...  donc il faudrait mettre certains champs à "inconnus" et les remplir avec le parsing du modele
+
 // TODO: demote to signal de bus définis par pragma ou alors pragma pour définir signaux
 
 // TODO: inclure numero de version dans l'affichage
@@ -2968,6 +2972,8 @@ public class FsmProcess {
 		BufferedTokenStream tokens;
 
 		MultiTransitions multiTransitions = new MultiTransitions();
+		// Store the expression as it is being parsed
+		String reconstructedExpression;
 
 		// TODO: make it clearer::::::
 		static String pragmaCleaned;
@@ -3005,6 +3011,8 @@ public class FsmProcess {
 			i.name = ctx.children.get(0).getText().toUpperCase();
 			i.isUsedAsInputInFSm = true;
 			fsm.addInput(ctx.children.get(0).getText().toUpperCase(), i);
+			// add this to the expression
+			reconstructedExpression += i.name;
 		}
 
 		// ///////////////////////////////////////////////////////////////
@@ -3021,21 +3029,17 @@ public class FsmProcess {
 		}
 
 		// ///////////////////////////////////////////////////////////////
-		public void enterCondition(FsmParser.ConditionContext ctx) {
-			String reconstructedCondition = new String("");
-			int nbChildren = ctx.getChildCount();
-			for (int n = 0; n < nbChildren; n++)
-			// reconstruct the condition, adding space characters between terms.
-			{
-				reconstructedCondition += ctx.children.get(n).getText().toUpperCase();
-				if (n != nbChildren - 1)
-					reconstructedCondition += " ";
-			}
+		public void exitCondition(FsmParser.ConditionContext ctx) {
 			// put the condition at the right place in the fsm
 			if (fsm.currentTransitionIsReset)
-				fsm.currentResetTransition.condition = reconstructedCondition;
+				fsm.currentResetTransition.condition = reconstructedExpression;
 			else
-				fsm.currentTransition.condition = reconstructedCondition;
+				fsm.currentTransition.condition = reconstructedExpression;
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterCondition(FsmParser.ConditionContext ctx) {
+			reconstructedExpression = new String("");
 		}
 
 		// //////////////////////////////////////////////////////////////
@@ -3066,18 +3070,78 @@ public class FsmProcess {
 		}
 
 		// //////////////////////////////////////////////////////////////
-		public void enterAction_expression(FsmParser.Action_expressionContext ctx) {
-			String reconstructedExpression = new String("");
-			int nbChildren = ctx.getChildCount();
-			for (int n = 0; n < nbChildren; n++) {
-				// reconstruct the condition, adding space characters between
-				// terms.
-				reconstructedExpression += ctx.children.get(n).getText().toUpperCase();
-				if (n != nbChildren - 1)
-					reconstructedExpression += " ";
-			}
+		/*
+		 * public void enterAction_expression(FsmParser.Action_expressionContext
+		 * ctx) { String reconstructedExpression = new String(""); int
+		 * nbChildren = ctx.getChildCount(); for (int n = 0; n < nbChildren;
+		 * n++) { // reconstruct the condition, adding space characters between
+		 * // terms. reconstructedExpression +=
+		 * ctx.children.get(n).getText().toUpperCase(); if (n != nbChildren - 1)
+		 * reconstructedExpression += " "; } fsm.currentAction.expression =
+		 * reconstructedExpression; }
+		 */
+
+		public void exitAction_expression(FsmParser.Action_expressionContext ctx) {
 			fsm.currentAction.expression = reconstructedExpression;
 		}
+
+		public void enterAction_expression(FsmParser.Action_expressionContext ctx) {
+			reconstructedExpression = new String("");
+			/*
+			 * int nbChildren = ctx.getChildCount(); for (int n = 0; n <
+			 * nbChildren; n++) { // reconstruct the condition, adding space
+			 * characters between // terms. reconstructedExpression +=
+			 * ctx.children.get(n).getText().toUpperCase(); if (n != nbChildren
+			 * - 1) reconstructedExpression += " "; }
+			 * fsm.currentAction.expression = reconstructedExpression;
+			 */
+		}
+
+		public void enterConstant(FsmParser.ConstantContext ctx) {
+			// add this to the expression
+			reconstructedExpression += ctx.children.get(0).getText().toUpperCase();
+		}
+
+		public void enterUnary_operators(FsmParser.Unary_operatorsContext ctx) {
+			// add this to the expression
+			reconstructedExpression += ctx.children.get(0).getText().toUpperCase() + " ";
+		}
+
+		public void enterBinary_operators(FsmParser.Binary_operatorsContext ctx) {
+			// add this to the expression
+			reconstructedExpression += " " + ctx.children.get(0).getText().toUpperCase() + " ";
+		}
+
+		public void enterParenthesisopen(FsmParser.ParenthesisopenContext ctx) {
+			// add this to the expression
+			reconstructedExpression += "(";
+		}
+
+		public void enterParenthesisclose(FsmParser.ParenthesiscloseContext ctx) {
+			// add this to the expression
+			reconstructedExpression += ")";
+		}
+
+		// //////////////////////////////////////////////////////////////
+		// public void enterExpr(FsmParser.ExprContext ctx) {
+		// String pay = ctx.children.get(0).getPayload().toString();
+		// String pay2 = ctx.toString();
+		// String pay3 = ctx.toStringTree();
+		// String pay4 = ctx.children.get(0).getClass().toString();
+		// int nbChildren = ctx.getChildCount();
+		// for (int n = 0; n < nbChildren; n++) {
+		// if
+		// (!(ctx.children.get(n).getClass().equals(FsmParser.ExprContext.class)))
+		// {
+		// String content = ctx.children.get(0).getText().toUpperCase() + " ";
+		// reconstructedExpression += content;
+		// }
+		// else ctx.children.get(n).
+		//
+		// }
+
+		// .children.get(0).getPayload().toString();
+		// }
 
 		// //////////////////////////////////////////////////////////////
 		public void enterLevel_reset_asynchronous(FsmParser.Level_reset_asynchronousContext ctx) {
@@ -3090,16 +3154,7 @@ public class FsmProcess {
 		}
 
 		// //////////////////////////////////////////////////////////////
-		public void enterAction_expression_reset_asynchronous(FsmParser.Action_expression_reset_asynchronousContext ctx) {
-			String reconstructedExpression = new String("");
-			int nbChildren = ctx.getChildCount();
-			for (int n = 0; n < nbChildren; n++) {
-				// reconstruct the condition, adding space characters between
-				// terms.
-				reconstructedExpression += ctx.children.get(n).getText().toUpperCase();
-				if (n != nbChildren - 1)
-					reconstructedExpression += " ";
-			}
+		public void exitAction_expression_reset_asynchronous(FsmParser.Action_expression_reset_asynchronousContext ctx) {
 			if (!reconstructedExpression.equals("0") && !reconstructedExpression.equals("1")) {
 				bufLogWarning.append("Warning:   Asynchronous reset value for output ");
 				bufLogWarning.append(fsm.currentOutput.name);
@@ -3111,6 +3166,21 @@ public class FsmProcess {
 			}
 			fsm.currentOutput.asyncResetExpression = reconstructedExpression;
 			fsm.currentOutput.isUsedAsOutputInFSm = true;
+		}
+
+		// //////////////////////////////////////////////////////////////
+		public void enterAction_expression_reset_asynchronous(FsmParser.Action_expression_reset_asynchronousContext ctx) {
+			reconstructedExpression = new String("");
+			// String reconstructedExpression = new String("");
+			// int nbChildren = ctx.getChildCount();
+			// for (int n = 0; n < nbChildren; n++) {
+			// // reconstruct the condition, adding space characters between
+			// // terms.
+			// reconstructedExpression +=
+			// ctx.children.get(n).getText().toUpperCase();
+			// if (n != nbChildren - 1)
+			// reconstructedExpression += " ";
+			// }
 		}
 
 		// //////////////////////////////////////////////////////////////
@@ -3513,7 +3583,7 @@ public class FsmProcess {
 		}
 
 		// ///////////////////////////////////////////////////////////////
-		public void enterId_generic(FsmParser.Id_genericContext ctx) {
+		public void enterGeneric_id(FsmParser.Generic_idContext ctx) {
 			fsm.currentGenericDeclarations = new GenericDeclaration();
 			fsm.currentGenericDeclarations.Name = ctx.children.get(0).getText().toUpperCase();
 		}
