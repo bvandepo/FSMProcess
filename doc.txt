@@ -424,6 +424,28 @@ Les transitions indifférenciées sont TOUJOURS plus prioritaire que les transit
 Donc non seulement, à 
 inhibe les actions sur état et sur transition quand la condition de reset est valide
 
+
+A CLARIFIER!!!!!!
+
+             
+<<FSM priority_action_1.fsm>>
+0:TOTO=TATA;
+0->1?COND:TOTO=TITI;
+->0?CONDRESET:TOTO=TUTU; 
+<</FSM>>
+
+
+que faire, dans ce cas la:
+<<FSM priority_action_2.fsm>>
+0:M,TOTO=TATA;
+0->1?COND:S,TOTO=TITI;
+->0?CONDRESET:R,TOTO=TUTU;
+<</FSM>>
+idéalement inhiber le  M de toto dans l'état 0 si on fait le S de TOTO sur la transition de 0 à 1, mais pas encore géré
+
+
+
+
 ===Réinitialisation asynchrone===
 
 Par défaut, l'entrée de réinitialisation asynchrone est ARAZB active à 0.
@@ -603,10 +625,11 @@ Il est possible d'utiliser ce mécanisme pour décrire des comportements plus co
 
  
 ==Promotion manuelle d'une sortie en buffer==
+ordre: le pragma doit être fait après que l'entrée ou la sortie ait été utilisée par le modèle.
 
 <<FSM ex_buffered_output_pragma.fsm>>
 1 :OUT2;
-#pragma_vhdl_promote_to_buffer{ OUT2 , OUT3}#pragma 
+#pragma_vhdl_promote_to_buffer{ OUT2 , OUT3}#pragma   //the OUT3 won't be demoted because the signal has not yet been defined in the model
 2 : OUT3;
 1->2;
 <</FSM>>
@@ -614,11 +637,11 @@ Il est possible d'utiliser ce mécanisme pour décrire des comportements plus co
 
 ==Destitution manuelle d'une sortie ou d'une entrée en signal interne==
 
-TODO: lequel utiliser quand une sortie est buffered ?? ordre???
- 
+ordre: le pragma doit être fait après que l'entrée ou la sortie ait été utilisée par le modèle.
+
 <<FSM ex_demoted_output_pragma.fsm>>
 1 :OUT2:OUT4;
-#pragma_vhdl_demote_to_signal{ OUT4,OUT3}#pragma 
+#pragma_vhdl_demote_to_signal{ OUT4,OUT3}#pragma    //the OUT3 won't be demoted because the signal has not yet been defined in the model
 2 : OUT3;
 1->2?IN1;
 #pragma_vhdl_demote_to_signal{ IN1}#pragma 
@@ -696,6 +719,8 @@ added_output<=signal_added_output;
 
 ===Gestion des composants génériques===
  
+
+
 <<FSM ex_pragma_include_vhdl.fsm>>
 #pragma_vhdl_generic_directive{ par1:integer:=3;
                                 par2:integer:=9;
@@ -712,10 +737,36 @@ F:integer:=5;
 #pragma_vhdl_entity{ B : in std_logic_vector(N -1 downto M+2);}#pragma
 #pragma_vhdl_entity{ C : in std_logic_vector(N +1 downto F-1);}#pragma
 #pragma_vhdl_entity{ D : in std_logic_vector(N + 1 downto 0);}#pragma
-#pragma_vhdl_entity{ R : in std_logic_vector(3 downto M-2);}#pragma
-#pragma_vhdl_entity{ R : in std_logic_vector( 0  to M+12);}#pragma
+#pragma_vhdl_entity{ G : in std_logic_vector(3 downto M-2);}#pragma
+#pragma_vhdl_entity{ H : in std_logic_vector( 0  to M+12);}#pragma
 <</FSM>>
 
+===Gestion des bus===
+TODO.... pas encore de gestion des sorties définies par pragmas dans le modèle. On peut indiquer pour l'affichage mais il n'y aura pas de code généré, il faut le faire à la main avec un autre pragma
+
+
+
+<<FSM ex_bus_1.fsm>>
+//définition des E/S et du code associé, doit être fait avant la définition du modèle pour que les E/S ne soient pas traitées par le modèle 
+#pragma_vhdl_generic_directive{ n:integer:=4;
+}#pragma
+#pragma_vhdl_entity{ A : in std_logic_vector(N - 1 downto 0);}#pragma
+#pragma_vhdl_entity{ B : in std_logic_vector(N - 1 downto 0);}#pragma
+#pragma_vhdl_entity{ C : out std_logic_vector(N - 1 downto 0);}#pragma
+
+//définition du modèle
+0:C=A;
+1:C=B;
+0->1?EN;
+1->0?EN;
+
+//définition de l'affectation
+#pragma_vhdl_architecture_post_begin{ 
+C<=A when (current_state=state_0) 
+else B when (current_state=state_1)
+else (others=>'0');
+}#pragma
+<</FSM>>
 
 ===Casse===
 <<FSM ex_case_insensitive.fsm>>
@@ -723,6 +774,28 @@ F:integer:=5;
 2 : OUT3:S,OUT5:r,out6= in1 anD totO2 XnOR TATA; 
 1->2?IN1;
 <</FSM>>
+
+
+
+
+===Directives pour configurer le rendu===
+
+
+valeurs par défaut:
+	 rankdir=LR; 
+		
+	ranksep=0.5;	// separation between different ranks
+	 nodesep=0.1;	// separation between nodes in same rank (state and corresponding action) between 3 and 0.1
+
+<<FSM ex_pragma_dot_global.fsm>>
+1 :i,OUT2:OUT4; 
+2 : OUT3:S,OUT5:r,out6= in1 anD totO2 XnOR TATA; 
+1->2?IN1;
+#pragma_dot_global_directive{
+  rankdir=TB; ranksep=0.009;  nodesep=0.01;   ranksep=equally;
+}#pragma
+<</FSM>>
+
 
 ===Génération de modèle par programme===
 
@@ -738,6 +811,51 @@ tiré de exam_AS:
 2->0?(NOT QCPT3) AND (NOT QCPT2) AND (NOT QCPT1) AND (NOT QCPT0):FIN;
 <</FSM>>
 
+
+<<FSM ex_counter_command_complete_with_tb.fsm>>
+0:encpt;
+2:encpt:udcpt;
+0->1?entree1;
+1->0?entree2;
+1->2?not entree2:sloadcpt:ECPT_EGAL_F;
+2->0?QCPT_EGAL_0:FIN;
+
+#pragma_vhdl_entity{ QCPT, ECPT: buffer std_logic_vector (3 downto 0);  }#pragma
+#pragma_vhdl_allow_automatic_buffering
+#pragma_vhdl_demote_to_signal{sloadcpt,encpt,udcpt,ECPT_EGAL_F,QCPT_EGAL_0}#pragma 
+#pragma_vhdl_architecture_post_begin{  
+process(ck, arazb)
+	begin
+	if arazb = '0' then QCPT<=(others=>'0');
+	elsif ck'event and ck = '1' then
+		if (sloadcpt='1') then QCPT<=ECPT;
+		elsif (encpt='1') then 
+			if (udcpt='1') then QCPT<=QCPT-1;
+			else QCPT<=QCPT+1;
+			end if;
+		end if;	
+	end if;
+end process ;
+ECPT <="1111" when ECPT_EGAL_F='1' else "0000";
+QCPT_EGAL_0<='1' when QCPT="0000" else '0';
+}#pragma
+ #pragma_vhdl_testbench{  
+ ---------------------------------------	
+wait until (ck'event and ck='0' );
+entree1<='0';
+entree2<='0';
+wait for ck_period*20;
+entree1<='1';
+entree2<='1';
+wait for ck_period*5;
+entree2<='0';
+wait for ck_period*5;
+entree1<='1';
+entree2<='1';
+wait for ck_period*30;
+---------------------------------------	
+}#pragma 
+<</FSM>>
 
 ====Mots réservés====
 
@@ -778,9 +896,6 @@ réalisation de registre à décalage?
 %M,sortie5=entree4;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
 %M,sortie6=entree5;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
 ///
-
-
-
 
 
 
