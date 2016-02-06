@@ -6,4 +6,5 @@ rem add dot executable directory to path so FsmProcess can find it
 rem do it locally in that script only, so it won't be added at each call
 setlocal
 set PATH=%PATH%;GraphVizPortable\App\bin
-"C:\Program Files\Java\jre1.8.0_71\bin\java.exe" -jar FsmProcess.jar  -i -f %1  -c
+rem "C:\Program Files\Java\jre1.8.0_71\bin\java.exe"
+java -jar FsmProcess.jar  -i -r -p  0x50x1285x750  -f %1   
