@@ -535,6 +535,12 @@ priority= regularly > reset transition >  transition > state
 pour les actions mémorisées, ordre de priorité plus fort que le classement précédent (qui reste valide pour un même type d'opération)
 asychrone >  set > reset > mémorisation
 
+===Même actions dans plusieurs états===
+<<FSM ex_multi_state_actions_1.fsm>>
+(1 to 5):COMPUTE;
+(2 to 8):COMPUTE2=TATA: COMPUTE3=TITI;
+0: RES;
+<</FSM>>
 ===Multiples transitions succéssives définies simultanément===
 
 <<FSM ex_multi_transitions_1.fsm>>

@@ -77,6 +77,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+// TODO: vérifier qu'une même condition de reset synchrone ne mêne pas à plusieurs états différents
 // TODO: afficher le numéros de ligne sur un nombre de digit constant dans la gui
 
 // TODO: prendre en compte les pragma demote et promote avant que le signal ne soit utilisé dans le modele...  donc il faudrait mettre certains champs à "inconnus" et les remplir avec le parsing du modele
@@ -1655,6 +1656,20 @@ public class FsmProcess {
 		buf.append("-- Component Declaration for the Unit Under Test (UUT)\n");
 		generateComponentVhdl(buf, false);
 		buf.append("\n");
+		// set value for generic constants so the following definitions use know
+		// values...
+		// generics
+		if (fsm.genericDeclarations.size() > 0) {
+			for (int i = 0; i < fsm.genericDeclarations.size(); i++) {
+				buf.append("constant     ");
+				buf.append(fsm.genericDeclarations.get(i).Name);
+				buf.append(" : ");
+				buf.append(fsm.genericDeclarations.get(i).Type);
+				buf.append(" := ");
+				buf.append(fsm.genericDeclarations.get(i).Default);
+				buf.append(";\n");
+			}
+		}
 		generateSignalsForInterfaceVhdl(buf);
 		buf.append("\n--Clock period, should be settable through pragma_vhdl to get real time in simu\n");
 		buf.append("constant ck_period : time := 100 ns;\n\n");
@@ -3468,6 +3483,58 @@ public class FsmProcess {
 				bufLogWarning
 						.append("Warning: The number of bits for current state number visualization set through pragma  directive should be between 1 and 1000\n");
 			}
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterMulti_state_action_directive(FsmParser.Multi_state_action_directiveContext ctx) {
+			// set default values if they are not set by optional parameters
+			multiTransitions.baseStateName = "";
+			multiTransitions.priority = 1000000; // default value
+			multiTransitions.condition = "1";
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void exitMulti_state_action_directive(FsmParser.Multi_state_action_directiveContext ctx) {
+			// do the actual job once all parameters have been gathered
+			// ascending or descending order?
+			Integer increment = +1;
+			if (multiTransitions.first > multiTransitions.last) {
+				increment = -1;
+			}
+			/*
+			 * for (int i = multiTransitions.first; i != multiTransitions.last;
+			 * i += increment) { Transition t = new Transition(); t.condition =
+			 * multiTransitions.condition; t.priorityOrder =
+			 * multiTransitions.priority; t.origin =
+			 * multiTransitions.baseStateName + Integer.toString(i);
+			 * t.destination = multiTransitions.baseStateName +
+			 * Integer.toString(i + increment); State s1 =
+			 * fsm.getStateOrCreateAndAdd(t.origin);
+			 * fsm.getStateOrCreateAndAdd(t.destination);
+			 * s1.transitionsFromThisState.add(t); // also add it to the global
+			 * transitions / list fsm.transitions.add(t); }
+			 */
+		} // ///////////////////////////////////////////////////////////////
+
+		public void enterMulti_state_action(FsmParser.Multi_state_actionContext ctx) {
+			Action a = new Action();
+			fsm.currentAction = a;
+			a.type = "I"; // default value if not specified
+			a.name = ""; // default value if not specified
+			a.expression = ""; // default value if not specified
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void exitMulti_state_action(FsmParser.Multi_state_actionContext ctx) {
+			// add the action to all the required states
+			Action a = fsm.currentAction;
+			for (int i = multiTransitions.first; i <= multiTransitions.last; i++) {
+				String stateName = multiTransitions.baseStateName + Integer.toString(i);
+				State s1 = fsm.getStateOrCreateAndAdd(stateName);
+				s1.attachedActions.add(a);
+			}
+			fsm.actions.add(a);// add to the global action list
+			fsm.noRepeatedlyActions.add(a);
 		}
 
 		// ///////////////////////////////////////////////////////////////

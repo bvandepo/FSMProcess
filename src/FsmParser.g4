@@ -77,6 +77,7 @@ line : state
      | clock_definition
      | multi_transitions_directive
      | multi_transitions_to_same_directive
+     | multi_state_action_directive
      | pragma_directive;
 
 
@@ -99,6 +100,9 @@ pragma_vhdl_directive:
 
 pragma_dot_directive:
        pragma_dot_global_directive;
+   
+multi_state_action_directive:   
+   (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number to multi_transitions_last_state_number PARENTHESISCLOSE (COLON multi_state_action)+ SEMICOLON;
    
 multi_transitions_directive:
 SHARP (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number to multi_transitions_last_state_number PARENTHESISCLOSE ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)?  SEMICOLON;
@@ -128,7 +132,9 @@ action_expression_reset_asynchronous : boolean_operation;
  
 repeatedly_action : REPEATACTION   (action_type COMMA)? action_id ( EQUAL action_expression)? SEMICOLON ;
 
-state_action :  (action_type COMMA)? action_id (EQUAL action_expression)? ;
+// different rules to trigger different listener functions
+state_action      :  (action_type COMMA)? action_id (EQUAL action_expression)? ;
+multi_state_action:  (action_type COMMA)? action_id (EQUAL action_expression)? ;
 transition_action :  (action_type COMMA)? action_id (EQUAL action_expression)? ;
  
 transition   	  :  state_id  ARROW  state_id ( STAR  transition_priority)? ('?' condition)? (COLON transition_action)* SEMICOLON   ;         	//transition (with  action(s)) 
