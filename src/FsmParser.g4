@@ -39,8 +39,8 @@ inout : I N O U T;
 buffer : B U F F E R;
 linkage : L I N K A G E; 
 
-to: T O ;
-downto:  D O W N T O;		      
+to: TO ;
+downto:  DOWNTO;		      
 
 std_logic : S T D UNDERSCORE L O G I C ;
 std_logic_vector : S T D UNDERSCORE L O G I C UNDERSCORE V E C T O R;

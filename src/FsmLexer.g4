@@ -67,6 +67,12 @@ XNOR        :  ' ' X N O R ' ';
 NOT         :  N O T ' ';
 //TEXT  : ~'<'+ ;                         // clump all text together
 
+TO: ' ' T O ' ';
+DOWNTO: ' ' D O W N T O ' ';		      
+
+
+
+
 /** "any double-quoted string ("...") possibly containing escaped quotes" */ 
 STRING   : '"' ( '\\"' | . )*? '"'    ;
 
