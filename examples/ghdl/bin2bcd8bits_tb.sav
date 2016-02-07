@@ -1,0 +1,69 @@
+[*]
+[*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
+[*] Sun Feb  7 23:16:45 2016
+[*]
+[dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdl/test_tb.vcd"
+[dumpfile_mtime] "Sun Feb  7 23:16:21 2016"
+[dumpfile_size] 429728
+[savefile] "/home/bvandepo/antlr/fsm/examples/ghdl/test_tb.sav"
+[timestart] 280475000000
+[size] 1280 778
+[pos] 0 1050
+*-29.075253 97680000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 213
+[signals_width] 200
+[sst_expanded] 1
+[sst_vpaned_height] 293
+@28
+resetn
+ck
+start
+@200
+-
+@28
+load
+@22
+bin_value[7:0]
+@28
+done
+@22
+bcd_value[11:0]
+@28
+compute
+@200
+-
+@22
+cent[3:0]
+centnew[3:0]
+dec[3:0]
+decnew[3:0]
+@c00022
+unit[3:0]
+@28
+(0)unit[3:0]
+(1)unit[3:0]
+(2)unit[3:0]
+(3)unit[3:0]
+@1401200
+-group_end
+@23
+unitnew[3:0]
+@c00022
+tmp_value[7:0]
+@28
+(0)tmp_value[7:0]
+(1)tmp_value[7:0]
+(2)tmp_value[7:0]
+(3)tmp_value[7:0]
+(4)tmp_value[7:0]
+(5)tmp_value[7:0]
+(6)tmp_value[7:0]
+(7)tmp_value[7:0]
+@1401200
+-group_end
+@820
+state_name[7:0]
+@22
+state_number[3:0]
+[pattern_trace] 1
+[pattern_trace] 0
