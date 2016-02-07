@@ -1998,7 +1998,7 @@ public class FsmProcess {
 		if (!fsm.pragmaVhdlArchitecturePreBegin.equals("")) {
 			buf.append("------------------------------pragma_vhdl_architecture_pre_begin-------------------------------------------\n");
 			buf.append(fsm.pragmaVhdlArchitecturePreBegin);
-			buf.append("--------------------------end of pragma_vhdl_architecture_pre_begin----------------------------------------\n");
+			buf.append("\n--------------------------end of pragma_vhdl_architecture_pre_begin----------------------------------------\n");
 		}
 		if (fsm.states.size() != 0) {
 			// ////// listing of possible values for state names
@@ -3495,25 +3495,7 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void exitMulti_state_action_directive(FsmParser.Multi_state_action_directiveContext ctx) {
-			// do the actual job once all parameters have been gathered
-			// ascending or descending order?
-			Integer increment = +1;
-			if (multiTransitions.first > multiTransitions.last) {
-				increment = -1;
-			}
-			/*
-			 * for (int i = multiTransitions.first; i != multiTransitions.last;
-			 * i += increment) { Transition t = new Transition(); t.condition =
-			 * multiTransitions.condition; t.priorityOrder =
-			 * multiTransitions.priority; t.origin =
-			 * multiTransitions.baseStateName + Integer.toString(i);
-			 * t.destination = multiTransitions.baseStateName +
-			 * Integer.toString(i + increment); State s1 =
-			 * fsm.getStateOrCreateAndAdd(t.origin);
-			 * fsm.getStateOrCreateAndAdd(t.destination);
-			 * s1.transitionsFromThisState.add(t); // also add it to the global
-			 * transitions / list fsm.transitions.add(t); }
-			 */
+		
 		} // ///////////////////////////////////////////////////////////////
 
 		public void enterMulti_state_action(FsmParser.Multi_state_actionContext ctx) {

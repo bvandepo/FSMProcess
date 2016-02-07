@@ -664,7 +664,7 @@ ordre: le pragma doit être fait après que l'entrée ou la sortie ait été uti
 #pragma_vhdl_pre_entity{ 
 -- this a a pragma inserted before entity
 -- for instance to add libraries 
--- //comments inside pragma are inserted in the vhdl file without modificationstata
+-- //comments inside pragma are inserted in the vhdl file without modifications
 -- void function()
 -- {
 -- tata=3;
