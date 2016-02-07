@@ -59,17 +59,17 @@ PARENTHESISCLOSE     :  ')'  ;
 
 //Added space to avoid tokenizing when these appears inside names
 //Added + to detect the keyword even if they are separated by many spaces
-AND         :  ' '+ A N D ' '+;
-NAND        :  ' '+ N A N D ' '+;
-OR          :  ' '+ O R  ' '+;
-NOR         :  ' '+ N O R ' '+;
-XOR         :  ' '+ X O R ' '+;
-XNOR        :  ' '+ X N O R ' '+;
-NOT         :  N O T ' '+;
+AND         :  WS A N D WS;
+NAND        :  WS N A N D WS;
+OR          :  WS O R  WS;
+NOR         :  WS N O R WS;
+XOR         :  WS X O R WS;
+XNOR        :  WS X N O R WS;
+NOT         :  N O T WS;
 //TEXT  : ~'<'+ ;                         // clump all text together
 
-TO: ' '+ T O ' '+;
-DOWNTO: ' '+ D O W N T O ' '+;		      
+TO: WS T O WS;
+DOWNTO: WS D O W N T O WS;		      
 
 
 
