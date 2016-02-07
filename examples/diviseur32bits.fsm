@@ -1,0 +1,124 @@
+//définition des E/S et du code associé, doit être fait avant la définition du modèle pour que les E/S ne soient pas traitées par le modèle 
+#pragma_vhdl_generic_directive{ n:integer:=32;
+m:integer:=64;
+}#pragma
+#pragma_vhdl_entity{ A  : in  std_logic_vector(N - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ B  : in  std_logic_vector(N - 1 downto 0) ;}#pragma
+
+#pragma_vhdl_entity{ Quotient  : buffer std_logic_vector(N - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ Remainder  : buffer std_logic_vector(N - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ Error      : out std_logic;}#pragma
+
+/*
+#pragma_vhdl_entity{ QuotientTemp  : buffer std_logic_vector(N - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ RemainderTemp  : buffer std_logic_vector(M - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ R1  : buffer std_logic_vector(M - 1 downto 0) ;}#pragma 
+#pragma_vhdl_entity{ R2  : buffer std_logic_vector(M downto 0) ;}#pragma 
+#pragma_vhdl_entity{ B2 : buffer std_logic_vector(M - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ testpos : buffer std_logic  ;}#pragma
+*/
+
+//buffer migrated to signal to fit the device I/Os
+#pragma_vhdl_architecture_pre_begin{ 
+ 
+ signal RemainderTemp  :   std_logic_vector(M - 1 downto 0) ; 
+ signal R1  :   std_logic_vector(M - 1 downto 0) ; 
+ signal R2  :   std_logic_vector(M downto 0) ; 
+ signal B2 :   std_logic_vector(M - 1 downto 0) ;
+ signal testpos :   std_logic  ;}#pragma
+
+
+
+
+
+
+//idealement #pragma_vhdl_entity{ R2 : out std_logic_vector((N*2) - 1 downto 0) ;}#pragma
+
+/*https://fr.wikipedia.org/wiki/Division#Division_de_nombres_cod.C3.A9s_en_binaire
+a et b font n bits
+Lorsque l'on optimise l'algorithme pour réduire le nombre d'opérations, on obtient le pseudo-code suivant.
+fonction [Q, R] = diviser(a, b)
+  R := a              // valeur initiale du reste
+  b := décalage_à_gauche_de_bits(b, n) 
+  pour i = n-1 → 0 
+    R := 2*R - b      // le reste décalé est-il supérieur à b ?
+    si R >= 0 alors
+      Q(i) := 1       // le i-ème bit de i est 1
+    sinon
+      Q(i) := 0       // le i-ème bit de i est 0
+      R := R + b      // on restaure la valeur du reste en gardant le décalage
+    fin
+  fin
+  retourner[Q, R]
+fin
+*/
+
+//TODO: generer les differents etats et action compute en fonction du nombre de bits souhaité
+//permettre l'utilisation  dans les généric  de (N*2)-1
+
+//définition du modèle
+=>0?RESETN;
+->1?START;
+0->1?START;
+#(1 to 33);
+(1 to 32):COMPUTE;
+ 
+33:RESULT_AVAILABLE;
+#pragma_vhdl_promote_to_buffer{COMPUTE }#pragma //compute est sortie de la mae mais utilisé en entrée ci dessous
+
+
+#pragma_vhdl_architecture_pre_begin{ signal padding: std_logic_vector(N - 1 downto 0) ;}#pragma
+
+
+//définition du calcul
+#pragma_vhdl_architecture_post_begin{ 
+padding<=(others=>'0');
+Error<='1' when B=0 else '0';
+R1 <=(RemainderTemp(M-2 downto 0) & '0') ;
+R2 <= ('0' & R1) - ('0' & B2) ;                 -- R := 2*R - b -- le reste décalé est-il supérieur à b 
+                                                -- il faut un bit de plus à R2 pour le signe!!!?                                          
+testpos <=	'1' when (R2(M)='0') else '0';  -- '1' when (R2>=0) else '0'; 
+Remainder<=RemainderTemp(M-1 downto N);
+ 
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  Quotient <= (others=>'0');RemainderTemp <= (others=>'0');B2<=(others=>'0');
+	elsif ck'event and ck='1' then 
+	  if START='1'then   --init synchrone
+		 RemainderTemp<=padding & A;        -- valeur initiale du reste
+	         Quotient <= (others=>'0');    -- résultat à 0 au début, on décalera pour injecter les bits résultats
+		 B2<= B & padding;                  -- décalage_à_gauche_de_bits(b, n) 
+	  elsif COMPUTE='1' then
+		if (testpos='1') then 
+			Quotient<=Quotient(N-2 downto 0) & '1';  --décalage à gauche pour injecter un 1
+			RemainderTemp<=R2 (M-1 downto 0);
+		else 
+			Quotient<=Quotient(N-2 downto 0) & '0';  --décalage à gauche pour injecter un 0
+			RemainderTemp<=(RemainderTemp(M-2 downto 0) & '0');
+		end if;
+	 end if;
+	end if;
+end process;
+}#pragma
+
+ 
+//run for 30000us
+#pragma_vhdl_testbench{  
+---------------------------------------	
+A<=(others=>'0');
+B<=(others=>'0');
+for i in 0 to 1000 loop
+for j in 0 to 10 loop
+wait until (ck'event and ck='0' );
+START<='1';
+wait for ck_period;
+START<='0';
+wait for ck_period*40;
+B<=B+1;
+END LOOP;
+A<=A+1;
+B<=(others=>'0');
+END LOOP;
+---------------------------------------	
+}#pragma
+
