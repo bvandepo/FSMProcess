@@ -58,17 +58,18 @@ PARENTHESISCLOSE     :  ')'  ;
   Z:('z'|'Z');
 
 //Added space to avoid tokenizing when these appears inside names
-AND         :  ' ' A N D ' ';
-NAND        :  ' ' N A N D ' ';
-OR          :  ' ' O R  ' ';
-NOR         :  ' ' N O R ' ';
-XOR         :  ' ' X O R ' ';
-XNOR        :  ' ' X N O R ' ';
-NOT         :  N O T ' ';
+//Added + to detect the keyword even if they are separated by many spaces
+AND         :  ' '+ A N D ' '+;
+NAND        :  ' '+ N A N D ' '+;
+OR          :  ' '+ O R  ' '+;
+NOR         :  ' '+ N O R ' '+;
+XOR         :  ' '+ X O R ' '+;
+XNOR        :  ' '+ X N O R ' '+;
+NOT         :  N O T ' '+;
 //TEXT  : ~'<'+ ;                         // clump all text together
 
-TO: ' ' T O ' ';
-DOWNTO: ' ' D O W N T O ' ';		      
+TO: ' '+ T O ' '+;
+DOWNTO: ' '+ D O W N T O ' '+;		      
 
 
 
