@@ -85,8 +85,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 // TODO: gérer les librairies avec ghdl et compiler fsm + ghdl -a tous les fichiers nécessaires
 // TODO: vérifier qu'une même condition de reset synchrone ne mêne pas à plusieurs états différents
-// TODO: afficher le numéros de ligne sur un nombre de digit constant dans la gui
-
 // TODO: prendre en compte les pragma demote et promote avant que le signal ne soit utilisé dans le modele...  donc il faudrait mettre certains champs à "inconnus" et les remplir avec le parsing du modele
 
 // TODO: demote to signal de bus définis par pragma ou alors pragma pour définir signaux
@@ -413,7 +411,7 @@ public class FsmProcess {
 			for (String v : textVhdl.split("\n")) {
 				Boolean lineCommented = false;
 				lineNumber++;
-				text.append(String.format("%5s : ", Integer.toString(lineNumber)));
+				text.append(String.format("%06d : ", lineNumber));
 				for (String w : v.split(" ")) {
 					if (lineCommented)
 						text.append(w);
