@@ -418,6 +418,10 @@ etat_2->etat_3;
 <</FSM>>
 
 
+Attention, impact potentiellement important sur la synthèse:
+  kdiff3 multiplier32bits.fsm multiplier32bitsnosreset.fsm
+  kdiff3 multiplier32bits_ise_synthesis.txt multiplier32bitsnosreset_ise_synthesis.txt
+
 
 ==Notion de priorité sur les transitions standard==
 Les transitions indifférenciées sont TOUJOURS plus prioritaire que les transitions standard (même si des niveaux de priorités indiquant le contraires sont spécifiés dans le modèle, raison pour laquelle les couleurs utilisées pour indiquer les niveaux de priorité sont différentes). 
