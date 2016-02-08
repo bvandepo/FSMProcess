@@ -77,7 +77,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
- // TODO: inclure la durée du testbench dans le pragma et l'extraire pour ghdl
+// TODO : gérer les paramètres généric compliqués: checker que les nom des generic id utilisé dans les interface port types sont bien déclarés dans les pragma generic
+// TODO: inclure la durée du testbench dans le pragma et l'extraire pour ghdl
 // TODO: recopier le 1° commentaire du FSM si présent dans chaque fichier généré (en adaptant le caractère de commentaire
 // idem pour la doc
 // TODO : éviter plantage violent quand on saisit #pragma_vhdl_entity{ BCD_VALUE  : buffered  std_logic_vector(M-1 downto 0) ;}#pragma
@@ -108,8 +109,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //%R,delay_ended=srazcpt; 
 
 //TODO: pour les AMZI, ajouter une commande qui permet de les définir active à 0... rien ne change dans le code sauf ca...
-
-//TODO; ajouter gestion des GENERIC et aussi dans testbench... (avec un pragma dans le fsm
 
 //TODO: ajouter gestion de multiples testbenches
 
@@ -689,7 +688,7 @@ public class FsmProcess {
 		// having comments without \n
 		inputFileContentString += "\n";
 		ANTLRInputStream input = new ANTLRInputStream(inputFileContentString);
-	 	// erase old files
+		// erase old files
 		EraseFile(fsmBaseName.concat(".dot"));
 		EraseFile(fsmBaseName.concat("_pack.vhd"));
 		EraseFile(fsmBaseName.concat(".vhd"));
@@ -1696,7 +1695,8 @@ public class FsmProcess {
 		buf.append("BEGIN\n");
 		buf.append("-- Instantiate the Unit Under Test (UUT)\n");
 		generatePortMapVhdl(buf);
-		generateVhdlTestBenchAsciiStates(buf);
+		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0))
+			generateVhdlTestBenchAsciiStates(buf);
 		buf.append("\n-- Clock process definitions\n");
 		buf.append("ck_process :process\n");
 		buf.append("begin\n");
@@ -1828,10 +1828,12 @@ public class FsmProcess {
 			buf.append(fsm.realOutputs.get(n).interfacePortTypes);
 			buf.append(";\n");
 		}
-		buf.append("--signals for current state name visualization:  \n");
-		buf.append("signal state_name : std_logic_vector(");
-		buf.append((fsm.stateNameDisplayError.length() * 8) - 1);
-		buf.append(" downto 0 );\n");
+		if (fsm.GenerateNumberOfStateOutput && (fsm.states.size() != 0)) {
+			buf.append("--signals for current state name visualization:  \n");
+			buf.append("signal state_name : std_logic_vector(");
+			buf.append((fsm.stateNameDisplayError.length() * 8) - 1);
+			buf.append(" downto 0 );\n");
+		}
 	}
 
 	// ////////////////////////////////////////////////////////////////////////////////////
