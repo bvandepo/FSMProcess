@@ -214,10 +214,18 @@ interface_port_mode   : in | out | inout | buffer | linkage ;
 interface_port_type:    interface_port_type_std_logic
 		              | interface_port_type_std_logic_vector  PARENTHESISOPEN bus_begin to_or_down_to bus_end PARENTHESISCLOSE;
 to_or_down_to :   to | downto;		      
+ 
+number_of_bit_with_optional_generic_prefix:    (unary_num_operators)? expr_num (binary_num_operators expr)*  ;
 
-number_of_bit_with_optional_generic_prefix:                  
-          ( generic_id ((MINUS| PLUS)?  (positive_integer))? 
-          |  (MINUS| PLUS)?  (positive_integer) );  //if the - or + sign is attached to the number
+expr_num:    (parenthesisopen expr_num parenthesisclose)  
+	  |  expr_num  binary_num_operators expr_num 
+	  |  unary_num_operators expr_num
+	  |  generic_id
+	  |  constant
+	  ;
+      
+unary_num_operators :   PLUS | MINUS   ;//to complete with all needed operators 
+binary_num_operators :  PLUS | MINUS | STAR | SLASH ;//to complete with all needed operators 
           
 bus_begin:  number_of_bit_with_optional_generic_prefix;
 bus_end:  number_of_bit_with_optional_generic_prefix;

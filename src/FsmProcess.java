@@ -77,7 +77,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
-// TODO : gérer les paramètres généric compliqués: checker que les nom des generic id utilisé dans les interface port types sont bien déclarés dans les pragma generic
+// TODO : checker que les nom des generic id utilisé dans les interface port types sont bien déclarés dans les pragma generic
 // TODO: inclure la durée du testbench dans le pragma et l'extraire pour ghdl
 // TODO: recopier le 1° commentaire du FSM si présent dans chaque fichier généré (en adaptant le caractère de commentaire
 // idem pour la doc
