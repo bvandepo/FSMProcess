@@ -1,0 +1,72 @@
+[*]
+[*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
+[*] Mon Feb  8 16:31:13 2016
+[*]
+[dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdl/test_tb.vcd"
+[dumpfile_mtime] "Mon Feb  8 16:30:55 2016"
+[dumpfile_size] 14067489
+[savefile] "/home/bvandepo/antlr/fsm/examples/ghdl/test_tb.sav"
+[timestart] 4844700000000
+[size] 1278 774
+[pos] 0 1050
+*-31.075253 4850160000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 213
+[signals_width] 310
+[sst_expanded] 1
+[sst_vpaned_height] 283
+@28
+resetn
+ck
+start
+@200
+-
+@28
+load
+compute
+@c00024
+bin_value[31:0]
+@28
+(0)bin_value[31:0]
+(1)bin_value[31:0]
+(2)bin_value[31:0]
+(3)bin_value[31:0]
+(4)bin_value[31:0]
+(5)bin_value[31:0]
+(6)bin_value[31:0]
+(7)bin_value[31:0]
+(8)bin_value[31:0]
+(9)bin_value[31:0]
+(10)bin_value[31:0]
+(11)bin_value[31:0]
+(12)bin_value[31:0]
+(13)bin_value[31:0]
+(14)bin_value[31:0]
+(15)bin_value[31:0]
+(16)bin_value[31:0]
+(17)bin_value[31:0]
+(18)bin_value[31:0]
+(19)bin_value[31:0]
+(20)bin_value[31:0]
+(21)bin_value[31:0]
+(22)bin_value[31:0]
+(23)bin_value[31:0]
+(24)bin_value[31:0]
+(25)bin_value[31:0]
+(26)bin_value[31:0]
+(27)bin_value[31:0]
+(28)bin_value[31:0]
+(29)bin_value[31:0]
+(30)bin_value[31:0]
+(31)bin_value[31:0]
+@1401200
+-group_end
+@28
+done
+@22
+bcd_value[39:0]
+@200
+-
+@821
+state_name[15:0]
+[pattern_trace] 1
+[pattern_trace] 0
