@@ -25,12 +25,22 @@ S_OVERFLOW->WAIT_TO_START:R,result_available:S,OVERFLOW;
 #pragma_vhdl_entity{ MAX_WINDOW: in std_logic_vector(31 downto 0);  }#pragma    //this is the max number of clock periods to achieve the measure, before overflow
   
 
+#pragma_vhdl_pre_entity{ 
+use ieee.numeric_std.all; 
+--use ieee.std_logic_arith.all;
+--use ieee.std_logic_unsigned.all;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+}#pragma 
+
 #pragma_vhdl_entity{ cpt_time,cpt_period: buffer std_logic_vector(31 downto 0);  }#pragma    //this is the desired number of clock periods to achieve 
 #pragma_vhdl_entity{ saved_cpt_time,saved_cpt_period: buffer std_logic_vector (31 downto 0);  }#pragma    //this is the results of the measurement
+#pragma_vhdl_entity{ frequency: buffer std_logic_vector (63 downto 0);  }#pragma    //this is the results of the measurement
+#pragma_vhdl_entity{ frequency2: buffer std_logic_vector (31 downto 0);  }#pragma    //this is the results of the measurement
+
 
 #pragma_vhdl_architecture_pre_begin{ 
 signal  old_sig: std_logic;
-
 }#pragma
 
 #pragma_vhdl_architecture_post_begin{ 
@@ -69,6 +79,10 @@ RISING_EDGE_SIG<='1' when SIG='1' AND OLD_SIG='0' else '0';
 
 --TODO: 
 COMPUTE_OVER<='1';
+--frequency<= unsigned(saved_cpt_period(31 downto 0) )   * unsigned( saved_cpt_time(31 downto 0) )  ; --simple slow division...
+--frequency2<= unsigned(saved_cpt_period(31 downto 0) )   / unsigned( saved_cpt_time(31 downto 0) )  ; --simple slow division...
+frequency<= saved_cpt_period(31 downto 0) *  saved_cpt_time(31 downto 0)   ; --simple slow division...
+frequency2<=  saved_cpt_period(31 downto 0)    /  saved_cpt_time(31 downto 0)   ; --simple slow division...
 
 
 TIME_OVERFLOW<='1' when CPT_TIME=MAX_WINDOW else '0';

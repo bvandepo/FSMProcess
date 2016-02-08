@@ -5,7 +5,7 @@
 4: marche=Inter0:A9;
 5: marche=Inter0:sens;
 6: marche=Inter0:A8;
-
+	
 0 -> 1 ?inter1;
 1 -> 2 ?NOT C12;
 2 -> 3 ?NOT C11; 
@@ -14,7 +14,10 @@
 5 -> 6 ?NOT C10;
 6 -> 0 ?NOT C8;
 
- 
+#pragma_dot_global_directive{
+  rankdir=TB; ranksep=0.1;  nodesep=0.1;    
+ }#pragma
+
 //to testbench this file, just type ./run_tb.sh train 10000us in example/ghdl directory
 
 #pragma_vhdl_testbench{  

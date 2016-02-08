@@ -1,0 +1,46 @@
+[*]
+[*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
+[*] Fri Jan 29 22:41:02 2016
+[*]
+[dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdl/filteredge_tb.vcd"
+[dumpfile_mtime] "Fri Jan 29 22:40:52 2016"
+[dumpfile_size] 87619
+[savefile] "/home/bvandepo/antlr/fsm/examples/ghdl/filteredge_tb.sav"
+[timestart] 37120000000
+[size] 1280 778
+[pos] -1 -1
+*-33.000000 25647000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 213
+[signals_width] 174
+[sst_expanded] 1
+[sst_vpaned_height] 218
+@28
+resetn
+ck
+sreset
+@22
+min_time[5:0]
+@200
+-
+@28
+signal_in
+@200
+-
+@28
+delay_ended
+@22
+q[5:0]
+@28
+srazcpt
+state_number[2:0]
+@821
+state_name[159:0]
+@200
+-
+@28
+falling_edge
+rising_edge
+false_falling_edge
+false_rising_edge
+[pattern_trace] 1
+[pattern_trace] 0

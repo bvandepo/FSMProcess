@@ -24,10 +24,7 @@
 
 
 #pragma_vhdl_entity{ 
--- this a a pragma inserted inside entity
--- for instance to add inputs /outputs
-added_output: out std_logic;
- 
+added_output: out std_logic; 
 }#pragma
 
 

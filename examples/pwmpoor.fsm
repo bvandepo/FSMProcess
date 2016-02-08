@@ -1,0 +1,25 @@
+
+#pragma_vhdl_entity{ dutycycle  : in  std_logic_vector(7 downto 0) ;}#pragma
+
+//définition du modèle
+->0?SRESET:GETNEWVALUES;
+=>0?RESETN;
+#(0 to 99);
+99->0:GETNEWVALUES;
+(0 to 99):PWM=COMP;
+
+
+#pragma_vhdl_promote_to_buffer{GETNEWVALUES }#pragma  
+#pragma_vhdl_demote_to_signal{COMP}#pragma  
+
+
+//TODO: foireux il faudrait pouvoir comparer dutycycle avec l'état courant
+
+#pragma_vhdl_testbench{  
+---------------------------------------	
+ 
+wait for ck_period*400000;
+ 
+---------------------------------------	
+}#pragma
+

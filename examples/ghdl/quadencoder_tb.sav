@@ -1,0 +1,31 @@
+[*]
+[*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
+[*] Fri Jan 29 22:40:40 2016
+[*]
+[dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdl/quadencoder_tb.vcd"
+[dumpfile_mtime] "Fri Jan 29 22:40:23 2016"
+[dumpfile_size] 52954
+[savefile] "/home/bvandepo/antlr/fsm/examples/ghdl/quadencoder_tb.sav"
+[timestart] 0
+[size] 1280 778
+[pos] -1 -1
+*-31.000000 1620000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 213
+[signals_width] 166
+[sst_expanded] 1
+[sst_vpaned_height] 282
+@28
+arazb
+ck
+a
+b
+sraz_cpt
+dec
+inc
+state_number[1:0]
+@820
+state_name[7:0]
+@22
+count[15:0]
+[pattern_trace] 1
+[pattern_trace] 0

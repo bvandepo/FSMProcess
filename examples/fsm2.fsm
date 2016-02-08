@@ -71,7 +71,7 @@ E->1?IN6;
 
 C->7?TOTO:I,sortie1:
   	            I,sortie2=IN2 and not IN4:
-		    S,sortie4=IN3;
+		    R,sortie4=IN3;
 
 D->5?TITI;
 E->5?TITI;
@@ -90,6 +90,8 @@ E->5?TITI;
 ->A*1?SRESET6;
 
 ->D? SRESET4;
+/* COMMENTAIRE
+PIPOT*/
 //////////////////////////////////////////////////////////////////////////////////////////////////////  
 //Actions toujours vraies
  	%I,sortie6;

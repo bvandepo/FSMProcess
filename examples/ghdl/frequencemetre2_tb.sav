@@ -1,0 +1,53 @@
+[*]
+[*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
+[*] Sat Feb  6 23:09:31 2016
+[*]
+[dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdl/frequencemetre2_tb.vcd"
+[dumpfile_mtime] "Sat Feb  6 23:09:16 2016"
+[dumpfile_size] 62949022
+[savefile] "/home/bvandepo/antlr/fsm/examples/ghdl/frequencemetre2_tb.sav"
+[timestart] 26194580000000
+[size] 1280 778
+[pos] -1 -1
+*-33.000000 26211150000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 213
+[signals_width] 294
+[sst_expanded] 1
+[sst_vpaned_height] 389
+@28
+ck
+sreset
+sig
+@200
+-
+@24
+desired_window[31:0]
+max_window[31:0]
+cpt_period[31:0]
+cpt_time[31:0]
+@200
+-
+@24
+saved_cpt_period[31:0]
+saved_cpt_time[31:0]
+@28
+result_available
+overflow
+@200
+-
+@25
+frequency[63:0]
+@200
+-
+@28
+rising_edge_sig
+en_cpt_periods
+periods_overflow
+time_overflow
+compute_over
+cpt_time_elapsed
+state_number[2:0]
+@820
+state_name[127:0]
+[pattern_trace] 1
+[pattern_trace] 0
