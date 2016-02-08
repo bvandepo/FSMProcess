@@ -77,6 +77,12 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+ // TODO: inclure la durée du testbench dans le pragma et l'extraire pour ghdl
+// TODO: recopier le 1° commentaire du FSM si présent dans chaque fichier généré (en adaptant le caractère de commentaire
+// idem pour la doc
+// TODO : éviter plantage violent quand on saisit #pragma_vhdl_entity{ BCD_VALUE  : buffered  std_logic_vector(M-1 downto 0) ;}#pragma
+
+// TODO: gérer les librairies avec ghdl et compiler fsm + ghdl -a tous les fichiers nécessaires
 // TODO: vérifier qu'une même condition de reset synchrone ne mêne pas à plusieurs états différents
 // TODO: afficher le numéros de ligne sur un nombre de digit constant dans la gui
 
@@ -660,16 +666,30 @@ public class FsmProcess {
 		System.out.print("Processing the file: ");
 		System.out.print(fsmInputName);
 		System.out.print("\n");
-		ANTLRInputStream input = null;
+
+		// to read the file 10K bytes at a time
+		byte[] inputFileContent = new byte[10240];
+		int nbCharRead = 1;
+		String inputFileContentString = "";
 		try {
-			input = new ANTLRInputStream(is);
+			while (nbCharRead != -1) {
+				nbCharRead = is.read(inputFileContent, 0, 10240);
+				if (nbCharRead != -1) {
+					byte[] reduced = Arrays.copyOfRange(inputFileContent, 0, nbCharRead);
+					// inputFileContent[nbCharRead] = 0;
+					inputFileContentString += new String(reduced, "UTF-8");
+				}
+			}
 		} catch (IOException e) {
 			System.err.println(e);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		// erase old files
+		// add \n at the end of the file to avoid problem with parsing files
+		// having comments without \n
+		inputFileContentString += "\n";
+		ANTLRInputStream input = new ANTLRInputStream(inputFileContentString);
+	 	// erase old files
 		EraseFile(fsmBaseName.concat(".dot"));
 		EraseFile(fsmBaseName.concat("_pack.vhd"));
 		EraseFile(fsmBaseName.concat(".vhd"));
@@ -3495,7 +3515,7 @@ public class FsmProcess {
 
 		// ///////////////////////////////////////////////////////////////
 		public void exitMulti_state_action_directive(FsmParser.Multi_state_action_directiveContext ctx) {
-		
+
 		} // ///////////////////////////////////////////////////////////////
 
 		public void enterMulti_state_action(FsmParser.Multi_state_actionContext ctx) {
