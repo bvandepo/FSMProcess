@@ -1,8 +1,8 @@
 //inspired from http://www.eng.utah.edu/~nmcdonal/Tutorials/BCDTutorial/BCDConversion.html
 
-#pragma_vhdl_generic_directive{ n:integer:=12; m:integer:=16; p:integer:=4; }#pragma
+#pragma_vhdl_generic_directive{ n:integer:=12; p:integer:=4; }#pragma
 #pragma_vhdl_entity{ BIN_VALUE  : in  std_logic_vector(N-1 downto 0) ;}#pragma
-#pragma_vhdl_entity{ BCD_VALUE  : buffer  std_logic_vector(M-1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ BCD_VALUE  : buffer  std_logic_vector(p*4-1 downto 0) ;}#pragma
 
 #pragma_vhdl_entity{ TMP_VALUE  : buffer  std_logic_vector(N-1 downto 0) ;}#pragma
   
@@ -16,8 +16,7 @@
 13:DONE;
 
 #pragma_vhdl_promote_to_buffer{LOAD,COMPUTE }#pragma  
-  #pragma_vhdl_architecture_pre_begin{  
-
+#pragma_vhdl_architecture_pre_begin{  
 type arrayOfBcd is array(0 to p-1 ) of std_logic_vector (3 downto 0);
 signal BCDELEMENT,BCDELEMENTNEW:arrayOfBcd ; 
 }#pragma
