@@ -796,7 +796,9 @@ insensible à la casse
 
 uniquement des valeurs d'entier
 
-opérateurs + - * / %
+opérateurs + - * / % log(x,y)
+
+calculs intermédiaires fait sur des entiers 64 bits
  
 comportement préprocesseur: affectation et remplacement par évaluation.
 
@@ -808,6 +810,14 @@ TODO: génération des noms de fichiers en sortie en fonction des paramètres  (
 (1 to #pragma_fsm_generic{3*M+1}#pragma):COMPUTE; 
 #pragma_fsm_generic{N}#pragma:RESULT_AVAILABLE;
 #pragma_vhdl_entity{ C : out std_logic_vector(#pragma_fsm_generic{M*2}#pragma - 1 downto 0);}#pragma
+<</FSM>>
+
+Pour débugger, utiliser un nom d'état par exemple pour afficher le résultat. Ici calcul du nombre de digits en base 10 pour afficher N bits. Ici il faut 10 digits pour afficher un entier sur 32 bits:
+<<FSM ex_fsm_generic_debug.fsm>>
+#pragma_fsm_generic{
+N=32;log(2^N,10)+1
+}#pragma
+; --état vide juste pour l'affichage
 <</FSM>>
 ===Directives pour configurer le rendu===
 
