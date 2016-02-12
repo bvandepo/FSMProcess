@@ -1,0 +1,80 @@
+//définition des E/S et du code associé, doit être fait avant la définition du modèle pour que les E/S ne soient pas traitées par le modèle 
+ 
+#pragma_vhdl_entity{ A  : in  std_logic_vector(#pragma_fsm_generic{N}#pragma - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ B  : in  std_logic_vector(#pragma_fsm_generic{N}#pragma - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ Quotient  : buffer std_logic_vector(#pragma_fsm_generic{N}#pragma - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ Remainder  : buffer std_logic_vector(#pragma_fsm_generic{N}#pragma - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ Error      : out std_logic;}#pragma
+
+//buffer migrated to signal to fit the device I/Os
+#pragma_vhdl_architecture_pre_begin{ 
+signal RemainderTemp  :   std_logic_vector(#pragma_fsm_generic{M=N*2;M}#pragma - 1 downto 0) ; 
+signal R1             :   std_logic_vector(#pragma_fsm_generic{M}#pragma - 1 downto 0) ; 
+signal R2             :   std_logic_vector(#pragma_fsm_generic{M}#pragma downto 0) ; 
+signal B2             :   std_logic_vector(#pragma_fsm_generic{M}#pragma - 1 downto 0) ;
+signal testpos        :   std_logic  ;}#pragma
+ 
+//définition du modèle
+=>0?RESETN;
+->1?START;
+0->1?START;
+#(1 to #pragma_fsm_generic{N+1}#pragma);
+(1 to #pragma_fsm_generic{N}#pragma):COMPUTE;
+#pragma_fsm_generic{N+1}#pragma:RESULT_AVAILABLE;
+#pragma_vhdl_promote_to_buffer{COMPUTE }#pragma //compute est sortie de la mae mais utilisé en entrée ci dessous
+
+
+#pragma_vhdl_architecture_pre_begin{ signal padding: std_logic_vector(#pragma_fsm_generic{N}#pragma - 1 downto 0) ;}#pragma
+
+
+//définition du calcul
+#pragma_vhdl_architecture_post_begin{ 
+padding<=(others=>'0');
+Error<='1' when B=0 else '0';
+R1 <=(RemainderTemp(#pragma_fsm_generic{M}#pragma-2 downto 0) & '0') ;
+R2 <= ('0' & R1) - ('0' & B2) ;                 -- R := 2*R - b -- le reste décalé est-il supérieur à b 
+                                                -- il faut un bit de plus à R2 pour le signe!!!?                                          
+testpos <=	'1' when (R2(#pragma_fsm_generic{M}#pragma)='0') else '0';  -- '1' when (R2>=0) else '0'; 
+Remainder<=RemainderTemp(#pragma_fsm_generic{M}#pragma-1 downto #pragma_fsm_generic{N}#pragma);
+ 
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  Quotient <= (others=>'0');RemainderTemp <= (others=>'0');B2<=(others=>'0');
+	elsif ck'event and ck='1' then 
+	  if START='1'then   --init synchrone
+		 RemainderTemp<=padding & A;        -- valeur initiale du reste
+	         Quotient <= (others=>'0');    -- résultat à 0 au début, on décalera pour injecter les bits résultats
+		 B2<= B & padding;                  -- décalage_à_gauche_de_bits(b, n) 
+	  elsif COMPUTE='1' then
+		if (testpos='1') then 
+			Quotient<=Quotient(#pragma_fsm_generic{N}#pragma-2 downto 0) & '1';  --décalage à gauche pour injecter un 1
+			RemainderTemp<=R2 (#pragma_fsm_generic{M}#pragma-1 downto 0);
+		else 
+			Quotient<=Quotient(#pragma_fsm_generic{N}#pragma-2 downto 0) & '0';  --décalage à gauche pour injecter un 0
+			RemainderTemp<=(RemainderTemp(#pragma_fsm_generic{M}#pragma-2 downto 0) & '0');
+		end if;
+	 end if;
+	end if;
+end process;
+}#pragma
+
+ 
+//run for 30000us
+#pragma_vhdl_testbench{  
+---------------------------------------	
+A<=(others=>'0');
+B<=(others=>'0');
+for i in 0 to 1000 loop
+for j in 0 to 10 loop
+wait until (ck'event and ck='0' );
+START<='1';
+wait for ck_period;
+START<='0';
+wait for ck_period*#pragma_fsm_generic{N+3}#pragma;
+B<=B+1;
+END LOOP;
+A<=A+1;
+B<=(others=>'0');
+END LOOP;
+---------------------------------------	
+}#pragma
