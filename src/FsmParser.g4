@@ -5,6 +5,25 @@ parser grammar FsmParser;
 
 options { tokenVocab=FsmLexer; } // use tokens from ModeFsmLexer.g4
 
+fsmgeneric: stat+;
+
+stat:  assignExpr*   printExpr;
+
+printExpr:  numericexpr SEMICOLON*;
+assignExpr: id EQUAL numericexpr SEMICOLON;
+  
+numericbinaryoperatorB:  PLUS | MINUS;
+numericbinaryoperatorA: SLASH | STAR;
+
+numericunaryoperator:  PLUS | MINUS;
+numericexpr:  numericexpr numericbinaryoperatorA numericexpr  # MulDiv
+     		| numericexpr numericbinaryoperatorB numericexpr  # AddSub
+			| numericunaryoperator numericexpr                # ChangeSign 
+     		| parenthesisopen numericexpr parenthesisclose    # parens
+  		    | positive_integer                                # int
+   		    | id											  # identifier
+			;
+
 
 fsmfile  : (line)+ ;          //a state machine is many lines, the fsm name is mandatory as the first entry
 

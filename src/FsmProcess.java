@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -76,6 +77,9 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Java->Code style->Formatter -> Edit 
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
+
+// TODO: gérer les parametres FSM_GENERIC: ils sont généric pour le programme fsm mais constant pour le vhdl, ex le bin2bcd. Il faut garder les généric pour les vrais.
+// La valeur du parametre FSM_GENERIC peut être fournie en ligne de commande (avec une valeur par defaut dans le .fsm) si la valeur est fournie en ligne de commande, le nom du composant est ajusté (classement des noms de paramètres par ordre alphabetique suivi de leurs valeurs)
 
 // TODO : checker que les nom des generic id utilisé dans les interface port types sont bien déclarés dans les pragma generic
 // TODO: inclure la durée du testbench dans le pragma et l'extraire pour ghdl
@@ -286,7 +290,7 @@ public class FsmProcess {
 	static int WIN_HEIGHT = 750;
 	private static FileWatcher watcher;
 	// number of different text files to display on the gui
-	static int NB_DISPLAY_TYPES = 6;
+	static int NB_DISPLAY_TYPES = 7;
 	static int displayState = 0; // Dot image view by default
 
 	// ////////////////////////////////////////////////////////////////////
@@ -380,26 +384,30 @@ public class FsmProcess {
 			text.append("</font>");
 			frame.setTitle(fsm.name + ".log");
 			break;
-		case 2: // display vhdl text
+		case 2: // display fsm postpreprocessor text
+			buf = bufFsm;
+			frame.setTitle("postpreprocessor " + fsm.name + ".fsm");
+			break;
+		case 3: // display vhdl text
 			buf = bufVhdl;
 			frame.setTitle(fsm.name + ".vhd");
 			break;
-		case 3: // display vhdl text
+		case 4: // display vhdl text
 			buf = bufVhdlPortMap;
 			frame.setTitle(fsm.name + "_portmap.vhd");
 			break;
-		case 4: // display vhdl text
+		case 5: // display vhdl text
 			buf = bufVhdlPack;
 			frame.setTitle(fsm.name + "_pack.vhd");
 			break;
-		case 5: // display vhdl text
+		case 6: // display vhdl text
 			buf = bufVhdlTb;
 			frame.setTitle(fsm.name + "_tb.vhd");
 			break;
 		default: // display text
 			break;
 		}
-		if (displayState > 1) { // VHDL
+		if (displayState >= 2) { // FSM & VHDL
 			int lineNumber = 0;
 			text.append("<html>");
 			// replace special html caracters. the & has to be processed firstly
@@ -442,7 +450,7 @@ public class FsmProcess {
 				text.append("<br>");
 			}
 		}
-		if (displayState != 0) { // LOG OR VHDL
+		if (displayState != 0) { // FSM OR LOG OR VHDL
 			labelDisplayImage.setIcon(null);
 			labelDisplayImage.setText(text.toString());
 			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
@@ -609,6 +617,7 @@ public class FsmProcess {
 	// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	static String softNameAndVersion = "FsmProcess V 1.0";
 	static String fsmInputName;
+	static StringBuilder bufFsm;
 	static StringBuilder bufDot;
 	static StringBuilder bufVhdl;
 	static StringBuilder bufVhdlTb;
@@ -635,7 +644,24 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////
+	public static void testparsefsmgeneric() {
+		// String inputFileContentString = "1 +3 *(2/5) +(1/(3*2)+6)";
+		String inputFileContentString = "tutu=(10*toto/(3+((tata*3)/2))); holala=tutu/2; holala+2";
+		ANTLRInputStream input = new ANTLRInputStream(inputFileContentString);
+		FsmLexer lexer = new FsmLexer(input);
+		CommonTokenStream tokens = new CommonTokenStream(lexer);
+		FsmParser parser = new FsmParser(tokens);
+		ParseTree tree = parser.fsmgeneric(); // parse
+		FSMGenericVisitor eval = new FSMGenericVisitor();
+		eval.assignValue("toto", 32); // get from command line?
+		eval.assignValue("tata", 6); // get from command line?
+		int valeur = eval.visit(tree);
+		System.out.println(valeur);
+		System.out.println("FINI");
+	}
 
+	// ///////////////////////////////////////////////
+	
 	static public void GenerateFiles(String fsmInputName) {
 		fsm = new FiniteStateMachine();
 		// by default, the input stream is System.in
@@ -684,7 +710,12 @@ public class FsmProcess {
 		}
 		// add \n at the end of the file to avoid problem with parsing files
 		// having comments without \n
+
+		testparsefsmgeneric();
+
 		inputFileContentString += "\n";
+		// inputFileContentString = applyFSMGenerics(inputFileContentString);
+
 		ANTLRInputStream input = new ANTLRInputStream(inputFileContentString);
 		// erase old files
 		EraseFile(fsmBaseName.concat(".dot"));
@@ -706,11 +737,14 @@ public class FsmProcess {
 		bufVhdlTb = new StringBuilder();
 		bufVhdlPortMap = new StringBuilder();
 		bufVhdlPack = new StringBuilder();
+		bufFsm = new StringBuilder();
 		bufDot = new StringBuilder();
 		bufLogInfo = new StringBuilder();
 		bufLogWarning = new StringBuilder();
 		bufLogError = new StringBuilder();
 		bufLogFinal = new StringBuilder();
+
+		bufFsm.append(inputFileContentString);
 
 		walker.walk(collector, tree);
 
@@ -1157,6 +1191,77 @@ public class FsmProcess {
 			bufDot.append(" };");
 		}
 		bufDot.append("}\n"); // end of the DOT file content
+	}
+
+	// ////////////////////////////////////////////////
+
+	static public String applyFSMGenerics(String stIn) {
+		fsm.addGeneric("N", "3");
+		fsm.addGeneric("M", "4");
+
+		String stOut = processOneStringFSMGenerics(stIn);
+		return stOut;
+
+		/*
+		 * fsm.pragmaVhdlPreEntity =
+		 * processOneStringFSMGenerics(fsm.pragmaVhdlPreEntity);
+		 * fsm.pragmaVhdlEntity =
+		 * processOneStringFSMGenerics(fsm.pragmaVhdlEntity);
+		 * fsm.pragmaVhdlArchitecturePreBegin =
+		 * processOneStringFSMGenerics(fsm.pragmaVhdlArchitecturePreBegin);
+		 * fsm.pragmaVhdlArchitecturePostBegin =
+		 * processOneStringFSMGenerics(fsm.pragmaVhdlArchitecturePostBegin);
+		 * fsm.pragmaVhdlTestbench =
+		 * processOneStringFSMGenerics(fsm.pragmaVhdlTestbench);
+		 */
+		// generic parameters
+		// port
+		// signals
+		/*
+		 * for (int i = 0; i <
+		 * fsm.listOfInterfacePortTypesToAddThroughPragma.size(); i++) { //
+		 * fsm.listOfInterfacePortTypesToAddThroughPragma.set(i, //
+		 * processOneStringFSMGenerics
+		 * (fsm.listOfInterfacePortTypesToAddThroughPragma.get(i); String toto =
+		 * fsm.listOfInterfacePortTypesToAddThroughPragma.get(i); String tata =
+		 * processOneStringFSMGenerics(toto);
+		 * fsm.listOfInterfacePortTypesToAddThroughPragma.set(i, tata); //
+		 * GenericDeclaration currentGenericDeclarations; }
+		 */
+
+		// processArraysStringFSMGenerics(fsm.listOfInterfacePortTypesToAddThroughPragma)
+		// ;
+
+	}
+
+	// ////////////////////////////////////////////////
+	/*
+	 * static public void processArraysStringFSMGenerics(ArrayList<String>
+	 * ArrayStringToProcess) { for (int i = 0; i < ArrayStringToProcess.size();
+	 * i++) { String toto = ArrayStringToProcess.get(i); String tata =
+	 * processOneStringFSMGenerics(toto); ArrayStringToProcess.set(i, tata); } }
+	 */
+	// ////////////////////////////////////////////////
+
+	static public String processOneStringFSMGenerics(String stringToProcess) {
+		String stringProcessed = stringToProcess;
+		String genHeader = "#FSMGENERIC\\("; // \\for escaping (
+		String genFooter = "\\)"; // \\for escaping )
+		/*
+		 * ExpressionParser parser = new SpelExpressionParser(); int two =
+		 * parser.parseExpression("1 + 1").getValue(Integer.class); // 2 double
+		 * twentyFour =
+		 * parser.parseExpression("2.0 * 3e0 * 4").getValue(Double.class);
+		 * //24.0
+		 */
+
+		for (int i = 0; i < fsm.listFSMGenerics.size(); i++) {
+			String genParam = genHeader + fsm.listFSMGenerics.get(i).parameterName + genFooter;
+			// String genParam = fsm.listFSMGenerics.get(i).parameterName;
+			String genValue = fsm.listFSMGenerics.get(i).parameterValue;
+			stringProcessed = stringProcessed.replaceAll(genParam, genValue);
+		}
+		return stringProcessed;
 	}
 
 	// ////////////////////////////////////////////////
@@ -2673,16 +2778,14 @@ public class FsmProcess {
 			inputsOrderedNamesList = new ArrayList<String>();
 			outputsOrderedNamesList = new ArrayList<String>();
 			imageFileExtension = "gif";
+			listFSMGenerics = new ArrayList<FSMGeneric>();
 		}
 
 		// member variables for storing the fsm model
 		public String name;
-		public String clkSignalName;// = "CK"; // caps to be compared with
-									// parsed
-									// names
-		public Boolean clkSignalNameSpecified;// = false;
-		public String aResetSignalName;// = "ARAZB"; // caps to be compared with
-										// parsed names
+		public String clkSignalName;
+		public Boolean clkSignalNameSpecified;
+		public String aResetSignalName;
 		public String aResetSignalLevel = "0";
 
 		// to contain added vhdl code
@@ -2697,9 +2800,11 @@ public class FsmProcess {
 		public String stateCodeError;
 		public String stateNameDisplayError;
 
+		ArrayList<FSMGeneric> listFSMGenerics;
+
 		// global flag to allow the reuse of memorized outputs as inputs in
 		// conditions and expressions
-		public Boolean bufferedOutputsAllowed;// = false;
+		public Boolean bufferedOutputsAllowed;
 
 		ArrayList<ResetTransition> resetTransitions;// = new
 													// ArrayList<ResetTransition>();
@@ -2736,7 +2841,15 @@ public class FsmProcess {
 		ArrayList<Input> demotedToSignalInputs;// = new ArrayList<Input>();
 
 		ArrayList<GenericDeclaration> genericDeclarations;// = new
-															// ArrayList<GenericDeclaration>();
+
+		void addGeneric(String name, String value) {
+			FSMGeneric f1 = new FSMGeneric();
+			f1.parameterName = name;
+			f1.parameterValue = value;
+			listFSMGenerics.add(f1);
+		}
+
+		// ArrayList<GenericDeclaration>();
 		GenericDeclaration currentGenericDeclarations;
 
 		public Boolean GenerateNumberOfStateOutput;// = true;
@@ -2761,18 +2874,16 @@ public class FsmProcess {
 		// resetTransitionInhibatesActionsOnStates is true
 		String resetConditionComplement;
 
-		public State currentState;// = null;
-		public Action currentAction;// = null;
-		public Output currentOutput;// = null;
-		public Input currentInput;// = null;
-		public Transition currentTransition;// = null;
-		public ResetTransition currentResetTransition;// = null;
+		public State currentState;
+		public Action currentAction;
+		public Output currentOutput;
+		public Input currentInput;
+		public Transition currentTransition;
+		public ResetTransition currentResetTransition;
 		public boolean currentTransitionIsReset;
 
-		public ArrayList<String> inputsOrderedNamesList;// = new
-														// ArrayList<String>();
-		public ArrayList<String> outputsOrderedNamesList;// = new
-															// ArrayList<String>();
+		public ArrayList<String> inputsOrderedNamesList;
+		public ArrayList<String> outputsOrderedNamesList;
 
 		public String imageFileExtension;// = "gif";
 
@@ -2982,6 +3093,12 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////////////////////
+	static class FSMGeneric {
+		String parameterName;
+		String parameterValue;
+	}
+
+	// ///////////////////////////////////////////////////////////////
 	static class MultiTransitions {
 		// class used to parse muliple transitions defined at once before they
 		// are added in the fsm
@@ -2998,6 +3115,100 @@ public class FsmProcess {
 		String Name;
 		String Type;
 		String Default;
+	}
+
+	// ///////////////////////////////////////////////////////////////
+	static class FSMGenericVisitor extends FsmParserBaseVisitor<Integer> {
+		/** "memory" for our calculator; variable/value pairs go here */
+		Map<String, Integer> memory = new HashMap<String, Integer>();
+
+		public void assignValue(String id, int value) {
+			// compute value of expression on right
+			memory.put(id, value); // store it in our memory
+		}
+
+		/** ID '=' expr NEWLINE */
+		@Override
+		public Integer visitPrintExpr(FsmParser.PrintExprContext ctx) {
+			int value = visitChildren(ctx);
+			return value;
+		}
+
+		@Override
+		public Integer visitAssignExpr(FsmParser.AssignExprContext ctx) {
+			/*
+			 * String id = ""; // id is left-hand side of '=' for (int
+			 * i=0;i<ctx.id().getChildCount();i++)
+			 * id+=ctx.id().getChild(i).getText();
+			 */
+			String id = ctx.id().getText();
+			String e = ctx.numericexpr().toString();
+			int value = visit(ctx.numericexpr());
+			// compute value of expression on right
+			memory.put(id, value);
+			// store it in our memory
+			return value;
+		}
+
+		@Override
+		public Integer visitChangeSign(FsmParser.ChangeSignContext ctx) {
+			int val = visit(ctx.numericexpr());
+			if (ctx.numericunaryoperator().start.getType() == FsmParser.MINUS)
+				return -val;
+			else
+				return val;
+		}
+
+		@Override
+		public Integer visitInt(FsmParser.IntContext ctx) {
+			return Integer.valueOf(ctx.positive_integer().getText());
+		}
+
+		@Override
+		public Integer visitAddSub(FsmParser.AddSubContext ctx) {
+			int left = visit(ctx.numericexpr(0)); // get value of left
+													// subexpression
+			int right = visit(ctx.numericexpr(1)); // get value of right
+													// subexpression
+			String r = ctx.numericbinaryoperatorB().getText();
+			// getChild(0).getChild(0)..getRuleIndex();
+			if (r.contentEquals("+"))
+				return left + right;
+			else
+				return left - right;
+		}
+
+		@Override
+		public Integer visitParens(FsmParser.ParensContext ctx) {
+			return visit(ctx.numericexpr()); // return child expr's value
+		}
+
+		@Override
+		public Integer visitIdentifier(FsmParser.IdentifierContext ctx) {
+			String id = ctx.id().getText();
+			if (memory.containsKey(id))
+				return memory.get(id);
+			else {
+				String err = "ERROR " + id + " is unknown";
+				System.out.println(err);
+				return 0;
+			}
+		}
+
+		@Override
+		public Integer visitMulDiv(FsmParser.MulDivContext ctx) {
+			int left = visit(ctx.numericexpr(0)); // get value of left
+			// subexpression
+			int right = visit(ctx.numericexpr(1)); // get value of right
+			// subexpression
+			String r = ctx.numericbinaryoperatorA().getText();
+			// getChild(0).getChild(0)..getRuleIndex();
+			if (r.contentEquals("*"))
+				return left * right;
+			else
+				return left / right;
+		}
+
 	}
 
 	// ///////////////////////////////////////////////////////////////
@@ -3675,8 +3886,6 @@ public class FsmProcess {
 			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
 			fsm.pragmaDotGlobal += pragmaCleaned;
 		}
-		// ///////////////////////////////////////////////////////////////
-
 	}
 
 	// ///////////////////////////////////////////////////////////////
