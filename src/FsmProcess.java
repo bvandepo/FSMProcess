@@ -1202,6 +1202,7 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////
 
 	static public String applyFSMGenerics(String stIn) {
+		Boolean First = true;
 		String stOut = "";
 		FSMGenericVisitor eval = new FSMGenericVisitor();
 		// copy the associations from FSMGeneric. new ones can be added during
@@ -1220,11 +1221,18 @@ public class FsmProcess {
 				// finish the copy
 				stOut += stIn.substring(fromIndex, stIn.length() - 1);
 			} else {
+				if (First) {
+					//to display only once and only if necessary
+					System.out.println("Parsing applyFSMGenerics (displayed line numbers are irrelevant)");
+					First = false;
+				}
 				// copy the content before the pragma
 				stOut += stIn.substring(fromIndex, startIndex);
 				int stopIndex = stIn.indexOf(genFooter, startIndex);
 				String stToProcess = stIn.substring(startIndex + genHeader.length(), stopIndex);
-				System.out.println(stToProcess);
+				System.out.print("Parsing: ");
+				System.out.print(stToProcess);
+				System.out.print(" is evaluated as: ");
 				// parse this string
 				ANTLRInputStream input = new ANTLRInputStream(stToProcess);
 				FsmLexer lexer = new FsmLexer(input);
@@ -3109,7 +3117,7 @@ public class FsmProcess {
 
 		@Override
 		public Integer visitAssignExpr(FsmParser.AssignExprContext ctx) {
-			String id = ctx.id().getText().toUpperCase(); 
+			String id = ctx.id().getText().toUpperCase();
 			// compute value of expression on right
 			int value = visit(ctx.numericexpr());
 			if (memory.containsKey(id)) {
@@ -3168,13 +3176,13 @@ public class FsmProcess {
 			else {
 				bufLogPreprocessor.append("Error: Fsm Generic id :");
 				bufLogPreprocessor.append(id);
-				bufLogPreprocessor.append(" is unknown.\n");
+				bufLogPreprocessor.append(" is unknown. Using default value 0.\n");
 				return 0;
 			}
 		}
 
 		@Override
-		public Integer visitMulDiv(FsmParser.MulDivContext ctx) {
+		public Integer visitMulDivMod(FsmParser.MulDivModContext ctx) {
 			int left = visit(ctx.numericexpr(0)); // get value of left
 			// subexpression
 			int right = visit(ctx.numericexpr(1)); // get value of right
@@ -3182,8 +3190,10 @@ public class FsmProcess {
 			String r = ctx.numericbinaryoperatorA().getText();
 			if (r.contentEquals("*"))
 				return left * right;
-			else
+			else if (r.contentEquals("/"))
 				return left / right;
+			else
+				return left % right;
 		}
 	}
 

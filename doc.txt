@@ -786,8 +786,29 @@ else (others=>'0');
 <</FSM>>
 
 
+===Composants génériques===
+expliquer diff par rapport à param generic en vhdl
+dire qu'un parametre peut être définit soit dans le fichier 
+#pragma_fsm_generic{N=1;}#pragma
+soit dans la ligne de commande -g n=1
 
+insensible à la casse
 
+uniquement des valeurs d'entier
+
+opérateurs + - * / %
+ 
+comportement préprocesseur: affectation et remplacement par évaluation.
+
+visualisation du fichier post_preprocesseur
+TODO: génération des noms de fichiers en sortie en fonction des paramètres  (trier par nom)
+
+<<FSM ex_fsm_generic.fsm>>
+#(1 to #pragma_fsm_generic{M=(N%7)+1;M+1}#pragma);
+(1 to #pragma_fsm_generic{3*M+1}#pragma):COMPUTE; 
+#pragma_fsm_generic{N}#pragma:RESULT_AVAILABLE;
+#pragma_vhdl_entity{ C : out std_logic_vector(#pragma_fsm_generic{M*2}#pragma - 1 downto 0);}#pragma
+<</FSM>>
 ===Directives pour configurer le rendu===
 
 
@@ -880,6 +901,14 @@ récupérer de toutes les vérifications que je fais dans le code.
 
 
 ====Paramètres de l'exécutable====
+System.out.println("usage: java -jar FsmProcess.jar -i -c -d -r -f fichier.fsm");
+		System.out.println("    -i: ignore error in the model and try to continue");
+		System.out.println("    -c: create output gif image file from the dot file");
+		System.out.println("    -f filename.fsm: provide the input file name to process");
+		System.out.println("    -g fsm_generic_parameter=value: provide generic parameter values");
+		System.out
+				.println("    -r: realtime process, regenerate the files when the input file content changes and  display the output gif image");
+		
 
 
 -i : ignore les erreurs critiques liées à la compilation du modèle et continue la génération des fichiers
@@ -890,8 +919,9 @@ récupérer de toutes les vérifications que je fais dans le code.
 
 -c 
 
+-g fsm_generic_parameter=value
 
-TODO: choix compacité du graphe
+TODO: choix compacité du graphe ->pragma dot
 
 TODO: choix des simplifications de modele par le checker
  
@@ -906,6 +936,12 @@ réalisation de registre à décalage?
 %M,sortie5=entree4;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
 %M,sortie6=entree5;         //   sortie5 recopie la valeur d'entree4 en permanence (induisant un cycle d'horloge de retard)
 ///
+
+
+
+===génération fichier vectoriel avec graphviz===
+dot -Tpdf $dotfile   -o  $pdffile
+evince   $pdffile  &
 
 
 

@@ -13,7 +13,7 @@ SHARP                : '#'   ;
 CONDITION            : '?'   ;
 COMMA                : ','   ;
 EQUAL                : '='   ;
-REPEATACTION         : '%'   ;
+PERCENT              : '%'   ;
 ARROW                : '->'  ;
 DOUBLEARROW          : '=>'  ;
 STAR                 : '*'   ;

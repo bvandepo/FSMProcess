@@ -13,10 +13,10 @@ printExpr:  numericexpr SEMICOLON*;
 assignExpr: id EQUAL numericexpr SEMICOLON;
   
 numericbinaryoperatorB:  PLUS | MINUS;
-numericbinaryoperatorA: SLASH | STAR;
+numericbinaryoperatorA: SLASH | STAR | PERCENT;
 
 numericunaryoperator:  PLUS | MINUS;
-numericexpr:  numericexpr numericbinaryoperatorA numericexpr  # MulDiv
+numericexpr:  numericexpr numericbinaryoperatorA numericexpr  # MulDivMod
      		| numericexpr numericbinaryoperatorB numericexpr  # AddSub
 			| numericunaryoperator numericexpr                # ChangeSign 
      		| parenthesisopen numericexpr parenthesisclose    # parens
@@ -149,7 +149,7 @@ action_reset_asynchronous : action_id_reset_asynchronous  ( EQUAL  action_expres
 
 action_expression_reset_asynchronous : boolean_operation;
  
-repeatedly_action : REPEATACTION   (action_type COMMA)? action_id ( EQUAL action_expression)? SEMICOLON ;
+repeatedly_action : PERCENT   (action_type COMMA)? action_id ( EQUAL action_expression)? SEMICOLON ;
 
 // different rules to trigger different listener functions
 state_action      :  (action_type COMMA)? action_id (EQUAL action_expression)? ;
