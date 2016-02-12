@@ -266,6 +266,7 @@ public class FsmProcess {
 	// preprocessor correspondances parsed in the command line.
 	// should not be stored in the fsm as it is initialized at each parsing
 	public static ArrayList<FSMGeneric> listFSMGenerics;
+	public static String GenericNameSuffix;
 
 	public static JFrame frame = null;
 	public static JPanel panel;
@@ -378,7 +379,7 @@ public class FsmProcess {
 			if (!autoResize) {
 				scrollPanel.setScrollPosition(xscroll, yscroll);
 			}
-			frame.setTitle(fsm.name + ".dot");
+			frame.setTitle(fsm.name + GenericNameSuffix + ".dot");
 			break;
 		case 1:// display log text
 			text.append("<html>");
@@ -390,27 +391,27 @@ public class FsmProcess {
 			text.append("</font><br><font color=#000000>");
 			text.append(bufLogInfo.toString().replace("\n", "<br>"));
 			text.append("</font>");
-			frame.setTitle(fsm.name + ".log");
+			frame.setTitle(fsm.name + GenericNameSuffix + ".log");
 			break;
 		case 2: // display fsm postpreprocessor text
 			buf = bufFsm;
-			frame.setTitle("postpreprocessor " + fsm.name + ".fsm");
+			frame.setTitle(fsm.name + GenericNameSuffix + ".fsm");
 			break;
 		case 3: // display vhdl text
 			buf = bufVhdl;
-			frame.setTitle(fsm.name + ".vhd");
+			frame.setTitle(fsm.name + GenericNameSuffix + ".vhd");
 			break;
 		case 4: // display vhdl text
 			buf = bufVhdlPortMap;
-			frame.setTitle(fsm.name + "_portmap.vhd");
+			frame.setTitle(fsm.name + GenericNameSuffix + "_portmap.vhd");
 			break;
 		case 5: // display vhdl text
 			buf = bufVhdlPack;
-			frame.setTitle(fsm.name + "_pack.vhd");
+			frame.setTitle(fsm.name + GenericNameSuffix + "_pack.vhd");
 			break;
 		case 6: // display vhdl text
 			buf = bufVhdlTb;
-			frame.setTitle(fsm.name + "_tb.vhd");
+			frame.setTitle(fsm.name + GenericNameSuffix + "_tb.vhd");
 			break;
 		default: // display text
 			break;
@@ -668,6 +669,16 @@ public class FsmProcess {
 			}
 		// file location and name without extension
 		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4);
+		// compute the name with added generic parameters
+		GenericNameSuffix = "";
+		// the generic parameters have already been sorted alphabetically
+		for (int i = 0; i < listFSMGenerics.size(); i++) {
+			GenericNameSuffix += "_";
+			GenericNameSuffix += listFSMGenerics.get(i).parameterName;
+			GenericNameSuffix += "_";
+			GenericNameSuffix += listFSMGenerics.get(i).parameterValue;
+		}
+		fsmBaseName += GenericNameSuffix;
 		// extract fsm.name from the fsmInputName file name
 		// does it contains a unix based directory name?
 		if (fsmInputName.contains("/"))
@@ -681,7 +692,6 @@ public class FsmProcess {
 		System.out.print("Processing the file: ");
 		System.out.print(fsmInputName);
 		System.out.print("\n");
-
 		// to read the file 10K bytes at a time
 		byte[] inputFileContent = new byte[10240];
 		int nbCharRead = 1;
@@ -709,9 +719,15 @@ public class FsmProcess {
 
 		ANTLRInputStream input = new ANTLRInputStream(inputFileContentString);
 		// erase old files
+		// TODO: add an option just to remove all the generated file with a
+		// given generic
+		// erase fsm file ONLY IF IT IS A GENERATED ONE!!!
+		if (!GenericNameSuffix.equals(""))
+			EraseFile(fsmBaseName.concat(".fsm"));
 		EraseFile(fsmBaseName.concat(".dot"));
 		EraseFile(fsmBaseName.concat("_pack.vhd"));
 		EraseFile(fsmBaseName.concat(".vhd"));
+		EraseFile(fsmBaseName.concat("_tb.vhd"));
 		EraseFile(fsmBaseName.concat("_portmap.vhd"));
 		EraseFile(fsmBaseName.concat(".log"));
 		imageFileName = fsmBaseName.concat(".").concat(fsm.imageFileExtension);
@@ -741,6 +757,7 @@ public class FsmProcess {
 		if (checkModel() || optionsIgnoreErrors)
 		// if ignoreErrors, then display and generate fsm that have errors
 		{
+			saveToFile(bufFsm.toString(), fsmBaseName.concat(".fsm"));
 			generateDot();
 			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot"));
 			generateVhdl(bufVhdl);
@@ -3044,9 +3061,14 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////////////////////
-	static class FSMGeneric {
+	static class FSMGeneric implements Comparable<FSMGeneric> {
 		String parameterName;
 		String parameterValue;
+
+		public int compareTo(FSMGeneric o) {
+			FSMGeneric a = (FSMGeneric) o;
+			return parameterName.compareTo(a.parameterName);
+		}
 	}
 
 	// ///////////////////////////////////////////////////////////////
@@ -3087,8 +3109,7 @@ public class FsmProcess {
 
 		@Override
 		public Integer visitAssignExpr(FsmParser.AssignExprContext ctx) {
-			String id = ctx.id().getText().toUpperCase();
-			String e = ctx.numericexpr().toString();
+			String id = ctx.id().getText().toUpperCase(); 
 			// compute value of expression on right
 			int value = visit(ctx.numericexpr());
 			if (memory.containsKey(id)) {
@@ -3843,7 +3864,7 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////////////////////
-	public static void addGeneric(String name, String value) {
+	public static void addFsmGeneric(String name, String value) {
 		FSMGeneric f1 = new FSMGeneric();
 		f1.parameterName = name.toUpperCase();
 		f1.parameterValue = value;
@@ -3865,7 +3886,7 @@ public class FsmProcess {
 					String fsmGenericName = scg.next().toUpperCase();
 					String fsmGenericValue = scg.next();
 					// TODO: check if fsmGenericValue is an integer?
-					addGeneric(fsmGenericName, fsmGenericValue);
+					addFsmGeneric(fsmGenericName, fsmGenericValue);
 					System.out.print("fsmGenericName: ");
 					System.out.print(fsmGenericName);
 					System.out.print("   fsmGenericValue: ");
@@ -3928,6 +3949,8 @@ public class FsmProcess {
 				System.out.println("getopt() returned " + c);
 				break;
 			}
+		// sort the generic parameters alphabetically
+		Collections.sort(listFSMGenerics);
 	}
 
 	// ///////////////////////////////////////////////////////////////
