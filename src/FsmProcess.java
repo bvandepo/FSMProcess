@@ -81,6 +81,9 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 // TODO: gérer les parametres FSM_GENERIC: ils sont généric pour le programme fsm mais constant pour le vhdl, ex le bin2bcd. Il faut garder les généric pour les vrais.
 // La valeur du parametre FSM_GENERIC peut être fournie en ligne de commande (avec une valeur par defaut dans le .fsm) si la valeur est fournie en ligne de commande, le nom du composant est ajusté (classement des noms de paramètres par ordre alphabetique suivi de leurs valeurs)
 
+// TODO : gérer des includes pour importer le contenu de plusieurs fsm dans un fichier
+//  pratique pour faire des testbenches différents, on importe le composant et on ajoute le tb
+// TODO: gérer la suppression d'état/transition/action depuis une fsm importée
 // TODO : checker que les nom des generic id utilisé dans les interface port types sont bien déclarés dans les pragma generic
 // TODO: inclure la durée du testbench dans le pragma et l'extraire pour ghdl
 // TODO: recopier le 1° commentaire du FSM si présent dans chaque fichier généré (en adaptant le caractère de commentaire
@@ -260,6 +263,10 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //////////////////////////////////////////////////////////
 
 public class FsmProcess {
+	// preprocessor correspondances parsed in the command line.
+	// should not be stored in the fsm as it is initialized at each parsing
+	public static ArrayList<FSMGeneric> listFSMGenerics;
+
 	public static JFrame frame = null;
 	public static JPanel panel;
 	public static JLabel labelResultsCompile;
@@ -376,6 +383,7 @@ public class FsmProcess {
 		case 1:// display log text
 			text.append("<html>");
 			text.append("<font color=#ff0000>");
+			text.append(bufLogPreprocessor.toString().replace("\n", "<br>"));
 			text.append(bufLogError.toString().replace("\n", "<br>"));
 			text.append("</font><br><font color=#0000ff>");
 			text.append(bufLogWarning.toString().replace("\n", "<br>"));
@@ -627,6 +635,7 @@ public class FsmProcess {
 	static StringBuilder bufLogWarning;
 	static StringBuilder bufLogError;
 	static StringBuilder bufLogFinal;
+	static StringBuilder bufLogPreprocessor;
 	static FiniteStateMachine fsm;
 
 	static public void EraseFile(String name) {
@@ -644,24 +653,7 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////
-	public static void testparsefsmgeneric() {
-		// String inputFileContentString = "1 +3 *(2/5) +(1/(3*2)+6)";
-		String inputFileContentString = "tutu=(10*toto/(3+((tata*3)/2))); holala=tutu/2; holala+2";
-		ANTLRInputStream input = new ANTLRInputStream(inputFileContentString);
-		FsmLexer lexer = new FsmLexer(input);
-		CommonTokenStream tokens = new CommonTokenStream(lexer);
-		FsmParser parser = new FsmParser(tokens);
-		ParseTree tree = parser.fsmgeneric(); // parse
-		FSMGenericVisitor eval = new FSMGenericVisitor();
-		eval.assignValue("toto", 32); // get from command line?
-		eval.assignValue("tata", 6); // get from command line?
-		int valeur = eval.visit(tree);
-		System.out.println(valeur);
-		System.out.println("FINI");
-	}
 
-	// ///////////////////////////////////////////////
-	
 	static public void GenerateFiles(String fsmInputName) {
 		fsm = new FiniteStateMachine();
 		// by default, the input stream is System.in
@@ -710,11 +702,10 @@ public class FsmProcess {
 		}
 		// add \n at the end of the file to avoid problem with parsing files
 		// having comments without \n
-
-		testparsefsmgeneric();
-
 		inputFileContentString += "\n";
-		// inputFileContentString = applyFSMGenerics(inputFileContentString);
+		// !!!!!!!PREPROCESSOR!!!!!!!
+		bufLogPreprocessor = new StringBuilder();
+		inputFileContentString = applyFSMGenerics(inputFileContentString);
 
 		ANTLRInputStream input = new ANTLRInputStream(inputFileContentString);
 		// erase old files
@@ -743,7 +734,6 @@ public class FsmProcess {
 		bufLogWarning = new StringBuilder();
 		bufLogError = new StringBuilder();
 		bufLogFinal = new StringBuilder();
-
 		bufFsm.append(inputFileContentString);
 
 		walker.walk(collector, tree);
@@ -762,9 +752,8 @@ public class FsmProcess {
 			generateVhdlTestBench(bufVhdlTb);
 			// TODO: compute name even if there is directory name before
 			saveToFile(bufVhdlTb.toString(), fsmBaseName.concat("_tb.vhd"));
-			saveToFile(
-					bufLogFinal.toString() + "\n\n\n" + bufLogError.toString() + "\n\n" + bufLogWarning.toString() + "\n\n"
-							+ bufLogInfo.toString(), fsmBaseName.concat(".log"));
+			saveToFile(bufLogFinal.toString() + "\n\n\n" + bufLogPreprocessor.toString() + "\n\n" + bufLogError.toString() + "\n\n"
+					+ bufLogWarning.toString() + "\n\n" + bufLogInfo.toString(), fsmBaseName.concat(".log"));
 
 			if (optionsComputeResultImage) {
 				// Execute external program to compute gif image
@@ -1196,72 +1185,44 @@ public class FsmProcess {
 	// ////////////////////////////////////////////////
 
 	static public String applyFSMGenerics(String stIn) {
-		fsm.addGeneric("N", "3");
-		fsm.addGeneric("M", "4");
-
-		String stOut = processOneStringFSMGenerics(stIn);
-		return stOut;
-
-		/*
-		 * fsm.pragmaVhdlPreEntity =
-		 * processOneStringFSMGenerics(fsm.pragmaVhdlPreEntity);
-		 * fsm.pragmaVhdlEntity =
-		 * processOneStringFSMGenerics(fsm.pragmaVhdlEntity);
-		 * fsm.pragmaVhdlArchitecturePreBegin =
-		 * processOneStringFSMGenerics(fsm.pragmaVhdlArchitecturePreBegin);
-		 * fsm.pragmaVhdlArchitecturePostBegin =
-		 * processOneStringFSMGenerics(fsm.pragmaVhdlArchitecturePostBegin);
-		 * fsm.pragmaVhdlTestbench =
-		 * processOneStringFSMGenerics(fsm.pragmaVhdlTestbench);
-		 */
-		// generic parameters
-		// port
-		// signals
-		/*
-		 * for (int i = 0; i <
-		 * fsm.listOfInterfacePortTypesToAddThroughPragma.size(); i++) { //
-		 * fsm.listOfInterfacePortTypesToAddThroughPragma.set(i, //
-		 * processOneStringFSMGenerics
-		 * (fsm.listOfInterfacePortTypesToAddThroughPragma.get(i); String toto =
-		 * fsm.listOfInterfacePortTypesToAddThroughPragma.get(i); String tata =
-		 * processOneStringFSMGenerics(toto);
-		 * fsm.listOfInterfacePortTypesToAddThroughPragma.set(i, tata); //
-		 * GenericDeclaration currentGenericDeclarations; }
-		 */
-
-		// processArraysStringFSMGenerics(fsm.listOfInterfacePortTypesToAddThroughPragma)
-		// ;
-
-	}
-
-	// ////////////////////////////////////////////////
-	/*
-	 * static public void processArraysStringFSMGenerics(ArrayList<String>
-	 * ArrayStringToProcess) { for (int i = 0; i < ArrayStringToProcess.size();
-	 * i++) { String toto = ArrayStringToProcess.get(i); String tata =
-	 * processOneStringFSMGenerics(toto); ArrayStringToProcess.set(i, tata); } }
-	 */
-	// ////////////////////////////////////////////////
-
-	static public String processOneStringFSMGenerics(String stringToProcess) {
-		String stringProcessed = stringToProcess;
-		String genHeader = "#FSMGENERIC\\("; // \\for escaping (
-		String genFooter = "\\)"; // \\for escaping )
-		/*
-		 * ExpressionParser parser = new SpelExpressionParser(); int two =
-		 * parser.parseExpression("1 + 1").getValue(Integer.class); // 2 double
-		 * twentyFour =
-		 * parser.parseExpression("2.0 * 3e0 * 4").getValue(Double.class);
-		 * //24.0
-		 */
-
-		for (int i = 0; i < fsm.listFSMGenerics.size(); i++) {
-			String genParam = genHeader + fsm.listFSMGenerics.get(i).parameterName + genFooter;
-			// String genParam = fsm.listFSMGenerics.get(i).parameterName;
-			String genValue = fsm.listFSMGenerics.get(i).parameterValue;
-			stringProcessed = stringProcessed.replaceAll(genParam, genValue);
+		String stOut = "";
+		FSMGenericVisitor eval = new FSMGenericVisitor();
+		// copy the associations from FSMGeneric. new ones can be added during
+		// the computations
+		// eval.assignValue("N", 32); // get from command line?
+		for (int i = 0; i < listFSMGenerics.size(); i++)
+			eval.assignValue(listFSMGenerics.get(i).parameterName, Integer.parseInt(listFSMGenerics.get(i).parameterValue)); // get
+		String genHeader = "#pragma_fsm_generic{";
+		String genFooter = "}#pragma";
+		Boolean ended = false;
+		int fromIndex = 0; // start looking at the begining
+		while (!ended) {
+			int startIndex = stIn.indexOf(genHeader, fromIndex);
+			if (startIndex == -1) {
+				ended = true;
+				// finish the copy
+				stOut += stIn.substring(fromIndex, stIn.length() - 1);
+			} else {
+				// copy the content before the pragma
+				stOut += stIn.substring(fromIndex, startIndex);
+				int stopIndex = stIn.indexOf(genFooter, startIndex);
+				String stToProcess = stIn.substring(startIndex + genHeader.length(), stopIndex);
+				System.out.println(stToProcess);
+				// parse this string
+				ANTLRInputStream input = new ANTLRInputStream(stToProcess);
+				FsmLexer lexer = new FsmLexer(input);
+				CommonTokenStream tokens = new CommonTokenStream(lexer);
+				FsmParser parser = new FsmParser(tokens);
+				ParseTree tree = parser.fsmgeneric(); // parse
+				// visit this and compute the value for replacement
+				int value = eval.visit(tree);
+				System.out.println(value);
+				stOut += Integer.toString(value);
+				fromIndex = stopIndex + genFooter.length();
+			}
 		}
-		return stringProcessed;
+		System.out.println(stOut);
+		return stOut;
 	}
 
 	// ////////////////////////////////////////////////
@@ -2778,7 +2739,6 @@ public class FsmProcess {
 			inputsOrderedNamesList = new ArrayList<String>();
 			outputsOrderedNamesList = new ArrayList<String>();
 			imageFileExtension = "gif";
-			listFSMGenerics = new ArrayList<FSMGeneric>();
 		}
 
 		// member variables for storing the fsm model
@@ -2799,8 +2759,6 @@ public class FsmProcess {
 		// error
 		public String stateCodeError;
 		public String stateNameDisplayError;
-
-		ArrayList<FSMGeneric> listFSMGenerics;
 
 		// global flag to allow the reuse of memorized outputs as inputs in
 		// conditions and expressions
@@ -2841,13 +2799,6 @@ public class FsmProcess {
 		ArrayList<Input> demotedToSignalInputs;// = new ArrayList<Input>();
 
 		ArrayList<GenericDeclaration> genericDeclarations;// = new
-
-		void addGeneric(String name, String value) {
-			FSMGeneric f1 = new FSMGeneric();
-			f1.parameterName = name;
-			f1.parameterValue = value;
-			listFSMGenerics.add(f1);
-		}
 
 		// ArrayList<GenericDeclaration>();
 		GenericDeclaration currentGenericDeclarations;
@@ -3136,18 +3087,23 @@ public class FsmProcess {
 
 		@Override
 		public Integer visitAssignExpr(FsmParser.AssignExprContext ctx) {
-			/*
-			 * String id = ""; // id is left-hand side of '=' for (int
-			 * i=0;i<ctx.id().getChildCount();i++)
-			 * id+=ctx.id().getChild(i).getText();
-			 */
-			String id = ctx.id().getText();
+			String id = ctx.id().getText().toUpperCase();
 			String e = ctx.numericexpr().toString();
-			int value = visit(ctx.numericexpr());
 			// compute value of expression on right
-			memory.put(id, value);
-			// store it in our memory
-			return value;
+			int value = visit(ctx.numericexpr());
+			if (memory.containsKey(id)) {
+				bufLogPreprocessor.append("Warning: Fsm Generic id :");
+				bufLogPreprocessor.append(id);
+				bufLogPreprocessor.append(" already  defined. New value ");
+				bufLogPreprocessor.append(Integer.toString(value));
+				bufLogPreprocessor.append(" is IGNORED.\n");
+				// return the stored value instead of the provided one
+				return memory.get(id);
+			} else {
+				// store it in our memory
+				memory.put(id, value);
+				return value;
+			}
 		}
 
 		@Override
@@ -3171,7 +3127,6 @@ public class FsmProcess {
 			int right = visit(ctx.numericexpr(1)); // get value of right
 													// subexpression
 			String r = ctx.numericbinaryoperatorB().getText();
-			// getChild(0).getChild(0)..getRuleIndex();
 			if (r.contentEquals("+"))
 				return left + right;
 			else
@@ -3185,12 +3140,14 @@ public class FsmProcess {
 
 		@Override
 		public Integer visitIdentifier(FsmParser.IdentifierContext ctx) {
-			String id = ctx.id().getText();
+			String id = ctx.id().getText().toUpperCase();
+			;
 			if (memory.containsKey(id))
 				return memory.get(id);
 			else {
-				String err = "ERROR " + id + " is unknown";
-				System.out.println(err);
+				bufLogPreprocessor.append("Error: Fsm Generic id :");
+				bufLogPreprocessor.append(id);
+				bufLogPreprocessor.append(" is unknown.\n");
 				return 0;
 			}
 		}
@@ -3202,13 +3159,11 @@ public class FsmProcess {
 			int right = visit(ctx.numericexpr(1)); // get value of right
 			// subexpression
 			String r = ctx.numericbinaryoperatorA().getText();
-			// getChild(0).getChild(0)..getRuleIndex();
 			if (r.contentEquals("*"))
 				return left * right;
 			else
 				return left / right;
 		}
-
 	}
 
 	// ///////////////////////////////////////////////////////////////
@@ -3829,7 +3784,6 @@ public class FsmProcess {
 		}
 
 		// ///////////////////////////////////////////////////////////////
-
 		public void exitMulti_transitions_to_same_directive(FsmParser.Multi_transitions_to_same_directiveContext ctx) {
 			// do the actual job once all parameters have been gathered
 			// ascending or descending order?
@@ -3889,13 +3843,42 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////////////////////
+	public static void addGeneric(String name, String value) {
+		FSMGeneric f1 = new FSMGeneric();
+		f1.parameterName = name.toUpperCase();
+		f1.parameterValue = value;
+		listFSMGenerics.add(f1);
+	}
+
+	// ///////////////////////////////////////////////////////////////
 	public static void parseArgs(String[] args) {
 		int c;
 		String arg;
-		Getopt g = new Getopt("FsmProcess", args, "if:crp:");
+		Getopt g = new Getopt("FsmProcess", args, "if:crp:g:");
 		g.setOpterr(false); // We'll do our own error handling
 		while ((c = g.getopt()) != -1)
 			switch (c) {
+			case 'g':
+				arg = g.getOptarg().replace('=', ' ');
+				Scanner scg = new Scanner(arg);
+				try {
+					String fsmGenericName = scg.next().toUpperCase();
+					String fsmGenericValue = scg.next();
+					// TODO: check if fsmGenericValue is an integer?
+					addGeneric(fsmGenericName, fsmGenericValue);
+					System.out.print("fsmGenericName: ");
+					System.out.print(fsmGenericName);
+					System.out.print("   fsmGenericValue: ");
+					System.out.println(fsmGenericValue);
+				} catch (Exception e) {
+					System.out
+							.println("Error: argument -g should be followed by a generic parameter and its value separated by an = character");
+					System.out.println(e.toString());
+					System.out.println(" ");
+					System.out.println("printStackTrace");
+					e.printStackTrace();
+				}
+				break;
 			case 'p':
 				arg = g.getOptarg().replace('x', ' ');
 				Scanner sc = new Scanner(arg);
@@ -3955,9 +3938,12 @@ public class FsmProcess {
 		System.out.println("    -i: ignore error in the model and try to continue");
 		System.out.println("    -c: create output gif image file from the dot file");
 		System.out.println("    -f filename.fsm: provide the input file name to process");
+		System.out.println("    -g fsm_generic_parameter=value: provide generic parameter values");
 		System.out
 				.println("    -r: realtime process, regenerate the files when the input file content changes and  display the output gif image");
 		System.out.println("  THE GENERATED FILES SHOULD NOT BE EDITED BY HAND, AS THEY MAY BE DELETED AUTOMATICALLY!!!!");
+		// create the list for FSMGeneric correspondances that may be parsed
+		listFSMGenerics = new ArrayList<FSMGeneric>();
 		parseArgs(args);
 
 		// File f = new File(args[0]); System.out.println(f.getPath());
