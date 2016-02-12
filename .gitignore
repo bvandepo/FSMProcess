@@ -15,4 +15,6 @@ src/FsmParser.java
 src/FsmParser.tokens
 src/FsmParserBaseListener.java
 src/FsmParserListener.java
-
+src/FsmParserVisitor.java
+src/FsmParserBaseVisitor.java
+doc_generated/
