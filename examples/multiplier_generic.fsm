@@ -1,0 +1,66 @@
+#pragma_vhdl_entity{ A  : in  std_logic_vector(#pragma_fsm_generic{N}#pragma - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ B  : in  std_logic_vector(#pragma_fsm_generic{N}#pragma - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ Result  : buffer std_logic_vector(#pragma_fsm_generic{M=N*2; M}#pragma - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ Temp  : buffer std_logic_vector(#pragma_fsm_generic{M}#pragma - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ memA  : buffer  std_logic_vector(#pragma_fsm_generic{N}#pragma - 1 downto 0) ;}#pragma 
+
+//définition du modèle
+=>0?RESETN;
+->1?START;
+0->1?START;
+#(1 to #pragma_fsm_generic{N+1}#pragma);
+(1 to #pragma_fsm_generic{N}#pragma):COMPUTE; 
+#pragma_fsm_generic{N+1}#pragma:RESULT_AVAILABLE;
+#pragma_vhdl_promote_to_buffer{COMPUTE }#pragma //compute est sortie de la mae mais utilisé en entrée ci dessous
+
+//définition du calcul
+#pragma_vhdl_architecture_post_begin{ 
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  Result <= (others=>'0');Temp <= (others=>'0'); memA <= (others=>'0');  
+	elsif ck'event and ck='1' then 
+	  if START='1'then   --init synchrone
+		Result <= (others=>'0');
+		Temp(#pragma_fsm_generic{N}#pragma*2 - 1 downto #pragma_fsm_generic{N}#pragma) <= (others=>'0'); 		 
+		Temp(#pragma_fsm_generic{N}#pragma - 1 downto 0) <= B;
+		memA<=A;
+	  elsif COMPUTE='1' then
+		if (memA(0)='1') then
+			Result<=Result+Temp;
+		else		
+		end if;
+		memA<='0' & memA(#pragma_fsm_generic{N}#pragma-1 downto 1);
+		Temp<=Temp(#pragma_fsm_generic{N}#pragma*2-2 downto 0) & '0'; 
+	 end if;
+	end if;
+end process;
+}#pragma
+
+ 
+//run for 30000us
+#pragma_vhdl_testbench{  
+---------------------------------------	
+--A<=1E8480; --std_logic_vector(to_unsigned(2000000,32));
+--B<=1E8480; --std_logic_vector(to_unsigned(2000000,32));
+--A<= std_logic_vector(to_unsigned(128,A'length));
+--B<= std_logic_vector(to_unsigned(128,B'length));
+--A<=16#1E8480#; --std_logic_vector(to_unsigned(2000000,32));
+--B<=16#1E8480#; --std_logic_vector(to_unsigned(2000000,32));
+ 
+
+A<=(others=>'0');
+B<=(others=>'0');
+for i in 0 to 1000 loop
+for j in 0 to 10 loop
+wait until (ck'event and ck='0' );
+START<='1';
+wait for ck_period;
+START<='0';
+wait for ck_period*#pragma_fsm_generic{N+3}#pragma;
+B<=B+136129864;
+END LOOP;
+A<=A+123456789;
+B<=(others=>'0');
+END LOOP;
+---------------------------------------	
+}#pragma
