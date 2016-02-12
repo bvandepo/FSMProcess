@@ -28,6 +28,7 @@ LEFT_CURLY_BRACE     :  '{'  ;
 RIGHT_CURLY_BRACE    :  '}'  ;
 PARENTHESISOPEN      :  '('  ;
 PARENTHESISCLOSE     :  ')'  ;
+POWER                :  '^'  ;
 
 // case insensitive chars
   A:('a'|'A');

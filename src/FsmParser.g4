@@ -13,14 +13,16 @@ printExpr:  numericexpr SEMICOLON*;
 assignExpr: id EQUAL numericexpr SEMICOLON;
   
 numericbinaryoperatorB:  PLUS | MINUS;
-numericbinaryoperatorA: SLASH | STAR | PERCENT;
+numericbinaryoperatorA: SLASH | STAR | PERCENT | POWER;
 
+logoperator  : L O G  ; 
 numericunaryoperator:  PLUS | MINUS;
-numericexpr:  numericexpr numericbinaryoperatorA numericexpr  # MulDivMod
+numericexpr:  numericexpr numericbinaryoperatorA numericexpr  # MulDivModPow
      		| numericexpr numericbinaryoperatorB numericexpr  # AddSub
-			| numericunaryoperator numericexpr                # ChangeSign 
-     		| parenthesisopen numericexpr parenthesisclose    # parens
-  		    | positive_integer                                # int
+			| numericunaryoperator numericexpr                # ChangeSign  
+     		| logoperator  parenthesisopen numericexpr COMMA numericexpr parenthesisclose   #Log 
+       	    | parenthesisopen numericexpr parenthesisclose    # parens
+     		| positive_integer                                # int
    		    | id											  # identifier
 			;
 

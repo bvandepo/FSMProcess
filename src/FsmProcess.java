@@ -1209,7 +1209,7 @@ public class FsmProcess {
 		// the computations
 		// eval.assignValue("N", 32); // get from command line?
 		for (int i = 0; i < listFSMGenerics.size(); i++)
-			eval.assignValue(listFSMGenerics.get(i).parameterName, Integer.parseInt(listFSMGenerics.get(i).parameterValue)); // get
+			eval.assignValue(listFSMGenerics.get(i).parameterName, Long.parseLong(listFSMGenerics.get(i).parameterValue)); // get
 		String genHeader = "#pragma_fsm_generic{";
 		String genFooter = "}#pragma";
 		Boolean ended = false;
@@ -1222,7 +1222,7 @@ public class FsmProcess {
 				stOut += stIn.substring(fromIndex, stIn.length() - 1);
 			} else {
 				if (First) {
-					//to display only once and only if necessary
+					// to display only once and only if necessary
 					System.out.println("Parsing applyFSMGenerics (displayed line numbers are irrelevant)");
 					First = false;
 				}
@@ -1240,13 +1240,13 @@ public class FsmProcess {
 				FsmParser parser = new FsmParser(tokens);
 				ParseTree tree = parser.fsmgeneric(); // parse
 				// visit this and compute the value for replacement
-				int value = eval.visit(tree);
+				Long value = eval.visit(tree);
 				System.out.println(value);
-				stOut += Integer.toString(value);
+				stOut += Long.toString(value);
 				fromIndex = stopIndex + genFooter.length();
 			}
 		}
-		System.out.println(stOut);
+		//System.out.println(stOut);
 		return stOut;
 	}
 
@@ -3099,32 +3099,32 @@ public class FsmProcess {
 	}
 
 	// ///////////////////////////////////////////////////////////////
-	static class FSMGenericVisitor extends FsmParserBaseVisitor<Integer> {
+	static class FSMGenericVisitor extends FsmParserBaseVisitor<Long> {
 		/** "memory" for our calculator; variable/value pairs go here */
-		Map<String, Integer> memory = new HashMap<String, Integer>();
+		Map<String, Long> memory = new HashMap<String, Long>();
 
-		public void assignValue(String id, int value) {
+		public void assignValue(String id, Long value) {
 			// compute value of expression on right
 			memory.put(id, value); // store it in our memory
 		}
 
 		/** ID '=' expr NEWLINE */
 		@Override
-		public Integer visitPrintExpr(FsmParser.PrintExprContext ctx) {
-			int value = visitChildren(ctx);
+		public Long visitPrintExpr(FsmParser.PrintExprContext ctx) {
+			Long value = visitChildren(ctx);
 			return value;
 		}
 
 		@Override
-		public Integer visitAssignExpr(FsmParser.AssignExprContext ctx) {
+		public Long visitAssignExpr(FsmParser.AssignExprContext ctx) {
 			String id = ctx.id().getText().toUpperCase();
 			// compute value of expression on right
-			int value = visit(ctx.numericexpr());
+			Long value = visit(ctx.numericexpr());
 			if (memory.containsKey(id)) {
 				bufLogPreprocessor.append("Warning: Fsm Generic id :");
 				bufLogPreprocessor.append(id);
 				bufLogPreprocessor.append(" already  defined. New value ");
-				bufLogPreprocessor.append(Integer.toString(value));
+				bufLogPreprocessor.append(Long.toString(value));
 				bufLogPreprocessor.append(" is IGNORED.\n");
 				// return the stored value instead of the provided one
 				return memory.get(id);
@@ -3136,8 +3136,8 @@ public class FsmProcess {
 		}
 
 		@Override
-		public Integer visitChangeSign(FsmParser.ChangeSignContext ctx) {
-			int val = visit(ctx.numericexpr());
+		public Long visitChangeSign(FsmParser.ChangeSignContext ctx) {
+			Long val = visit(ctx.numericexpr());
 			if (ctx.numericunaryoperator().start.getType() == FsmParser.MINUS)
 				return -val;
 			else
@@ -3145,30 +3145,32 @@ public class FsmProcess {
 		}
 
 		@Override
-		public Integer visitInt(FsmParser.IntContext ctx) {
-			return Integer.valueOf(ctx.positive_integer().getText());
+		public Long visitInt(FsmParser.IntContext ctx) {
+			return Long.valueOf(ctx.positive_integer().getText());
 		}
 
 		@Override
-		public Integer visitAddSub(FsmParser.AddSubContext ctx) {
-			int left = visit(ctx.numericexpr(0)); // get value of left
+		public Long visitAddSub(FsmParser.AddSubContext ctx) {
+			Long left = visit(ctx.numericexpr(0)); // get value of left
 													// subexpression
-			int right = visit(ctx.numericexpr(1)); // get value of right
+			Long right = visit(ctx.numericexpr(1)); // get value of right
 													// subexpression
+			Long returnValue;
 			String r = ctx.numericbinaryoperatorB().getText();
 			if (r.contentEquals("+"))
-				return left + right;
+				returnValue = left + right;
 			else
-				return left - right;
+				returnValue = left - right;
+			return returnValue;
 		}
 
 		@Override
-		public Integer visitParens(FsmParser.ParensContext ctx) {
+		public Long visitParens(FsmParser.ParensContext ctx) {
 			return visit(ctx.numericexpr()); // return child expr's value
 		}
 
 		@Override
-		public Integer visitIdentifier(FsmParser.IdentifierContext ctx) {
+		public Long visitIdentifier(FsmParser.IdentifierContext ctx) {
 			String id = ctx.id().getText().toUpperCase();
 			;
 			if (memory.containsKey(id))
@@ -3177,23 +3179,38 @@ public class FsmProcess {
 				bufLogPreprocessor.append("Error: Fsm Generic id :");
 				bufLogPreprocessor.append(id);
 				bufLogPreprocessor.append(" is unknown. Using default value 0.\n");
-				return 0;
+				return (long) 0;
 			}
 		}
 
 		@Override
-		public Integer visitMulDivMod(FsmParser.MulDivModContext ctx) {
-			int left = visit(ctx.numericexpr(0)); // get value of left
+		public Long visitMulDivModPow(FsmParser.MulDivModPowContext ctx) {
+			Long left = visit(ctx.numericexpr(0)); // get value of left
 			// subexpression
-			int right = visit(ctx.numericexpr(1)); // get value of right
+			Long right = visit(ctx.numericexpr(1)); // get value of right
 			// subexpression
+			Long returnValue;
 			String r = ctx.numericbinaryoperatorA().getText();
 			if (r.contentEquals("*"))
-				return left * right;
+				returnValue = left * right;
 			else if (r.contentEquals("/"))
-				return left / right;
+				returnValue = left / right;
+			else if (r.contentEquals("%"))
+				returnValue = left % right;
 			else
-				return left % right;
+				returnValue = (long) Math.pow(left, right);
+			return returnValue;
+		}
+
+		@Override
+		public Long visitLog(FsmParser.LogContext ctx) {
+			Long left = visit(ctx.numericexpr(0)); // get value of left
+			// subexpression
+			Long right = visit(ctx.numericexpr(1)); // get value of right
+			// subexpression
+			Long returnValue;
+			returnValue = (long) (Math.log(left) / Math.log(right));
+			return returnValue;
 		}
 	}
 
