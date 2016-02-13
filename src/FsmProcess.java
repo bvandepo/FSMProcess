@@ -266,6 +266,10 @@ public class FsmProcess {
 	public static ArrayList<FSMGeneric> listFSMGenerics;
 	public static String GenericNameSuffix;
 
+	// list of included files to avoid infinite recursions
+	public static ArrayList<String> listIncludedFiles;
+	// ////////////////////////////////////////////////
+
 	public static JFrame frame = null;
 	public static JPanel panel;
 	public static JLabel labelResultsCompile;
@@ -694,6 +698,16 @@ public class FsmProcess {
 
 	static public void GenerateFiles(String fsmInputName) {
 		fsm = new FiniteStateMachine();
+		bufVhdl = new StringBuilder();
+		bufVhdlTb = new StringBuilder();
+		bufVhdlPortMap = new StringBuilder();
+		bufVhdlPack = new StringBuilder();
+		bufFsm = new StringBuilder();
+		bufDot = new StringBuilder();
+		bufLogInfo = new StringBuilder();
+		bufLogWarning = new StringBuilder();
+		bufLogError = new StringBuilder();
+		bufLogFinal = new StringBuilder();
 		// file location and name without extension
 		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4);
 		// compute the name with added generic parameters
@@ -723,6 +737,8 @@ public class FsmProcess {
 
 		// !!!!!!!PREPROCESSOR!!!!!!!
 		bufLogPreprocessor = new StringBuilder();
+		listIncludedFiles = new ArrayList<String>();
+		listIncludedFiles.add(fsmInputName);
 		inputFileContentString = applyFSMIncludes(inputFileContentString);
 		inputFileContentString = applyFSMGenerics(inputFileContentString);
 		ANTLRInputStream input = new ANTLRInputStream(inputFileContentString);
@@ -748,16 +764,7 @@ public class FsmProcess {
 		ParseTreeWalker walker = new ParseTreeWalker();
 
 		FunctionListener collector = new FunctionListener(tokens);
-		bufVhdl = new StringBuilder();
-		bufVhdlTb = new StringBuilder();
-		bufVhdlPortMap = new StringBuilder();
-		bufVhdlPack = new StringBuilder();
-		bufFsm = new StringBuilder();
-		bufDot = new StringBuilder();
-		bufLogInfo = new StringBuilder();
-		bufLogWarning = new StringBuilder();
-		bufLogError = new StringBuilder();
-		bufLogFinal = new StringBuilder();
+	
 		bufFsm.append(inputFileContentString);
 
 		walker.walk(collector, tree);
@@ -1208,6 +1215,7 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////
+
 	static public String applyFSMIncludes(String stIn) {
 		String stOut = "";
 		String genHeader = "#pragma_include{";
@@ -1225,14 +1233,25 @@ public class FsmProcess {
 				stOut += stIn.substring(fromIndex, startIndex);
 				int stopIndex = stIn.indexOf(genFooter, startIndex);
 				String stToProcess = stIn.substring(startIndex + genHeader.length(), stopIndex);
-				// add directory
+				// TODO: add directory include ./ + ......
 				stToProcess = "/home/bvandepo/antlr/fsm/examples/" + stToProcess;
 				System.out.print("Including: ");
-				System.out.print(stToProcess);
+				System.out.println(stToProcess);
 				// TODO; ajouter au file watcher tous les fichiers inclus
 				// gérer les liens relatifs. et les multi includes récursifs,
 				// qui peuvent faire changer plusieurs fois de dossiers
-				String content = readFile(stToProcess);
+				// recursivity to deal with included files inside the included
+				// file
+				String content;
+				if (listIncludedFiles.contains(stToProcess)) {
+					content = "// THIS INCLUDE PRAGMA HAS BEEN IGNORED TO AVOID MULTIPLE INCLUSIONS OF " + stToProcess + "\n";
+					bufLogWarning.append("Warning:   THIS INCLUDE PRAGMA HAS BEEN IGNORED TO AVOID MULTIPLE INCLUSIONS OF ");
+					bufLogWarning.append(stToProcess);
+					bufLogWarning.append("\n");
+				} else {
+					listIncludedFiles.add(stToProcess);
+					content = applyFSMIncludes(readFile(stToProcess));
+				}
 				stOut += content;
 				fromIndex = stopIndex + genFooter.length();
 			}
