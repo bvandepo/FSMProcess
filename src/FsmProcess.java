@@ -1250,7 +1250,9 @@ public class FsmProcess {
 					bufLogWarning.append("\n");
 				} else {
 					listIncludedFiles.add(stToProcess);
-					content = applyFSMIncludes(readFile(stToProcess));
+					content = "// THIS CODE IS IMPORTED FROM " + stToProcess + "\n";
+					content += applyFSMIncludes(readFile(stToProcess));
+					content += "// END OF THE CODE IMPORTED FROM " + stToProcess + "\n";
 				}
 				stOut += content;
 				fromIndex = stopIndex + genFooter.length();
