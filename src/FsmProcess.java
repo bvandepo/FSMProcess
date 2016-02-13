@@ -78,9 +78,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
-// TODO: gérer les parametres FSM_GENERIC: ils sont généric pour le programme fsm mais constant pour le vhdl, ex le bin2bcd. Il faut garder les généric pour les vrais.
-// La valeur du parametre FSM_GENERIC peut être fournie en ligne de commande (avec une valeur par defaut dans le .fsm) si la valeur est fournie en ligne de commande, le nom du composant est ajusté (classement des noms de paramètres par ordre alphabetique suivi de leurs valeurs)
-
+// TODO: faire en sorte de pouvoir traiter des fichiers ailleurs que .../bvandepo/..
 // TODO : gérer des includes pour importer le contenu de plusieurs fsm dans un fichier
 //  pratique pour faire des testbenches différents, on importe le composant et on ajoute le tb
 // TODO: gérer la suppression d'état/transition/action depuis une fsm importée
@@ -639,6 +637,8 @@ public class FsmProcess {
 	static StringBuilder bufLogPreprocessor;
 	static FiniteStateMachine fsm;
 
+	// ///////////////////////////////////////////////
+
 	static public void EraseFile(String name) {
 		try {
 			File file = new File(name);
@@ -655,18 +655,45 @@ public class FsmProcess {
 
 	// ///////////////////////////////////////////////
 
-	static public void GenerateFiles(String fsmInputName) {
-		fsm = new FiniteStateMachine();
-		// by default, the input stream is System.in
-		InputStream is = System.in;
+	static public String readFile(String fsmInputName) {
+		// TODO: gérer le cas ou le fichier demandé n'existe pas..
+		InputStream is;
+		String inputFileContentString = "";
 		if (fsmInputName != null)
 			try {
 				is = new FileInputStream(fsmInputName);
+				// to read the file 10K bytes at a time
+				byte[] inputFileContent = new byte[10240];
+				int nbCharRead = 1;
+				try {
+					while (nbCharRead != -1) {
+						nbCharRead = is.read(inputFileContent, 0, 10240);
+						if (nbCharRead != -1) {
+							byte[] reduced = Arrays.copyOfRange(inputFileContent, 0, nbCharRead);
+							// inputFileContent[nbCharRead] = 0;
+							inputFileContentString += new String(reduced, "UTF-8");
+						}
+					}
+				} catch (IOException e) {
+					System.err.println(e);
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				// add \n at the end of the file to avoid problem with parsing
+				// files having comments without \n
+				inputFileContentString += "\n";
 			} catch (FileNotFoundException e) {
 				System.err.println(e);
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		return inputFileContentString;
+	}
+
+	// ///////////////////////////////////////////////
+
+	static public void GenerateFiles(String fsmInputName) {
+		fsm = new FiniteStateMachine();
 		// file location and name without extension
 		String fsmBaseName = fsmInputName.substring(0, fsmInputName.length() - 4);
 		// compute the name with added generic parameters
@@ -692,31 +719,12 @@ public class FsmProcess {
 		System.out.print("Processing the file: ");
 		System.out.print(fsmInputName);
 		System.out.print("\n");
-		// to read the file 10K bytes at a time
-		byte[] inputFileContent = new byte[10240];
-		int nbCharRead = 1;
-		String inputFileContentString = "";
-		try {
-			while (nbCharRead != -1) {
-				nbCharRead = is.read(inputFileContent, 0, 10240);
-				if (nbCharRead != -1) {
-					byte[] reduced = Arrays.copyOfRange(inputFileContent, 0, nbCharRead);
-					// inputFileContent[nbCharRead] = 0;
-					inputFileContentString += new String(reduced, "UTF-8");
-				}
-			}
-		} catch (IOException e) {
-			System.err.println(e);
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		// add \n at the end of the file to avoid problem with parsing files
-		// having comments without \n
-		inputFileContentString += "\n";
+		String inputFileContentString = readFile(fsmInputName);
+
 		// !!!!!!!PREPROCESSOR!!!!!!!
 		bufLogPreprocessor = new StringBuilder();
+		inputFileContentString = applyFSMIncludes(inputFileContentString);
 		inputFileContentString = applyFSMGenerics(inputFileContentString);
-
 		ANTLRInputStream input = new ANTLRInputStream(inputFileContentString);
 		// erase old files
 		// TODO: add an option just to remove all the generated file with a
@@ -1200,6 +1208,40 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////
+	static public String applyFSMIncludes(String stIn) {
+		String stOut = "";
+		String genHeader = "#pragma_include{";
+		String genFooter = "}#pragma";
+		Boolean ended = false;
+		int fromIndex = 0; // start looking at the begining
+		while (!ended) {
+			int startIndex = stIn.indexOf(genHeader, fromIndex);
+			if (startIndex == -1) {
+				ended = true;
+				// finish the copy
+				stOut += stIn.substring(fromIndex, stIn.length());
+			} else {
+				// copy the content before the pragma
+				stOut += stIn.substring(fromIndex, startIndex);
+				int stopIndex = stIn.indexOf(genFooter, startIndex);
+				String stToProcess = stIn.substring(startIndex + genHeader.length(), stopIndex);
+				// add directory
+				stToProcess = "/home/bvandepo/antlr/fsm/examples/" + stToProcess;
+				System.out.print("Including: ");
+				System.out.print(stToProcess);
+				// TODO; ajouter au file watcher tous les fichiers inclus
+				// gérer les liens relatifs. et les multi includes récursifs,
+				// qui peuvent faire changer plusieurs fois de dossiers
+				String content = readFile(stToProcess);
+				stOut += content;
+				fromIndex = stopIndex + genFooter.length();
+			}
+		}
+		// System.out.println(stOut);
+		return stOut;
+	}
+
+	// ////////////////////////////////////////////////
 
 	static public String applyFSMGenerics(String stIn) {
 		Boolean First = true;
@@ -1219,7 +1261,7 @@ public class FsmProcess {
 			if (startIndex == -1) {
 				ended = true;
 				// finish the copy
-				stOut += stIn.substring(fromIndex, stIn.length() - 1);
+				stOut += stIn.substring(fromIndex, stIn.length());
 			} else {
 				if (First) {
 					// to display only once and only if necessary
@@ -1246,7 +1288,7 @@ public class FsmProcess {
 				fromIndex = stopIndex + genFooter.length();
 			}
 		}
-		//System.out.println(stOut);
+		// System.out.println(stOut);
 		return stOut;
 	}
 
