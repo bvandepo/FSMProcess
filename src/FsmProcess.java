@@ -793,7 +793,8 @@ public class FsmProcess {
 		if (checkModel() || optionsIgnoreErrors)
 		// if ignoreErrors, then display and generate fsm that have errors
 		{
-			saveToFile(bufFsm.toString(), fsmBaseName.concat(".fsm"));
+			if (!GenericNameSuffix.equals(""))
+				saveToFile(bufFsm.toString(), fsmBaseName.concat(".fsm"));
 			generateDot();
 			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot"));
 			generateDotComponent();
@@ -981,6 +982,8 @@ public class FsmProcess {
 		bufDotComponent.append("    	rankdir=LR;\n");
 		bufDotComponent.append("node[shape=Mrecord]\n");
 		bufDotComponent.append(fsm.name);
+		bufDotComponent.append(GenericNameSuffix);
+		bufDotComponent.append("_u0 ");
 		bufDotComponent.append(" [ label=\" ");
 		bufDotComponent.append(fsm.name);
 		bufDotComponent.append(GenericNameSuffix);
