@@ -79,8 +79,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //profile name: Eclipse [bvdp]
 
 // TODO: faire en sorte de pouvoir traiter des fichiers ailleurs que .../bvandepo/..
-// TODO : gérer des includes pour importer le contenu de plusieurs fsm dans un fichier
-//  pratique pour faire des testbenches différents, on importe le composant et on ajoute le tb
 // TODO: gérer la suppression d'état/transition/action depuis une fsm importée
 // TODO : checker que les nom des generic id utilisé dans les interface port types sont bien déclarés dans les pragma generic
 // TODO: inclure la durée du testbench dans le pragma et l'extraire pour ghdl
@@ -279,7 +277,10 @@ public class FsmProcess {
 	public static BufferedImage resizedImage;
 	public static Graphics2D g;
 	public static ImageIcon icon;
+	// img can be either imgFsm or imgComp
 	public static BufferedImage img;
+	public static BufferedImage imgFsm;
+	public static BufferedImage imgComp;
 
 	public static Boolean autoResize = false;
 	public static int imageSizeWidth = 0;
@@ -309,9 +310,15 @@ public class FsmProcess {
 
 	// ////////////////////////////////////////////////////////////////////
 	static void ImageUpdate() {
-		String fileName = imageFileName;
 		try {
-			img = ImageIO.read(new File(fileName));
+			imgFsm = ImageIO.read(new File(imageFileNameFsm));
+		} catch (IOException e) {
+			System.err.println(e);
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			imgComp = ImageIO.read(new File(imageFileNameComp));
 		} catch (IOException e) {
 			System.err.println(e);
 			// TODO Auto-generated catch block
@@ -328,14 +335,19 @@ public class FsmProcess {
 		int IMG_HEIGHT = WIN_HEIGHT - 80;
 		scrollPanel.setSize(WIN_WIDTH - 30, WIN_HEIGHT - 80);
 		StringBuilder text = new StringBuilder();
+		if (displayState == 0)
+			img = imgFsm;
+		else
+			img = imgComp;
 		switch (displayState) {
-		case 0: // display the dot image
+		case 0: // display the dot image fsm
+		case 1: // display the dot image component
 			imageSizeWidth = img.getWidth();
 			imageSizeHeight = img.getHeight();
 			if (autoResize) {
 				IMG_WIDTH = WIN_WIDTH - 30 - 5;
 				IMG_HEIGHT = WIN_HEIGHT - 80;
-				double aspectRatioOrg = (double) img.getWidth() / (double) img.getHeight();
+				double aspectRatioOrg = (double) imageSizeWidth / (double) imageSizeHeight;
 				double aspectRatioDest = (double) IMG_WIDTH / (double) IMG_HEIGHT;
 				int IMG_WIDTH_dest = IMG_WIDTH;
 				int IMG_HEIGHT_dest = IMG_HEIGHT;
@@ -381,9 +393,12 @@ public class FsmProcess {
 			if (!autoResize) {
 				scrollPanel.setScrollPosition(xscroll, yscroll);
 			}
-			frame.setTitle(fsm.name + GenericNameSuffix + ".dot");
+			if (displayState == 0)
+				frame.setTitle(displayState + ": " + fsm.name + GenericNameSuffix + ".dot");
+			else
+				frame.setTitle(displayState + ": " + fsm.name + GenericNameSuffix + "_comp.dot");
 			break;
-		case 1:// display log text
+		case 2:// display log text
 			text.append("<html>");
 			text.append("<font color=#ff0000>");
 			text.append(bufLogPreprocessor.toString().replace("\n", "<br>"));
@@ -393,32 +408,32 @@ public class FsmProcess {
 			text.append("</font><br><font color=#000000>");
 			text.append(bufLogInfo.toString().replace("\n", "<br>"));
 			text.append("</font>");
-			frame.setTitle(fsm.name + GenericNameSuffix + ".log");
+			frame.setTitle(displayState + ": " + fsm.name + GenericNameSuffix + ".log");
 			break;
-		case 2: // display fsm postpreprocessor text
+		case 3: // display fsm postpreprocessor text
 			buf = bufFsm;
-			frame.setTitle(fsm.name + GenericNameSuffix + ".fsm");
-			break;
-		case 3: // display vhdl text
-			buf = bufVhdl;
-			frame.setTitle(fsm.name + GenericNameSuffix + ".vhd");
+			frame.setTitle(displayState + ": " + fsm.name + GenericNameSuffix + ".fsm");
 			break;
 		case 4: // display vhdl text
-			buf = bufVhdlPortMap;
-			frame.setTitle(fsm.name + GenericNameSuffix + "_portmap.vhd");
+			buf = bufVhdl;
+			frame.setTitle(displayState + ": " + fsm.name + GenericNameSuffix + ".vhd");
 			break;
 		case 5: // display vhdl text
-			buf = bufVhdlPack;
-			frame.setTitle(fsm.name + GenericNameSuffix + "_pack.vhd");
+			buf = bufVhdlPortMap;
+			frame.setTitle(displayState + ": " + fsm.name + GenericNameSuffix + "_portmap.vhd");
 			break;
 		case 6: // display vhdl text
+			buf = bufVhdlPack;
+			frame.setTitle(displayState + ": " + fsm.name + GenericNameSuffix + "_pack.vhd");
+			break;
+		case 7: // display vhdl text
 			buf = bufVhdlTb;
-			frame.setTitle(fsm.name + GenericNameSuffix + "_tb.vhd");
+			frame.setTitle(displayState + ": " + fsm.name + GenericNameSuffix + "_tb.vhd");
 			break;
 		default: // display text
 			break;
 		}
-		if (displayState >= 2) { // FSM & VHDL
+		if (displayState >= 3) { // FSM & VHDL
 			int lineNumber = 0;
 			text.append("<html>");
 			// replace special html caracters. the & has to be processed firstly
@@ -461,7 +476,7 @@ public class FsmProcess {
 				text.append("<br>");
 			}
 		}
-		if (displayState != 0) { // FSM OR LOG OR VHDL
+		if (displayState > 1) { // FSM OR LOG OR VHDL
 			labelDisplayImage.setIcon(null);
 			labelDisplayImage.setText(text.toString());
 			labelDisplayImage.setHorizontalAlignment(SwingConstants.LEFT);
@@ -510,7 +525,7 @@ public class FsmProcess {
 		labelDisplayImage.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if (displayState == 0) {
+				if (displayState <= 1) {
 					autoResize = !autoResize;
 					percentWidth = 100.0 * e.getX() / (double) imageSizeWidth;
 					percentHeight = 100.0 * e.getY() / (double) imageSizeHeight;
@@ -542,7 +557,8 @@ public class FsmProcess {
 	public static Boolean optionsDisplayResultImage = false;
 	public static Boolean optionsComputeResultImage = false;
 	public static Boolean optionsRealtime = false;
-	public static String imageFileName;
+	public static String imageFileNameFsm;
+	public static String imageFileNameComp;
 
 	// ////////////////////////////////////////////////////////
 	static public class FileWatcher extends Thread {
@@ -630,6 +646,7 @@ public class FsmProcess {
 	static String fsmInputName;
 	static StringBuilder bufFsm;
 	static StringBuilder bufDot;
+	static StringBuilder bufDotComponent;
 	static StringBuilder bufVhdl;
 	static StringBuilder bufVhdlTb;
 	static StringBuilder bufVhdlPortMap;
@@ -704,6 +721,7 @@ public class FsmProcess {
 		bufVhdlPack = new StringBuilder();
 		bufFsm = new StringBuilder();
 		bufDot = new StringBuilder();
+		bufDotComponent = new StringBuilder();
 		bufLogInfo = new StringBuilder();
 		bufLogWarning = new StringBuilder();
 		bufLogError = new StringBuilder();
@@ -749,13 +767,16 @@ public class FsmProcess {
 		if (!GenericNameSuffix.equals(""))
 			EraseFile(fsmBaseName.concat(".fsm"));
 		EraseFile(fsmBaseName.concat(".dot"));
+		EraseFile(fsmBaseName.concat("_comp.dot"));
 		EraseFile(fsmBaseName.concat("_pack.vhd"));
 		EraseFile(fsmBaseName.concat(".vhd"));
 		EraseFile(fsmBaseName.concat("_tb.vhd"));
 		EraseFile(fsmBaseName.concat("_portmap.vhd"));
 		EraseFile(fsmBaseName.concat(".log"));
-		imageFileName = fsmBaseName.concat(".").concat(fsm.imageFileExtension);
-		EraseFile(imageFileName);
+		imageFileNameFsm = fsmBaseName.concat(".").concat(fsm.imageFileExtension);
+		EraseFile(imageFileNameFsm);
+		imageFileNameComp = fsmBaseName.concat("_comp.").concat(fsm.imageFileExtension);
+		EraseFile(imageFileNameComp);
 		FsmLexer lexer = new FsmLexer(input);
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		FsmParser parser = new FsmParser(tokens);
@@ -764,7 +785,7 @@ public class FsmProcess {
 		ParseTreeWalker walker = new ParseTreeWalker();
 
 		FunctionListener collector = new FunctionListener(tokens);
-	
+
 		bufFsm.append(inputFileContentString);
 
 		walker.walk(collector, tree);
@@ -775,6 +796,8 @@ public class FsmProcess {
 			saveToFile(bufFsm.toString(), fsmBaseName.concat(".fsm"));
 			generateDot();
 			saveToFile(bufDot.toString(), fsmBaseName.concat(".dot"));
+			generateDotComponent();
+			saveToFile(bufDotComponent.toString(), fsmBaseName.concat("_comp.dot"));
 			generateVhdl(bufVhdl);
 			saveToFile(bufVhdl.toString(), fsmBaseName.concat(".vhd"));
 			generatePackageVhdl(bufVhdlPack);
@@ -790,14 +813,20 @@ public class FsmProcess {
 			if (optionsComputeResultImage) {
 				// Execute external program to compute gif image
 				// http://ydisanto.developpez.com/tutoriels/java/runtime-exec/
-				String cmd = "dot -T" + fsm.imageFileExtension + " " + fsmBaseName.concat(".dot") + " -o " + imageFileName;
-				try {
-					Runtime r = Runtime.getRuntime();
-					Process p = r.exec(cmd);
-					// wait until graphwiz dot has finished
-					p.waitFor();
-				} catch (Exception e) {
-					System.err.println("Error executing: " + cmd + e.toString());
+				String cmd;
+				for (int i = 0; i < 2; i++) {
+					if (i == 0)
+						cmd = "dot -T" + fsm.imageFileExtension + " " + fsmBaseName.concat(".dot") + " -o " + imageFileNameFsm;
+					else
+						cmd = "dot -T" + fsm.imageFileExtension + " " + fsmBaseName.concat("_comp.dot") + " -o " + imageFileNameComp;
+					try {
+						Runtime r = Runtime.getRuntime();
+						Process p = r.exec(cmd);
+						// wait until graphwiz dot has finished
+						p.waitFor();
+					} catch (Exception e) {
+						System.err.println("Error executing: " + cmd + e.toString());
+					}
 				}
 			}
 		}
@@ -946,7 +975,55 @@ public class FsmProcess {
 	}
 
 	// ////////////////////////////////////////////////
+	static public void generateDotComponent() {
+		GenerateHeader(bufDotComponent, ".dot diagram", '/');
+		bufDotComponent.append("digraph component {\n");
+		bufDotComponent.append("    	rankdir=LR;\n");
+		bufDotComponent.append("node[shape=Mrecord]\n");
+		bufDotComponent.append(fsm.name);
+		bufDotComponent.append(" [ label=\" ");
+		bufDotComponent.append(fsm.name);
+		bufDotComponent.append(GenericNameSuffix);
+		bufDotComponent.append("_u0 ");
+		bufDotComponent.append("  | { { ");
+		for (int i = 0; i < fsm.inputs.size(); i++) {
+			bufDotComponent.append(" <");
+			bufDotComponent.append(fsm.inputs.get(i).name);
+			bufDotComponent.append("> ");
+			bufDotComponent.append(fsm.inputs.get(i).name);
+			bufDotComponent.append(":");
+			// bufDotComponent.append(fsm.inputs.get(i).type);
+			bufDotComponent.append(" in ");
+			bufDotComponent.append(" ");
+			bufDotComponent.append(fsm.inputs.get(i).interfacePortTypes);
+			if ((i != fsm.inputs.size() - 1) || (fsm.outputs.size() > 0))
+				bufDotComponent.append(" | ");
+		}
+		for (int i = 0; i < fsm.outputs.size(); i++) {
+			bufDotComponent.append(" <");
+			bufDotComponent.append(fsm.outputs.get(i).name);
+			bufDotComponent.append("> ");
+			bufDotComponent.append(fsm.outputs.get(i).name);
+			bufDotComponent.append(":");
+			// bufDotComponent.append(fsm.inputs.get(i).type);
+			if (fsm.outputs.get(i).isBuffer)
+				bufDotComponent.append(" buffer ");
+			else
+				bufDotComponent.append(" out ");
+			bufDotComponent.append(" ");
+			bufDotComponent.append(fsm.outputs.get(i).interfacePortTypes);
+			if (i != fsm.outputs.size() - 1)
+				bufDotComponent.append(" | ");
+		}
+		bufDotComponent.append("  } } ");
+		bufDotComponent.append(" | ");
+		bufDotComponent.append(fsm.name);
+		bufDotComponent.append(GenericNameSuffix);
+		bufDotComponent.append("\"];");
+		bufDotComponent.append("\n}\n"); // end of the DOT file content
+	}
 
+	// ////////////////////////////////////////////////
 	static public void generateDot() {
 		Boolean sResetInSameRank = false;
 		GenerateHeader(bufDot, ".dot diagram", '/');
