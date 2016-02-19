@@ -10,8 +10,8 @@
 
 //définition du modèle
 ->1?START:LOAD;
-=>0?RESETN;
-0->1:LOAD;
+=>0?RESETN; //etat d'attente pour ne pas déclencher de conversion sans avoir de load
+//0->1?START:LOAD;
 #(1 to #pragma_fsm_generic{N+1}#pragma);
 (1 to #pragma_fsm_generic{N}#pragma):COMPUTE;
 #pragma_fsm_generic{N+1}#pragma:DONE;
