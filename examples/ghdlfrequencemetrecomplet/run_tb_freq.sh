@@ -20,8 +20,8 @@ rm frequencemetrecomplet_testbench.vcd
 echo ------------------------ Processing included component ------------------------ 
   
 mkdir work
-ghdl -a $GHDL_OPTIONS --work=work ../multiplier32bits.vhd
-ghdl -a $GHDL_OPTIONS --work=work ../multiplier32bits_pack.vhd
+ghdl -a $GHDL_OPTIONS --work=work ../multiplier_generic_N_32.vhd
+ghdl -a $GHDL_OPTIONS --work=work ../multiplier_generic_N_32_pack.vhd
 ghdl -a $GHDL_OPTIONS --work=work ../diviseur_generic_N_64.vhd
 ghdl -a $GHDL_OPTIONS --work=work ../diviseur_generic_N_64_pack.vhd
 ghdl -a $GHDL_OPTIONS --work=work ../bin2bcd32bits.vhd

@@ -5,7 +5,7 @@ use		ieee.std_logic_unsigned.all;
 use		ieee.std_logic_arith.all;
 
 library work;
-use work.multiplier32bits_pack.all;
+use work.multiplier_generic_N_32_pack.all;	
 use work.diviseur_generic_N_64_pack.all;
 use work.bin2bcd32bits_pack.all;
 use work.frequencemetre2_pack.all;
@@ -44,9 +44,7 @@ signal FREQ_OVERFLOW:  std_logic; --todo
 signal FREQ_RESULT_AVAILABLE:  std_logic;
 begin
 --------------------------------------------------------------------------------
-multiplier32bits_u0 : multiplier32bits
-generic map (
-		N => 32)
+multiplier_generic_N_32_u0 : multiplier_generic_N_32
 port map(
 		CK => CK,
 		RESETN => RESETN,
@@ -55,8 +53,8 @@ port map(
 		B => x"0000C350",   --50000
 --		B => x"00000032",   --50
 		START => MUL_START,
-		COMPUTE => open,
-		MEMA => open,
+		COMPUTE =>  open,
+		MEMA =>  open,
 		RESULT => MUL_RESULT,
 		RESULT_AVAILABLE => MUL_RESULT_AVAILABLE,
 		TEMP => open);
