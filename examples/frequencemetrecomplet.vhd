@@ -7,7 +7,7 @@ use		ieee.std_logic_arith.all;
 library work;
 use work.multiplier_generic_N_32_pack.all;	
 use work.diviseur_generic_N_64_pack.all;
-use work.bin2bcd32bits_pack.all;
+use work.bin2bcd_generic_N_64_pack.all;
 use work.frequencemetre2_pack.all;
 use work.frequencemetrebcmd_pack.all;
 
@@ -22,7 +22,7 @@ port (
 		SIG              : in     std_logic;
 		DEMAND_MEASURE   : in     std_logic;
 		RESULT_AVAILABLE : out    std_logic;
-		RESULT_BCD       : out    std_logic_vector ( 40-1  downto  0 ) 
+		RESULT_BCD       : out    std_logic_vector ( 76-1  downto  0 ) 
 		);
 end frequencemetrecomplet;
 
@@ -37,7 +37,7 @@ signal DIV_ERROR:  std_logic;  --todo
 signal QUOTIENT,REMAINDER:  std_logic_vector(63 downto 0);
 signal DIV_RESULT_AVAILABLE:  std_logic;
 signal BIN2BCD_START:  std_logic;
-signal BCD_VALUE:  std_logic_vector(39 downto 0);
+signal BCD_VALUE:  std_logic_vector( 76-1 downto 0);
 signal BIN2BCD_DONE:  std_logic;
 signal FREQ_SRESET:  std_logic;
 signal FREQ_OVERFLOW:  std_logic; --todo
@@ -76,15 +76,12 @@ port map(
 		REMAINDER => REMAINDER,
 		RESULT_AVAILABLE =>  DIV_RESULT_AVAILABLE);
 
-bin2bcd32bits_u0 : bin2bcd32bits
-generic map (
-		N => 32,
-		P => 10)
+bin2bcd_generic_N_64_u0 : bin2bcd_generic_N_64
 port map(
 		CK => CK,
 		RESETN => RESETN,
 		state_number =>  open,
-		BIN_VALUE =>  QUOTIENT(31 downto 0), -- x"12345678",  
+		BIN_VALUE => QUOTIENT(63 downto 0), -- x"123456789ABCDEF0"
 		START => BIN2BCD_START,
 		BCD_VALUE => BCD_VALUE,
 		COMPUTE => open,

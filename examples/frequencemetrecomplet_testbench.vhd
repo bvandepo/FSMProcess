@@ -48,7 +48,7 @@ ARCHITECTURE behavior OF frequencemetrecomplet_testbench IS
          SIG : IN  std_logic;
          DEMAND_MEASURE : IN  std_logic;
          RESULT_AVAILABLE : OUT  std_logic;
-         RESULT_BCD : OUT  std_logic_vector(39 downto 0)
+         RESULT_BCD : OUT  std_logic_vector( 76-1 downto 0)
         );
     END COMPONENT;
     
@@ -63,7 +63,7 @@ ARCHITECTURE behavior OF frequencemetrecomplet_testbench IS
  	--Outputs
    signal STATE_NUMBER : std_logic_vector(2 downto 0);
    signal RESULT_AVAILABLE : std_logic;
-   signal RESULT_BCD : std_logic_vector(39 downto 0);
+   signal RESULT_BCD : std_logic_vector( 76-1 downto 0);
 
 --signals for current state name visualization:  
 signal state_name : std_logic_vector(103 downto 0 );

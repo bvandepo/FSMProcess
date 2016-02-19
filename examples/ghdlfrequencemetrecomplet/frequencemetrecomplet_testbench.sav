@@ -1,0 +1,92 @@
+[*]
+[*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
+[*] Fri Feb 19 14:33:08 2016
+[*]
+[dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdlfrequencemetrecomplet/frequencemetrecomplet_testbench.vcd"
+[dumpfile_mtime] "Fri Feb 19 14:31:02 2016"
+[dumpfile_size] 633372
+[savefile] "/home/bvandepo/antlr/fsm/examples/ghdlfrequencemetrecomplet/frequencemetrecomplet_testbench.sav"
+[timestart] 103981000000
+[size] 1680 986
+[pos] -1 -1
+*-30.000000 108070000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] uut.
+[sst_width] 259
+[signals_width] 272
+[sst_expanded] 1
+[sst_vpaned_height] 520
+@28
+ck
+resetn
+sreset
+sig
+demand_measure
+@820
+state_name[103:0]
+@28
+result_available
+@22
+result_bcd[75:0]
+@200
+-
+-compteur
+@24
+uut.frequencemetre2_u0.cpt_period[31:0]
+@c00024
+uut.frequencemetre2_u0.cpt_time[31:0]
+@28
+(0)uut.frequencemetre2_u0.cpt_time[31:0]
+(1)uut.frequencemetre2_u0.cpt_time[31:0]
+(2)uut.frequencemetre2_u0.cpt_time[31:0]
+(3)uut.frequencemetre2_u0.cpt_time[31:0]
+(4)uut.frequencemetre2_u0.cpt_time[31:0]
+(5)uut.frequencemetre2_u0.cpt_time[31:0]
+(6)uut.frequencemetre2_u0.cpt_time[31:0]
+(7)uut.frequencemetre2_u0.cpt_time[31:0]
+(8)uut.frequencemetre2_u0.cpt_time[31:0]
+(9)uut.frequencemetre2_u0.cpt_time[31:0]
+(10)uut.frequencemetre2_u0.cpt_time[31:0]
+(11)uut.frequencemetre2_u0.cpt_time[31:0]
+(12)uut.frequencemetre2_u0.cpt_time[31:0]
+(13)uut.frequencemetre2_u0.cpt_time[31:0]
+(14)uut.frequencemetre2_u0.cpt_time[31:0]
+(15)uut.frequencemetre2_u0.cpt_time[31:0]
+(16)uut.frequencemetre2_u0.cpt_time[31:0]
+(17)uut.frequencemetre2_u0.cpt_time[31:0]
+(18)uut.frequencemetre2_u0.cpt_time[31:0]
+(19)uut.frequencemetre2_u0.cpt_time[31:0]
+(20)uut.frequencemetre2_u0.cpt_time[31:0]
+(21)uut.frequencemetre2_u0.cpt_time[31:0]
+(22)uut.frequencemetre2_u0.cpt_time[31:0]
+(23)uut.frequencemetre2_u0.cpt_time[31:0]
+(24)uut.frequencemetre2_u0.cpt_time[31:0]
+(25)uut.frequencemetre2_u0.cpt_time[31:0]
+(26)uut.frequencemetre2_u0.cpt_time[31:0]
+(27)uut.frequencemetre2_u0.cpt_time[31:0]
+(28)uut.frequencemetre2_u0.cpt_time[31:0]
+(29)uut.frequencemetre2_u0.cpt_time[31:0]
+(30)uut.frequencemetre2_u0.cpt_time[31:0]
+(31)uut.frequencemetre2_u0.cpt_time[31:0]
+@1401200
+-group_end
+@24
+uut.frequencemetre2_u0.saved_cpt_period[31:0]
+uut.frequencemetre2_u0.saved_cpt_time[31:0]
+@200
+-
+-multiplieur
+@22
+uut.multiplier_generic_n_32_u0.a[31:0]
+uut.multiplier_generic_n_32_u0.b[31:0]
+@28
+uut.multiplier_generic_n_32_u0.start
+uut.multiplier_generic_n_32_u0.result_available
+@200
+-
+-diviseur
+@24
+uut.diviseur_generic_n_64_u0.quotient[63:0]
+@28
+uut.diviseur_generic_n_64_u0.result_available
+[pattern_trace] 1
+[pattern_trace] 0
