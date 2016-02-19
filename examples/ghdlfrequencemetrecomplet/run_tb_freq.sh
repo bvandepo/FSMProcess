@@ -8,6 +8,13 @@ echo "--------------------------------------------------------------------------
  
 GHDL_OPTIONS="--std=02 --ieee=synopsys -fexplicit  --warn-no-vital-generic --workdir=./"
 
+
+
+echo ------------------------ Erasing old files            ------------------------  
+rm work/*
+rm frequencemetrecomplet_testbench
+rm frequencemetrecomplet_testbench.vcd
+
 #   export GHDL_OPTIONS="--std=02 --ieee=synopsys -fexplicit  --warn-no-vital-generic --workdir=./"
  
 echo ------------------------ Processing included component ------------------------ 
@@ -15,8 +22,8 @@ echo ------------------------ Processing included component --------------------
 mkdir work
 ghdl -a $GHDL_OPTIONS --work=work ../multiplier32bits.vhd
 ghdl -a $GHDL_OPTIONS --work=work ../multiplier32bits_pack.vhd
-ghdl -a $GHDL_OPTIONS --work=work ../diviseur32bits.vhd
-ghdl -a $GHDL_OPTIONS --work=work ../diviseur32bits_pack.vhd
+ghdl -a $GHDL_OPTIONS --work=work ../diviseur_generic_N_64.vhd
+ghdl -a $GHDL_OPTIONS --work=work ../diviseur_generic_N_64_pack.vhd
 ghdl -a $GHDL_OPTIONS --work=work ../bin2bcd32bits.vhd
 ghdl -a $GHDL_OPTIONS --work=work ../bin2bcd32bits_pack.vhd
 ghdl -a $GHDL_OPTIONS --work=work ../frequencemetre2.vhd

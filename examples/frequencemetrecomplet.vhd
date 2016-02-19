@@ -6,7 +6,7 @@ use		ieee.std_logic_arith.all;
 
 library work;
 use work.multiplier32bits_pack.all;
-use work.diviseur32bits_pack.all;
+use work.diviseur_generic_N_64_pack.all;
 use work.bin2bcd32bits_pack.all;
 use work.frequencemetre2_pack.all;
 use work.frequencemetrebcmd_pack.all;
@@ -28,12 +28,13 @@ end frequencemetrecomplet;
 
 architecture ar of frequencemetrecomplet is
 signal cpt_time, cpt_period: std_logic_vector(31 downto 0);
+signal cpt_time64:  std_logic_vector(63 downto 0);
 signal MUL_START:    std_logic;
 signal MUL_RESULT:  std_logic_vector(63 downto 0);
 signal MUL_RESULT_AVAILABLE:  std_logic;
 signal DIV_START:  std_logic;
 signal DIV_ERROR:  std_logic;  --todo
-signal QUOTIENT,REMAINDER:  std_logic_vector(31 downto 0);
+signal QUOTIENT,REMAINDER:  std_logic_vector(63 downto 0);
 signal DIV_RESULT_AVAILABLE:  std_logic;
 signal BIN2BCD_START:  std_logic;
 signal BCD_VALUE:  std_logic_vector(39 downto 0);
@@ -60,25 +61,23 @@ port map(
 		RESULT_AVAILABLE => MUL_RESULT_AVAILABLE,
 		TEMP => open);
 
-
- 
-diviseur32bits_u0 : diviseur32bits
-generic map (
-		N => 32,
-		M => 64)
+cpt_time64<="00000000000000000000000000000000" & cpt_time;
+--ghdl does not support B => "00000000000000000000000000000000" & cpt_time,  ???
+	
+diviseur_generic_N_64_u0 : diviseur_generic_N_64
 port map(
 		CK => CK,
 		RESETN => RESETN,
-		state_number =>  open,
-		A => MUL_RESULT(31 downto 0),  --todo: check that 63 downto 32 ==0
-		B => cpt_time,
-		START => DIV_START,
+		state_number =>    open,
+		A => MUL_RESULT,
+		B => cpt_time64,
+		START =>  DIV_START,
 		COMPUTE => open,
 		ERROR => DIV_ERROR,
 		QUOTIENT => QUOTIENT,
 		REMAINDER => REMAINDER,
-		RESULT_AVAILABLE => DIV_RESULT_AVAILABLE);
- 
+		RESULT_AVAILABLE =>  DIV_RESULT_AVAILABLE);
+
 bin2bcd32bits_u0 : bin2bcd32bits
 generic map (
 		N => 32,
@@ -87,7 +86,7 @@ port map(
 		CK => CK,
 		RESETN => RESETN,
 		state_number =>  open,
-		BIN_VALUE =>  QUOTIENT, -- x"12345678",  
+		BIN_VALUE =>  QUOTIENT(31 downto 0), -- x"12345678",  
 		START => BIN2BCD_START,
 		BCD_VALUE => BCD_VALUE,
 		COMPUTE => open,
