@@ -20,6 +20,7 @@ port (
 		SRESET           : in     std_logic;
 		STATE_NUMBER     : out    std_logic_vector( 2 downto 0);
 		SIG              : in     std_logic;
+                SIG_MEM          : buffer std_logic;
 		DEMAND_MEASURE   : in     std_logic;
 		RESULT_AVAILABLE : out    std_logic;
 		RESULT_BCD       : out    std_logic_vector ( 76-1  downto  0 ) 
@@ -42,15 +43,28 @@ signal BIN2BCD_DONE:  std_logic;
 signal FREQ_SRESET:  std_logic;
 signal FREQ_OVERFLOW:  std_logic; --todo
 signal FREQ_RESULT_AVAILABLE:  std_logic;
+
 begin
 --------------------------------------------------------------------------------
+--mémorisation de sig pour éviter une transition trop proche du signal d'horloge
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  SIG_MEM <=  '0' ;
+	elsif ck'event and ck='1' then 
+	  SIG_MEM<=SIG;
+	end if;
+end process; 
+
+
+
 multiplier_generic_N_32_u0 : multiplier_generic_N_32
 port map(
 		CK => CK,
 		RESETN => RESETN,
 		state_number =>  open,
 		A => cpt_period,
-		B => x"0000C350",   --50000
+		B => x"02FAF080",   --50000000 for 50Mhz
+--		B => x"0000C350",   --50000
 --		B => x"00000032",   --50
 		START => MUL_START,
 		COMPUTE =>  open,
@@ -98,10 +112,11 @@ port map(
 		CK => CK,
 		RESETN => RESETN,
 		state_number =>  open,
-	DESIRED_WINDOW => x"00001388",  --5000 pour 100us
+		DESIRED_WINDOW => x"0007A120",  --500000 pour 10ms
+	--      DESIRED_WINDOW => x"00001388",  --5000 pour 100us
 	--	DESIRED_WINDOW => x"004C4B40", --5.10^6 pour 100ms 
 		MAX_WINDOW => x"02FAF080", --5.10^7 pour 1sec
-		SIG => SIG,
+		SIG => SIG_MEM,
 		SRESET => FREQ_SRESET,
 		CPT_PERIOD => open,
 		CPT_TIME => open,

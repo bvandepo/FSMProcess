@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
-[*] Fri Feb 19 14:33:08 2016
+[*] Fri Feb 19 15:35:41 2016
 [*]
 [dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdlfrequencemetrecomplet/frequencemetrecomplet_testbench.vcd"
-[dumpfile_mtime] "Fri Feb 19 14:31:02 2016"
-[dumpfile_size] 633372
+[dumpfile_mtime] "Fri Feb 19 15:31:53 2016"
+[dumpfile_size] 58860049
 [savefile] "/home/bvandepo/antlr/fsm/examples/ghdlfrequencemetrecomplet/frequencemetrecomplet_testbench.sav"
-[timestart] 103981000000
+[timestart] 10000473800000
 [size] 1680 986
 [pos] -1 -1
-*-30.000000 108070000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-27.000000 10000850000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] uut.
 [sst_width] 259
 [signals_width] 272
@@ -20,6 +20,7 @@ ck
 resetn
 sreset
 sig
+uut.sig_mem
 demand_measure
 @820
 state_name[103:0]
@@ -75,11 +76,14 @@ uut.frequencemetre2_u0.saved_cpt_time[31:0]
 @200
 -
 -multiplieur
-@22
+@24
 uut.multiplier_generic_n_32_u0.a[31:0]
 uut.multiplier_generic_n_32_u0.b[31:0]
-@28
+@29
 uut.multiplier_generic_n_32_u0.start
+@24
+uut.multiplier_generic_n_32_u0.result[63:0]
+@28
 uut.multiplier_generic_n_32_u0.result_available
 @200
 -

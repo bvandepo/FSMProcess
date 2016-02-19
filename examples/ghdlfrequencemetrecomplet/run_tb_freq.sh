@@ -41,7 +41,7 @@ echo -------------------------------------------------------------------
 ghdl -e $GHDL_OPTIONS --work=work -Pwork  frequencemetrecomplet_testbench 
  
 #ghdl -r $GHDL_OPTIONS  frequencemetrecomplet_testbench   --vcd=frequencemetrecomplet_testbench.vcd --stop-time=110000us
- ghdl -r $GHDL_OPTIONS  frequencemetrecomplet_testbench   --vcd=frequencemetrecomplet_testbench.vcd --stop-time=110us
+ ghdl -r $GHDL_OPTIONS  frequencemetrecomplet_testbench   --vcd=frequencemetrecomplet_testbench.vcd --stop-time=11000us
  
 gtkwave  frequencemetrecomplet_testbench.vcd  frequencemetrecomplet_testbench.sav 
  

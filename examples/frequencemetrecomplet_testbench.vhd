@@ -46,6 +46,7 @@ ARCHITECTURE behavior OF frequencemetrecomplet_testbench IS
          SRESET : IN  std_logic;
          STATE_NUMBER : OUT  std_logic_vector(2 downto 0);
          SIG : IN  std_logic;
+         SIG_MEM          : buffer std_logic;
          DEMAND_MEASURE : IN  std_logic;
          RESULT_AVAILABLE : OUT  std_logic;
          RESULT_BCD : OUT  std_logic_vector( 76-1 downto 0)
@@ -130,14 +131,23 @@ SIG<='0';
 	--periode du signal à mesurer:  14,071 periodes ck systeme (à 20ns)= 281,42ns
         --frequence = 10^9 / (20*(8,256+5,815)) =3,55340771800156349939592068793973420510269348305  MhZ
 	
+        --frequence = 10^9 / (20*(123,256+456,815)) =86196,34493018958024103945896278214218604274304352398241 hZ
+	--1 / ( (123,256+456,815)*20*10^(-9))
+
+	--mesure de 500021 clk pour 862 periodes
+        --soit 1/((500021*20*10^(-9))/862)=86196,37975205041388261693008893626467688357089002261905
+        --resultat fourni 86196
+
 for i in 0 to 100000000 loop
 	sig<='1';
  --	wait for ck_period*8.256;
 	wait for ck_period*123.256;
+--	wait for ck_period*1;
 
 	sig<='0';
 --	wait for ck_period*5.815;
 	wait for ck_period*456.815;
+--	wait for ck_period*1;
 
 
 
