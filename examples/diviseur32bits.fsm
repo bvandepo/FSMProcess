@@ -105,6 +105,15 @@ end process;
 //run for 30000us
 #pragma_vhdl_testbench{  
 ---------------------------------------	
+A<=x"0006DDD0";
+B<=x"00001591";
+wait until (ck'event and ck='0' );
+START<='1';
+wait for ck_period;
+START<='0';
+wait for ck_period*40;
+
+
 A<=(others=>'0');
 B<=(others=>'0');
 for i in 0 to 1000 loop
@@ -121,4 +130,5 @@ B<=(others=>'0');
 END LOOP;
 ---------------------------------------	
 }#pragma
+
 

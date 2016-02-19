@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
-[*] Sun Feb  7 18:02:13 2016
+[*] Fri Feb 19 08:26:44 2016
 [*]
 [dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdl/diviseur32bits_tb.vcd"
-[dumpfile_mtime] "Sun Feb  7 18:01:07 2016"
-[dumpfile_size] 176824
+[dumpfile_mtime] "Fri Feb 19 08:19:32 2016"
+[dumpfile_size] 179186
 [savefile] "/home/bvandepo/antlr/fsm/examples/ghdl/diviseur32bits_tb.sav"
 [timestart] 0
-[size] 1000 600
-[pos] -1 -1
-*-37.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 1280 736
+[pos] -273 -113
+*-37.000000 40550000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 213
-[signals_width] 158
+[signals_width] 215
 [sst_expanded] 1
-[sst_vpaned_height] 155
+[sst_vpaned_height] 203
 @28
 resetn
 ck

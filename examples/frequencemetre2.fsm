@@ -5,8 +5,7 @@ COUNTING:EN_CPT_PERIODS=RISING_EDGE_SIG;
 COUNTING->FINISH_TIME? CPT_TIME_ELAPSED;
 FINISH_TIME->PRE_FINISH_COUNT?RISING_EDGE_SIG:EN_CPT_PERIODS; //count one more period (and time)
 PRE_FINISH_COUNT->FINISH_COUNT:SAVE_AND_COMPUTE;
-FINISH_COUNT->FINISH_COMPUTE?COMPUTE_OVER;
-FINISH_COMPUTE->WAIT_TO_START:S,result_available:R,OVERFLOW;
+FINISH_COUNT->WAIT_TO_START:S,result_available:R,OVERFLOW;
 
 COUNTING->S_OVERFLOW*1? TIME_OVERFLOW OR PERIODS_OVERFLOW;
 PRE_FINISH_COUNT->S_OVERFLOW*1? TIME_OVERFLOW OR PERIODS_OVERFLOW;
@@ -14,7 +13,7 @@ FINISH_TIME->S_OVERFLOW*1? TIME_OVERFLOW OR PERIODS_OVERFLOW;
 
 S_OVERFLOW->WAIT_TO_START:R,result_available:S,OVERFLOW;
 
-->WAIT_TO_START?SRESET:SRESET_CPT_TIME:SRESET_CPT_PERIODS; 
+->WAIT_TO_START?SRESET:SRESET_CPT_TIME:SRESET_CPT_PERIODS:R,result_available:R,OVERFLOW;
 =>WAIT_TO_START?RESETN;
 
 #pragma_vhdl_allow_automatic_buffering
@@ -78,11 +77,11 @@ RISING_EDGE_SIG<='1' when SIG='1' AND OLD_SIG='0' else '0';
 
 
 --TODO: 
-COMPUTE_OVER<='1';
+--COMPUTE_OVER<='1';
 --frequency<= unsigned(saved_cpt_period(31 downto 0) )   * unsigned( saved_cpt_time(31 downto 0) )  ; --simple slow division...
 --frequency2<= unsigned(saved_cpt_period(31 downto 0) )   / unsigned( saved_cpt_time(31 downto 0) )  ; --simple slow division...
-frequency<= saved_cpt_period(31 downto 0) *  saved_cpt_time(31 downto 0)   ; --simple slow division...
-frequency2<=  saved_cpt_period(31 downto 0)    /  saved_cpt_time(31 downto 0)   ; --simple slow division...
+--frequency<= saved_cpt_period(31 downto 0) *  saved_cpt_time(31 downto 0)   ; --simple slow division...
+--frequency2<=  saved_cpt_period(31 downto 0)    /  saved_cpt_time(31 downto 0)   ; --simple slow division...
 
 
 TIME_OVERFLOW<='1' when CPT_TIME=MAX_WINDOW else '0';
@@ -151,12 +150,62 @@ for i in 0 to 100000 loop
 	sig<='0';
 	wait for ck_period*5.815;
 END LOOP;
-	wait for ck_period*500000*5;
+	wait for ck_period*50000000;
 ---------------------------------------	
 }#pragma
  
 //result at 27ms:
 //synthesized= 8.256+5.815=14.071
 //measured: 262157/18612=14,08537502686
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
