@@ -1897,12 +1897,15 @@ public class FsmProcess {
 		buf.append("--USE ieee.numeric_std.ALL;\n\n");
 		buf.append("ENTITY ");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append("_tb IS\n");
 		buf.append("END ");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append("_tb ;\n\n");
 		buf.append("ARCHITECTURE behavior OF ");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append("_tb IS\n");
 		buf.append("-- Component Declaration for the Unit Under Test (UUT)\n");
 		generateComponentVhdl(buf, false);
@@ -2137,6 +2140,7 @@ public class FsmProcess {
 	static public void generateComponentVhdl(StringBuilder buf, Boolean comment) {
 		buf.append("component ");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append("\n");
 		generateInterfaceVhdl(buf);
 		buf.append("end component;\n");
@@ -2151,10 +2155,12 @@ public class FsmProcess {
 		buf.append("use IEEE.STD_LOGIC_1164.all;\n");
 		buf.append("package ");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append("_pack is\n");
 		generateComponentVhdl(buf, true);
 		buf.append("end \n");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append("_pack;\n");
 	}
 
@@ -2162,8 +2168,10 @@ public class FsmProcess {
 	static public void generatePortMapVhdl(StringBuilder buf) {
 		GenerateHeader(buf, "port map vhdl file", '-');
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append("_u0 : ");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append("\n");
 		// generics
 		if (fsm.genericDeclarations.size() > 0) {
@@ -2225,6 +2233,7 @@ public class FsmProcess {
 		buf.append("library work;\n");
 		buf.append("use work.");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append("_pack.all;\n\n");
 		generatePortMapVhdl(buf);
 	}
@@ -2241,13 +2250,16 @@ public class FsmProcess {
 		}
 		buf.append("entity ");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append(" is\n");
 		generateInterfaceVhdl(buf);
 		buf.append("end ");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append(";\n\n");
 		buf.append("architecture ar of ");
 		buf.append(fsm.name);
+		buf.append(GenericNameSuffix);
 		buf.append(" is \n");
 		if (!fsm.pragmaVhdlArchitecturePreBegin.equals("")) {
 			buf.append("------------------------------pragma_vhdl_architecture_pre_begin-------------------------------------------\n");
