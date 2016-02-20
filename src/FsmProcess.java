@@ -78,6 +78,9 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+// TODO: gérer les inout pas uniquement en vhdl mais aussi dans la mae
+// TODO: activer toujours //#pragma_vhdl_allow_automatic_buffering
+
 // TODO: faire en sorte de pouvoir traiter des fichiers ailleurs que .../bvandepo/..
 // TODO: gérer la suppression d'état/transition/action depuis une fsm importée
 // TODO : checker que les nom des generic id utilisé dans les interface port types sont bien déclarés dans les pragma generic
@@ -85,8 +88,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 // TODO: recopier le 1° commentaire du FSM si présent dans chaque fichier généré (en adaptant le caractère de commentaire
 // idem pour la doc
 // TODO : éviter plantage violent quand on saisit #pragma_vhdl_entity{ BCD_VALUE  : buffered  std_logic_vector(M-1 downto 0) ;}#pragma
-
-// TODO: gérer les librairies avec ghdl et compiler fsm + ghdl -a tous les fichiers nécessaires
 // TODO: vérifier qu'une même condition de reset synchrone ne mêne pas à plusieurs états différents
 // TODO: prendre en compte les pragma demote et promote avant que le signal ne soit utilisé dans le modele...  donc il faudrait mettre certains champs à "inconnus" et les remplir avec le parsing du modele
 
@@ -989,33 +990,36 @@ public class FsmProcess {
 		bufDotComponent.append(GenericNameSuffix);
 		bufDotComponent.append("_u0 ");
 		bufDotComponent.append("  | { { ");
-		for (int i = 0; i < fsm.inputs.size(); i++) {
+		for (int i = 0; i < fsm.realInputs.size(); i++) {
 			bufDotComponent.append(" <");
-			bufDotComponent.append(fsm.inputs.get(i).name);
+			bufDotComponent.append(fsm.realInputs.get(i).name);
 			bufDotComponent.append("> ");
-			bufDotComponent.append(fsm.inputs.get(i).name);
+			bufDotComponent.append(fsm.realInputs.get(i).name);
 			bufDotComponent.append(":");
 			// bufDotComponent.append(fsm.inputs.get(i).type);
-			bufDotComponent.append(" in ");
+			if (fsm.realInputs.get(i).isInOut)
+				bufDotComponent.append(" inout ");
+			else
+				bufDotComponent.append(" in ");
 			bufDotComponent.append(" ");
-			bufDotComponent.append(fsm.inputs.get(i).interfacePortTypes);
-			if ((i != fsm.inputs.size() - 1) || (fsm.outputs.size() > 0))
+			bufDotComponent.append(fsm.realInputs.get(i).interfacePortTypes);
+			if ((i != fsm.realInputs.size() - 1) || (fsm.realOutputs.size() > 0))
 				bufDotComponent.append(" | ");
 		}
-		for (int i = 0; i < fsm.outputs.size(); i++) {
+		for (int i = 0; i < fsm.realOutputs.size(); i++) {
 			bufDotComponent.append(" <");
-			bufDotComponent.append(fsm.outputs.get(i).name);
+			bufDotComponent.append(fsm.realOutputs.get(i).name);
 			bufDotComponent.append("> ");
-			bufDotComponent.append(fsm.outputs.get(i).name);
+			bufDotComponent.append(fsm.realOutputs.get(i).name);
 			bufDotComponent.append(":");
 			// bufDotComponent.append(fsm.inputs.get(i).type);
-			if (fsm.outputs.get(i).isBuffer)
+			if (fsm.realOutputs.get(i).isBuffer)
 				bufDotComponent.append(" buffer ");
 			else
 				bufDotComponent.append(" out ");
 			bufDotComponent.append(" ");
-			bufDotComponent.append(fsm.outputs.get(i).interfacePortTypes);
-			if (i != fsm.outputs.size() - 1)
+			bufDotComponent.append(fsm.realOutputs.get(i).interfacePortTypes);
+			if (i != fsm.realOutputs.size() - 1)
 				bufDotComponent.append(" | ");
 		}
 		bufDotComponent.append("  } } ");
@@ -2116,7 +2120,10 @@ public class FsmProcess {
 		for (int n = 0; n < fsm.realInputs.size(); n++) {
 			buf.append("		");
 			buf.append(fsm.realInputs.get(n).paddedName);
-			buf.append(" : in     ");
+			if (fsm.realInputs.get(n).isInOut)
+				buf.append(" : inout  ");
+			else
+				buf.append(" : in     ");
 			buf.append(fsm.realInputs.get(n).interfacePortTypes);
 			if ((n != fsm.realInputs.size() - 1) || ((fsm.realOutputs.size() > 0)))
 				buf.append(";\n");
@@ -2793,6 +2800,7 @@ public class FsmProcess {
 		// in pragma
 		Boolean isUsedAsInputInFSm = false;
 		String interfacePortTypes = "std_logic"; // default
+		Boolean isInOut = false;
 
 		public int compareTo(Input o) {
 			Input a = (Input) o;
@@ -3727,7 +3735,7 @@ public class FsmProcess {
 					interfacePortTypes += fsm.listOfInterfacePortTypesToAddThroughPragma.get(j);
 					interfacePortTypes += " ";
 				}
-				if (fsm.InterfacePortModeToAddThroughPragma.equals("IN")) {
+				if (fsm.InterfacePortModeToAddThroughPragma.equals("IN") || fsm.InterfacePortModeToAddThroughPragma.equals("INOUT")) {
 					Input i = fsm.getInputFromName(name);
 					if (i == null) {
 						i = new Input();
@@ -3736,6 +3744,8 @@ public class FsmProcess {
 						i.isDemotedToSignal = false;
 						fsm.addInput(i.name, i);
 					}
+					if (fsm.InterfacePortModeToAddThroughPragma.equals("INOUT"))
+						i.isInOut = true;
 					i.interfacePortTypes = interfacePortTypes;
 				} else if (fsm.InterfacePortModeToAddThroughPragma.equals("OUT")
 						|| fsm.InterfacePortModeToAddThroughPragma.equals("BUFFER")) {
