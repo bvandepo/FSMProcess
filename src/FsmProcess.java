@@ -302,7 +302,7 @@ public class FsmProcess {
 	static int WIN_HEIGHT = 750;
 	private static FileWatcher watcher;
 	// number of different text files to display on the gui
-	static int NB_DISPLAY_TYPES = 7;
+	static int NB_DISPLAY_TYPES = 8;
 	static int displayState = 0; // Dot image view by default
 
 	// ////////////////////////////////////////////////////////////////////
