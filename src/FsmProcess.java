@@ -3244,6 +3244,9 @@ public class FsmProcess {
 		// for multiple transition to a same state, store the name of the
 		// destination name
 		String destinationState;
+		Transition virtualTransition;
+		// a virtual transition used to store actions on transitions that will
+		// be duplicated at the end of the parsing
 	}
 
 	// ///////////////////////////////////////////////////////////////
@@ -3914,6 +3917,9 @@ public class FsmProcess {
 			multiTransitions.baseStateName = "";
 			multiTransitions.priority = 1000000; // default value
 			multiTransitions.condition = "1";
+			multiTransitions.virtualTransition = new Transition();
+			fsm.currentTransitionIsReset = false;
+			fsm.currentTransition = multiTransitions.virtualTransition;
 		}
 
 		// ///////////////////////////////////////////////////////////////
@@ -3969,6 +3975,15 @@ public class FsmProcess {
 				s1.transitionsFromThisState.add(t);
 				// also add it to the global transitions / list
 				fsm.transitions.add(t);
+				// duplicate the temporarely stored transition Actions
+				for (int j = 0; j < multiTransitions.virtualTransition.attachedActions.size(); j++) {
+					Action aj = multiTransitions.virtualTransition.attachedActions.get(j);
+					Action a = new Action();
+					a.type = aj.type;
+					a.name = aj.name;
+					a.expression = aj.expression;
+					t.attachedActions.add(a);
+				}
 			}
 		}
 
@@ -3978,6 +3993,9 @@ public class FsmProcess {
 			multiTransitions.baseStateName = "";
 			multiTransitions.priority = 1000000; // default value
 			multiTransitions.condition = "1";
+			multiTransitions.virtualTransition = new Transition();
+			fsm.currentTransitionIsReset = false;
+			fsm.currentTransition = multiTransitions.virtualTransition;
 		}
 
 		// ///////////////////////////////////////////////////////////////
@@ -4008,6 +4026,15 @@ public class FsmProcess {
 				fsm.transitions.add(t); // also add it to the global
 										// transitions
 										// list
+				// duplicate the temporarely stored transition Actions
+				for (int j = 0; j < multiTransitions.virtualTransition.attachedActions.size(); j++) {
+					Action aj = multiTransitions.virtualTransition.attachedActions.get(j);
+					Action a = new Action();
+					a.type = aj.type;
+					a.name = aj.name;
+					a.expression = aj.expression;
+					t.attachedActions.add(a);
+				}
 				if (i == multiTransitions.last)
 					over = true;
 				i += increment;

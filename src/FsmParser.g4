@@ -126,7 +126,7 @@ multi_state_action_directive:
    (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number to multi_transitions_last_state_number PARENTHESISCLOSE (COLON multi_state_action)+ SEMICOLON;
    
 multi_transitions_directive:
-SHARP (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number to multi_transitions_last_state_number PARENTHESISCLOSE ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)?  SEMICOLON;
+SHARP (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number to multi_transitions_last_state_number PARENTHESISCLOSE ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)? (COLON transition_action)* SEMICOLON;
 multi_transitions_base_state_name:state_id;
 multi_transitions_first_state_number:positive_integer;
 multi_transitions_last_state_number:positive_integer;
@@ -134,7 +134,7 @@ multi_transitions_priority:positive_integer;
 condition_multi_transitions: boolean_operation;
 
 multi_transitions_to_same_directive:
-SHARP (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number to multi_transitions_last_state_number PARENTHESISCLOSE ARROW multi_transitions_destination_state ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)?  SEMICOLON;
+SHARP (multi_transitions_base_state_name)?  PARENTHESISOPEN multi_transitions_first_state_number to multi_transitions_last_state_number PARENTHESISCLOSE ARROW multi_transitions_destination_state ( STAR  multi_transitions_priority)? (CONDITION condition_multi_transitions)? (COLON transition_action)* SEMICOLON;
 multi_transitions_destination_state: state_id;
  
 state   :  state_id ( COLON state_action)* SEMICOLON    ;         	//state (with  action(s))

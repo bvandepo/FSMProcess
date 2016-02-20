@@ -580,6 +580,18 @@ asychrone >  set > reset > mémorisation
 Pour voir l'intérêt, comparer filteredge2.fsm et filteredge3.fsm qui font la même chose.
  
 
+
+===Actions sur de multiples transitions===
+
+<<FSM ex_multi_transitions_actions_1.fsm>>
+0->1?COND:OUT1=IN1 AND IN2: OUT2;
+#(0 to 3)?COND:OUT1=IN1 AND IN2: OUT2;
+#etat(5 to 2)?COND AND COND2:OUT1=IN1 AND IN2: OUT2;
+#(1 to 3)->org?COND AND COND2:OUT1=IN1 AND IN2: OUT2;
+<</FSM>>
+
+
+
 ===Spécifications via Pragma===
 ==Indiquer taille du bus pour la visualisation du numéro de l'état en cours==
 Par défaut la  taille du buspour la sortie codant le numéro de l'état en cours est réglée automatiquement mais il est possible d'imposer une valeur fixe, par exemple pour contrôler un afficheur prenant des mots de 4 bits pour afficher en hexadécimal. Ceci est réalisé à l'aide de la commande pragma: 
@@ -802,8 +814,13 @@ calculs intermédiaires fait sur des entiers 64 bits
  
 comportement préprocesseur: affectation et remplacement par évaluation.
 
-visualisation du fichier post_preprocesseur
-TODO: génération des noms de fichiers en sortie en fonction des paramètres  (trier par nom)
+visualisation du fichier en sortie du post_preprocesseur dans la gui +génération de fichier .fsm en sortie en fonction des paramètres  (triés par nom)
+
+
+Bon exemple filteredge_generic.fsm  en N= 4 ou 8
+filteredge_generic_N_4.fsm et filteredge_generic_N_8.fsm
+
+
 
 <<FSM ex_fsm_generic.fsm>>
 #(1 to #pragma_fsm_generic{M=(N%7)+1;M+1}#pragma);
@@ -819,6 +836,45 @@ N=32;log(2^N,10)+1
 }#pragma
 ; --état vide juste pour l'affichage
 <</FSM>>
+
+===Directives pour inclure des fichiers===
+
+supporte plusieurs degrés d'inclusions (un fichier qui inclue plusieurs autres fichiers, eux même incluant plusieurs fichiers etc...)
+dans le cas où un fichier a déjà été inclus, pour éviter un nouvelle inclusion, l'ordre d'inclusion est ignoré (warning)
+
+//option en ligne de commande pour indiquer des dossiers d'inclusion
+//TODO: faire bon exemple et gérer le dossier de la doc pour que le fichier inclus soit trouvé lors de la compilation de la doc
+
+peut être utiliser pour ajouter des instructions de testbenches différentes
+
+peut être utiliser pour préciser la valeur de fsm_generics
+
+ce qu'on veut....
+
+<<FSM ex_include.fsm>>
+#pragma_include{ex_transition_priority1.fsm}#pragma
+#pragma_vhdl_testbench{  
+---------------------------------------	
+A<=(others=>'0');
+B<=(others=>'0');
+for i in 0 to 1000 loop
+for j in 0 to 10 loop
+wait until (ck'event and ck='0' );
+START<='1';
+wait for ck_period;
+START<='0';
+wait for ck_period*40;
+B<=B+1;
+END LOOP;
+A<=A+1;
+B<=(others=>'0');
+END LOOP;
+---------------------------------------	
+}#pragma
+<</FSM>>
+
+
+
 ===Directives pour configurer le rendu===
 
 
