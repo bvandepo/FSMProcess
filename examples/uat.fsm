@@ -6,7 +6,7 @@
 
 #pragma_vhdl_allow_automatic_buffering
 
-#pragma_vhdl_promote_buffered{sraz_cpt,en_cpt}#pragma 
+#pragma_vhdl_promote_to_buffer{sraz_cpt,en_cpt}#pragma 
  
 //#pragma_vhdl_demote_output_to_signal{en_reg_decal, sload_reg_decal , sload_prediv , en_cpt }#pragma
 
