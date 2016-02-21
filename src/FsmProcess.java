@@ -56,8 +56,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 // sudo apt-get install libgetopt-java
 //et ajouter dans referenced Libraries /usr/share/gnu-getopt-1.0.13.jar
 
-//WHEN CHANGES ARE MADE TO THE LEXER OR PARSER GRAMMAR, CALL ant.sh script and 
-//in eclipse press Project -> clean. Then go to Package Explorer->Fsm->fsm  (no its another location....) and press F5 to refresh
+//WHEN CHANGES ARE MADE TO THE LEXER OR PARSER GRAMMAR, CALL ant.sh and antv.sh scripts and 
+//in eclipse press Project -> clean. Then go to Package Explorer->Fsm->fsm  (no its another location....) and press F5 to refresh. Do it for each files
 
 //To generate the jar using eclipse:
 //F5 to refresh eclipse project
@@ -1931,6 +1931,11 @@ public class FsmProcess {
 		generateSignalsForInterfaceVhdl(buf);
 		buf.append("\n--Clock period, should be settable through pragma_vhdl to get real time in simu\n");
 		buf.append("constant ck_period : time := 100 ns;\n\n");
+		if (!fsm.pragmaVhdlTestbenchPreBegin.equals("")) {
+			buf.append("------------------------------pragma_vhdl_testbench_pre_begin----------------------------------------------\n");
+			buf.append(fsm.pragmaVhdlTestbenchPreBegin);
+			buf.append("--------------------------end of pragma_vhdl_testbench_pre_begin-------------------------------------------\n");
+		}
 		buf.append("BEGIN\n");
 		buf.append("-- Instantiate the Unit Under Test (UUT)\n");
 		generatePortMapVhdl(buf);
@@ -2889,6 +2894,7 @@ public class FsmProcess {
 			pragmaVhdlArchitecturePreBegin = "";
 			pragmaVhdlArchitecturePostBegin = "";
 			pragmaVhdlTestbench = "";
+			pragmaVhdlTestbenchPreBegin = "";
 			pragmaDotGlobal = "";
 			stateCodeError = "";
 			bufferedOutputsAllowed = false;
@@ -2942,6 +2948,8 @@ public class FsmProcess {
 		public String pragmaVhdlArchitecturePreBegin;
 		public String pragmaVhdlArchitecturePostBegin;
 		public String pragmaVhdlTestbench;
+		public String pragmaVhdlTestbenchPreBegin;
+
 		public String pragmaDotGlobal;
 		// to store the binary value that is put on state_number output when
 		// error
@@ -3795,6 +3803,13 @@ public class FsmProcess {
 			String pragma = ctx.children.get(1).getText();
 			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
 			fsm.pragmaVhdlTestbench += pragmaCleaned;
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterPragma_vhdl_testbench_pre_begin_directive(FsmParser.Pragma_vhdl_testbench_pre_begin_directiveContext ctx) {
+			String pragma = ctx.children.get(1).getText();
+			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
+			fsm.pragmaVhdlTestbenchPreBegin += pragmaCleaned;
 		}
 
 		// ///////////////////////////////////////////////////////////////

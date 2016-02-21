@@ -705,7 +705,10 @@ signal_added_output <= '1';
 added_output<=signal_added_output;
 }#pragma
 
-
+//add some signal for the simulation
+#pragma_vhdl_testbench_pre_begin{ 
+signal A                :   std_logic_vector ( 64-1  downto  0 ) ;
+ }#pragma
 
 #pragma_vhdl_testbench{  
 -- code ajouté pour le testbench:
