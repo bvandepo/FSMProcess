@@ -1,0 +1,155 @@
+ 
+=>0?RESETN;
+->0?SRESET;
+0->1?(NOT IR):R,ERROR:ERASE_BYTES:RAZ_cptus;
+1->0? IR AND T_INF_9MS:S,ERROR;
+1->2? IR AND (NOT T_INF_9MS):RAZ_cptus;
+2->0?(NOT IR) AND T_EQU_2250:INC_REPEAT;
+2->3? (NOT IR) AND T_EQU_4500:RAZ_REPEAT:RAZ_CPT_BIT:RAZ_cptus;
+2->0?(NOT IR) AND (NOT T_EQU_2250) AND (NOT T_EQU_4500):S,ERROR;
+3->4? IR and CPT_BIT_INF_32:RAZ_cptus;
+4->3? (NOT IR) AND T_EQU_560:DECAL:RAZ_cptus;  //bit à 0
+4->3? (NOT IR) AND (NOT T_EQU_560): BITIN:DECAL:RAZ_cptus;   //bit à 1
+3->0? IR AND CPT_BIT_SUP_EQU_32:DATACOMPLETE;
+
+#pragma_vhdl_demote_to_signal{ERASE_BYTES,T_INF_9MS,T_EQU_2250,T_EQU_4500,T_EQU_560,INC_REPEAT,RAZ_REPEAT,RAZ_CPT_BIT,CPT_BIT_INF_32,DECAL,CPT_BIT_SUP_EQU_32,RAZ_cptus}#pragma
+#pragma_vhdl_promote_to_buffer{BITIN }#pragma 
+#pragma_vhdl_entity{ bytes  : buffer  std_logic_vector(32 - 1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ nb_REPEAT  : buffer  std_logic_vector(8-1 downto 0) ;}#pragma
+#pragma_vhdl_entity{ nb_bit  : buffer  std_logic_vector(5 downto 0) ;}#pragma //doit pouvoir stocker >=32
+#pragma_vhdl_entity{ cpt_us  : buffer  std_logic_vector(14-1 downto 0) ;}#pragma //doit pouvoir stocker >9000-> à calculer automatiuqement
+#pragma_vhdl_entity{ cpt_prediv  : buffer  std_logic_vector(5 downto 0) ;}#pragma //doit pouvoir stocker 50 -> à calculer automatiuqement
+#pragma_vhdl_entity{ finprediv  : buffer  std_logic  ;}#pragma //doit pouvoir stocker 50 -> à calculer automatiuqement
+#pragma_vhdl_architecture_post_begin{ 
+
+--registre à décalage--------------------------------
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  bytes <= (others=>'0'); 
+	elsif ck'event and ck='1' then 
+	  if (ERASE_BYTES='1') OR (SRESET ='1') then   --init synchrone
+		 bytes <= (others=>'0'); 
+	  elsif DECAL='1' then
+ 		bytes<=bytes(30 downto 0) & BITIN;
+	  end if;
+	end if;
+end process;
+--compteur repeat--------------------------------
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  nb_REPEAT <= (others=>'0'); 
+	elsif ck'event and ck='1' then 
+	  if (RAZ_REPEAT='1') OR (SRESET ='1') then   --init synchrone
+		 nb_REPEAT <= (others=>'0'); 
+	  elsif INC_REPEAT='1' then
+ 		nb_REPEAT<=nb_REPEAT+1; 
+	  end if;
+	end if;
+end process;
+--compteur bit--------------------------------
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  nb_bit <= (others=>'0'); 
+	elsif ck'event and ck='1' then 
+	  if (RAZ_CPT_BIT='1') OR (SRESET ='1') then   --init synchrone
+		 nb_bit <= (others=>'0'); 
+	  elsif DECAL='1' then
+ 		nb_bit<=nb_bit+1; 
+	  end if;
+	end if;
+end process;
+
+CPT_BIT_INF_32<='1' when nb_bit<32 else '0';
+CPT_BIT_SUP_EQU_32<=NOT CPT_BIT_INF_32; 
+--prediv 1 us--------------------------------
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  cpt_prediv <="001001"; -- "110001"; --49; 
+	elsif ck'event and ck='1' then 
+	  if  (SRESET ='1') OR (cpt_prediv=0)  then   --init synchrone
+		 cpt_prediv <= "001001"; --"110001"; --49; 
+	  else 
+		cpt_prediv<=cpt_prediv-1; 
+	  end if;
+	end if;
+end process;
+finprediv <='1' when cpt_prediv=0 else '0';
+ 
+--compteur 1 us--------------------------------
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  cpt_us <= (others=>'0'); 
+	elsif ck'event and ck='1' then 
+	  if (RAZ_cptus='1') OR (SRESET ='1') then   --init synchrone
+		 cpt_us <=(others=>'0');  
+	  elsif (finprediv='1') then
+		cpt_us<=cpt_us+1; 
+	  end if;
+	end if;
+end process;
+  
+T_INF_9MS<='1' when cpt_us<=8500 else '0';
+T_EQU_2250<='1' when (cpt_us<=2400) and (cpt_us>2100) else '0';
+T_EQU_4500<='1' when (cpt_us<=4700) and (cpt_us>4300) else '0';
+T_EQU_560<='1' when (cpt_us<=660) and (cpt_us>460) else '0';
+
+
+}#pragma
+
+
+#pragma_vhdl_testbench_pre_begin{ 
+signal DATA                :   std_logic_vector ( 31  downto  0 ) ;
+}#pragma
+
+//run for 100ms pour la premiere trame 600 pour les suivantes
+#pragma_vhdl_testbench{  
+---------------------------------------	
+DATA<=x"12345678"; --value to receive
+
+SRESET<='0';
+IR<='1';
+wait for 1 us;
+IR<='0';
+wait for 9 ms;
+IR<='1';
+wait for 4500 us;
+IR<='0';
+
+for j in 31 downto 0 loop
+wait for 560 us;
+IR<='1';
+
+if data(j)='0' then
+	wait for 560 us;
+else
+ 	wait for 1680 us;
+end if;
+IR<='0';
+END LOOP;
+ 
+
+--stop
+wait for 560 us;
+IR<='1';
+wait for 560 us;
+ 
+
+--5 trames repeat
+IR<='1';
+wait for 60 ms;
+
+for j in 0 to 5 loop
+IR<='0';
+wait for 9 ms;
+IR<='1';
+wait for 2250 us;
+IR<='0';
+wait for 560 us;
+IR<='1'; 
+wait for 100 ms;
+END LOOP;
+
+---------------------------------------	
+}#pragma
+
+ 
