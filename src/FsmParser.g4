@@ -117,6 +117,7 @@ pragma_vhdl_directive:
      | pragma_vhdl_set_bit_size_for_output_state_number
      | pragma_vhdl_generic_directive
      | pragma_vhdl_testbench
+     | pragma_vhdl_testbench_pre_begin_directive
      ;
 
 pragma_dot_directive:
@@ -202,6 +203,8 @@ pragma_vhdl_set_bit_size_for_output_state_number: PRAGMA_VHDL_SET_BIT_SIZE_FOR_O
 					                              PRAGMA_ENDING;
 pragma_vhdl_testbench                           : PRAGMA_VHDL_TESTBENCH_BEGIN_DIRECTIVE 
 				                                  PRAGMA_WITH_BEGINING_AND_ENDING;
+pragma_vhdl_testbench_pre_begin_directive       : PRAGMA_VHDL_TESTBENCH_PRE_BEGIN_DIRECTIVE 
+				                                  PRAGMA_WITH_BEGINING_AND_ENDING;				                                  
 pragma_vhdl_generic_directive                   : PRAGMA_VHDL_GENERIC_DIRECTIVE 
                                                   generic_declaration
 					                              (generic_declaration)*
