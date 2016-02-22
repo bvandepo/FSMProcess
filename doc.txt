@@ -710,6 +710,13 @@ added_output<=signal_added_output;
 signal A                :   std_logic_vector ( 64-1  downto  0 ) ;
  }#pragma
 
+#pragma_vhdl_init_testbench{   
+SRESET<='0';
+DATA<=x"12345678"; --value to receive
+E_prediv<="00001001";
+IR<='1';
+}#pragma
+
 #pragma_vhdl_testbench{  
 -- code ajouté pour le testbench:
  ---------------------------------------	
@@ -818,6 +825,9 @@ calculs intermédiaires fait sur des entiers 64 bits
 comportement préprocesseur: affectation et remplacement par évaluation.
 
 visualisation du fichier en sortie du post_preprocesseur dans la gui +génération de fichier .fsm en sortie en fonction des paramètres  (triés par nom)
+
+
+LES #pragma_fsm_generic{ ne peuvent pas être commentés. Si il contient affectation, elle est effective. Si il contient une valeur à remplacer, c'est cette valeur effective qui apparaitra en commentaire
 
 
 Bon exemple filteredge_generic.fsm  en N= 4 ou 8
