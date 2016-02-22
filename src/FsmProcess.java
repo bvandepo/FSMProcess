@@ -78,6 +78,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 //Line Wrapping->Maximum line width = 140
 //profile name: Eclipse [bvdp]
 
+// TODO: ajouter un pragma pour régler la frequence de clk, notamment pour le testbench!!!
+
 // TODO: gérer les inout pas uniquement en vhdl mais aussi dans la mae
 // TODO: activer toujours //#pragma_vhdl_allow_automatic_buffering
 
@@ -1961,6 +1963,11 @@ public class FsmProcess {
 		buf.append(" <='");
 		buf.append(fsm.aResetSignalLevel);
 		buf.append("';\n");
+		if (!fsm.pragmaVhdlInitTestbench.equals("")) {
+			buf.append("------------------------------pragma_vhdl_init_testbench----------------------------------------------\n");
+			buf.append(fsm.pragmaVhdlInitTestbench);
+			buf.append("--------------------------end of pragma_vhdl_init_testbench-------------------------------------------\n");
+		}
 		buf.append("wait for 100 ns;\n");
 		buf.append(fsm.aResetSignalName);
 		buf.append(" <= NOT '");
@@ -2893,6 +2900,7 @@ public class FsmProcess {
 			pragmaVhdlEntity = "";
 			pragmaVhdlArchitecturePreBegin = "";
 			pragmaVhdlArchitecturePostBegin = "";
+			pragmaVhdlInitTestbench = "";
 			pragmaVhdlTestbench = "";
 			pragmaVhdlTestbenchPreBegin = "";
 			pragmaDotGlobal = "";
@@ -2947,6 +2955,7 @@ public class FsmProcess {
 		public String pragmaVhdlEntity;
 		public String pragmaVhdlArchitecturePreBegin;
 		public String pragmaVhdlArchitecturePostBegin;
+		public String pragmaVhdlInitTestbench;
 		public String pragmaVhdlTestbench;
 		public String pragmaVhdlTestbenchPreBegin;
 
@@ -3796,6 +3805,13 @@ public class FsmProcess {
 			String pragma = ctx.children.get(1).getText();
 			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
 			fsm.pragmaVhdlArchitecturePostBegin += pragmaCleaned;
+		}
+
+		// ///////////////////////////////////////////////////////////////
+		public void enterPragma_vhdl_init_testbench(FsmParser.Pragma_vhdl_init_testbenchContext ctx) {
+			String pragma = ctx.children.get(1).getText();
+			String pragmaCleaned = pragma.substring(1, pragma.length() - 8);
+			fsm.pragmaVhdlInitTestbench += pragmaCleaned;
 		}
 
 		// ///////////////////////////////////////////////////////////////

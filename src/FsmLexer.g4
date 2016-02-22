@@ -118,6 +118,7 @@ PRAGMA_VHDL_PROMOTE_TO_BUFFER_DIRECTIVE        :  '#pragma_vhdl_promote_to_buffe
 PRAGMA_VHDL_DEMOTE_TO_SIGNAL_DIRECTIVE         :  '#pragma_vhdl_demote_to_signal{' ;
 PRAGMA_VHDL_ALLOW_AUTOMATIC_BUFFERING_DIRECTIVE:  '#pragma_vhdl_allow_automatic_buffering' ;
 PRAGMA_VHDL_SET_BIT_SIZE_FOR_OUTPUT_STATE_NUMBER: '#pragma_vhdl_set_bit_size_for_output_state_number{' ;
+PRAGMA_VHDL_INIT_TESTBENCH_BEGIN_DIRECTIVE     :  '#pragma_vhdl_init_testbench' ;
 PRAGMA_VHDL_TESTBENCH_BEGIN_DIRECTIVE          :  '#pragma_vhdl_testbench' ;
 PRAGMA_VHDL_TESTBENCH_PRE_BEGIN_DIRECTIVE      :  '#pragma_vhdl_testbench_pre_begin' ;
 PRAGMA_VHDL_GENERIC_DIRECTIVE                  :  '#pragma_vhdl_generic_directive{' ;
