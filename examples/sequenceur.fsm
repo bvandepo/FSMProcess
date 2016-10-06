@@ -1,0 +1,233 @@
+// Simple 1 bit automata
+// Bertrand VANDEPORTAELE 2016
+
+#pragma_vhdl_entity{ DMEMPROG  : in     std_logic_vector(7 downto 0) ;}#pragma
+#pragma_vhdl_entity{ AMEMPROG  : BUFFER std_logic_vector(7 downto 0) ;}#pragma
+#pragma_vhdl_entity{ INPUTS    : in     std_logic_vector(7 downto 0) ;}#pragma
+#pragma_vhdl_entity{ OUTPUTS   : out    std_logic_vector(7 downto 0) ;}#pragma
+//signals for debuging purpose:
+#pragma_vhdl_entity{ VAR       : BUFFER std_logic_vector(7 downto 0) ;}#pragma
+#pragma_vhdl_entity{ RI        : buffer std_logic_vector(7 downto 0) ;}#pragma
+#pragma_vhdl_entity{ SAVEAMEMPROG        : buffer std_logic_vector(7 downto 0) ;}#pragma
+
+#pragma_vhdl_entity{ VISUA   : out    std_logic  ;}#pragma
+
+=>Init?RESETN,0;
+
+//Init; // in the initial state, PC=0, RI=0;
+//or to continue program execution after branching, 
+Init         -> FetchPrepare ? EN                         : INCPC: WRRI; //to  load the first instruction and prepare for the next  PC=1 (future instruction or adress),RI=first intruction (from PC=0)
+
+// one cycle instructions
+FetchPrepare -> FetchPrepare ? EN AND INST_ANL_A_EI       : INCPC: WRRI: WRACC: ANEXT     = A AND INI;
+FetchPrepare -> FetchPrepare ? EN AND INST_ANL_A_VI       : INCPC: WRRI: WRACC: ANEXT     = A AND VARI;
+FetchPrepare -> FetchPrepare ? EN AND INST_ANL_VI_A       : INCPC: WRRI: WRVAR: VARINEXT  = A AND VARI;   
+FetchPrepare -> FetchPrepare ? EN AND INST_ORL_A_EI       : INCPC: WRRI: WRACC: ANEXT     = A OR INI;
+FetchPrepare -> FetchPrepare ? EN AND INST_ORL_A_VI       : INCPC: WRRI: WRACC: ANEXT     = A OR VARI;
+FetchPrepare -> FetchPrepare ? EN AND INST_ORL_VI_A       : INCPC: WRRI: WRVAR: VARINEXT  = A OR VARI;   
+FetchPrepare -> FetchPrepare ? EN AND INST_XRL_A_EI       : INCPC: WRRI: WRACC: ANEXT     = A XOR INI;
+FetchPrepare -> FetchPrepare ? EN AND INST_XRL_A_VI       : INCPC: WRRI: WRACC: ANEXT     = A XOR VARI;
+FetchPrepare -> FetchPrepare ? EN AND INST_XRL_VI_A       : INCPC: WRRI: WRVAR: VARINEXT  = A XOR VARI;   
+FetchPrepare -> FetchPrepare ? EN AND INST_CPL_A          : INCPC: WRRI: WRACC: ANEXT     = NOT A;
+FetchPrepare -> FetchPrepare ? EN AND INST_CPL_VI         : INCPC: WRRI: WRVAR: VARINEXT  = NOT VARI;
+FetchPrepare -> FetchPrepare ? EN AND INST_SET_A          : INCPC: WRRI: WRACC: ANEXT     ;
+FetchPrepare -> FetchPrepare ? EN AND INST_SET_VI         : INCPC: WRRI: WRVAR: VARINEXT  ;
+FetchPrepare -> FetchPrepare ? EN AND INST_SET_SI         : INCPC: WRRI: WROUT: OUTINEXT  ;
+FetchPrepare -> FetchPrepare ? EN AND INST_CLR_A          : INCPC: WRRI: WRACC; //: ANEXT     = 0;
+FetchPrepare -> FetchPrepare ? EN AND INST_CLR_VI         : INCPC: WRRI: WRVAR; //: VARINEXT  = 0;
+FetchPrepare -> FetchPrepare ? EN AND INST_CLR_SI         : INCPC: WRRI: WROUT; //: OUTINEXT  = 0;
+FetchPrepare -> FetchPrepare ? EN AND INST_MOV_A_EI       : INCPC: WRRI: WRACC: ANEXT     = INI;
+FetchPrepare -> FetchPrepare ? EN AND INST_MOV_A_NOT_EI   : INCPC: WRRI: WRACC: ANEXT     = NOT INI;
+FetchPrepare -> FetchPrepare ? EN AND INST_MOV_A_VI       : INCPC: WRRI: WRACC: ANEXT     = VARI;
+FetchPrepare -> FetchPrepare ? EN AND INST_MOV_A_NOT_VI   : INCPC: WRRI: WRACC: ANEXT     = NOT VARI;
+FetchPrepare -> FetchPrepare ? EN AND INST_MOV_VI_A       : INCPC: WRRI: WRVAR: VARINEXT  = A;
+FetchPrepare -> FetchPrepare ? EN AND INST_MOV_SI_A       : INCPC: WRRI: WROUT: OUTINEXT  = A;
+ 
+// multiple cycles instructions, mainly for branching
+FetchPrepare -> ChangePC2    ? EN AND INST_CALL           : WRSAVEDMEMPROG    : INCPC;
+ChangePC2    -> Init         ? EN                         : WRSAVEAMEMPROG    : WRPCFORMSAVEDMEMPROG;
+FetchPrepare -> Init         ? EN AND INST_RET            : WRPCFORMSAVEAMEMPROG;
+
+FetchPrepare -> Init         ? EN AND INST_JMP            : WRPCFROMDMEMPROG;
+FetchPrepare -> Init         ? EN AND INST_JZ_A           : WRPCFROMDMEMPROG= NOT A; 
+FetchPrepare -> Init         ? EN AND INST_JNZ_A          : WRPCFROMDMEMPROG= A; 
+FetchPrepare -> Init         ? EN AND INST_JZ_EI          : WRPCFROMDMEMPROG= NOT INI ; 
+FetchPrepare -> Init         ? EN AND INST_JNZ_EI         : WRPCFROMDMEMPROG= INI; 
+FetchPrepare -> Init         ? EN AND INST_JZ_VI          : WRPCFROMDMEMPROG= NOT VARI ; 
+FetchPrepare -> Init         ? EN AND INST_JNZ_VI         : WRPCFROMDMEMPROG= VARI; 
+  
+//---------------------------------------------------------------------
+//signals for instruction decode
+#pragma_vhdl_demote_to_signal{INST_ANL_A_EI,INST_ANL_A_VI,INST_ANL_VI_A,INST_ORL_A_EI,INST_ORL_A_VI,INST_ORL_VI_A,INST_XRL_A_EI,INST_XRL_A_VI,INST_XRL_VI_A,INST_CPL_A,INST_CPL_VI,INST_SET_A,INST_SET_VI,INST_SET_SI,INST_CLR_A,INST_CLR_VI,INST_CLR_SI,INST_MOV_A_EI,INST_MOV_A_NOT_EI,INST_MOV_A_VI,INST_MOV_A_NOT_VI,INST_MOV_VI_A,INST_MOV_SI_A,INST_CALL,INST_RET,INST_JMP,INST_JZ_A,INST_JNZ_A,INST_JZ_EI,INST_JNZ_EI,INST_JZ_VI,INST_JNZ_VI}#pragma  
+ //signal to change registers
+#pragma_vhdl_demote_to_signal{WRRI,WRACC,WROUT,WRVAR}#pragma
+//signal to change PC
+#pragma_vhdl_demote_to_signal{INCPC,WRPCFROMDMEMPROG,WRPCFORMSAVEDMEMPROG,WRPCFORMSAVEAMEMPROG,WRSAVEAMEMPROG,WRSAVEDMEMPROG}#pragma 
+//signal to get multiplexed registers content
+#pragma_vhdl_demote_to_signal{VARI,INI}#pragma 
+//signal to set future registers content
+#pragma_vhdl_demote_to_signal{VARINEXT,OUTINEXT,ANEXT,A}#pragma 
+ 
+
+//---------------------------------------------------------------------	
+//#pragma_vhdl_pre_entity{use  ieee.numeric_std.all;}#pragma 
+//---------------------------------------------------------------------	
+#pragma_vhdl_architecture_pre_begin{  
+--type BUS8BITS is array(0 to 7) of std_logic;
+signal SAVEDMEMPROG        :  std_logic_vector(7 downto 0) ;
+--signal SAVEAMEMPROG        :  std_logic_vector(7 downto 0) ;
+}#pragma 
+//---------------------------------------------------------------------	
+#pragma_vhdl_architecture_post_begin{  
+Process (ck, RESETN)
+	--variable BUSVAR:BUS8BITS;
+	begin
+	if RESETN='0' then  
+		RI        	<= (others=>'0');    
+		AMEMPROG  	<= (others=>'0'); --it is the Program Counter value
+		VAR       	<= (others=>'0');    
+		OUTPUTS   	<= (others=>'0');    
+	 	SAVEDMEMPROG    <= (others=>'0');   
+	 	SAVEAMEMPROG    <= (others=>'0');  
+		A 		<= '0'; 
+	elsif ck'event and ck='1' then 
+   	  	if WRSAVEDMEMPROG='1' then
+			SAVEDMEMPROG<=DMEMPROG;
+		end if;
+		if WRSAVEAMEMPROG='1' then
+			SAVEAMEMPROG<=AMEMPROG;
+		end if;
+		if WRRI='1'then 
+			RI<=DMEMPROG;
+		end if;
+		if    INCPC='1' then
+			AMEMPROG<= AMEMPROG+1;
+		elsif WRPCFROMDMEMPROG='1' then
+			AMEMPROG<= DMEMPROG;
+		elsif WRPCFORMSAVEDMEMPROG='1' then
+			AMEMPROG<= SAVEDMEMPROG;
+		elsif WRPCFORMSAVEAMEMPROG='1' then
+			AMEMPROG<= SAVEAMEMPROG;
+		end if;
+		if WRACC='1' then 
+			A<=ANEXT;
+		end if;
+		if WROUT='1' then  --decoding
+			case RI(2 downto 0) is
+				when "000"  => OUTPUTS(0)<=OUTINEXT;
+				when "001"  => OUTPUTS(1)<=OUTINEXT;
+				when "010"  => OUTPUTS(2)<=OUTINEXT;
+				when "011"  => OUTPUTS(3)<=OUTINEXT;
+				when "100"  => OUTPUTS(4)<=OUTINEXT;
+				when "101"  => OUTPUTS(5)<=OUTINEXT;
+				when "110"  => OUTPUTS(6)<=OUTINEXT;
+				when others => OUTPUTS(7)<=OUTINEXT;
+			end case;
+		end if;
+		if WRVAR='1' then  --decoding
+			case RI(2 downto 0) is
+				when "000"  => VAR(0)<=VARINEXT;
+				when "001"  => VAR(1)<=VARINEXT;
+				when "010"  => VAR(2)<=VARINEXT;
+				when "011"  => VAR(3)<=VARINEXT;
+				when "100"  => VAR(4)<=VARINEXT;
+				when "101"  => VAR(5)<=VARINEXT;
+				when "110"  => VAR(6)<=VARINEXT;
+				when others => VAR(7)<=VARINEXT;
+			end case;
+		end if;
+	end if;	
+	case RI(2 downto 0) is
+		when "000"  => VARI<=VAR(0); INI<=INPUTS(0); 
+		when "001"  => VARI<=VAR(1); INI<=INPUTS(1);
+		when "010"  => VARI<=VAR(2); INI<=INPUTS(2);
+		when "011"  => VARI<=VAR(3); INI<=INPUTS(3);
+		when "100"  => VARI<=VAR(4); INI<=INPUTS(4);
+		when "101"  => VARI<=VAR(5); INI<=INPUTS(5);
+		when "110"  => VARI<=VAR(6); INI<=INPUTS(6);
+		when others => VARI<=VAR(7); INI<=INPUTS(7); 
+	end case;
+end process; 
+
+  	
+--Peripheral address is  RI(2 downto 0)
+--Instruction number decoding   
+INST_ANL_A_EI     <='1' when RI(7 downto 3)="00000" else '0';
+INST_ANL_A_VI     <='1' when RI(7 downto 3)="00001" else '0';
+INST_ANL_VI_A     <='1' when RI(7 downto 3)="00010" else '0';
+INST_ORL_A_EI     <='1' when RI(7 downto 3)="00011" else '0';
+INST_ORL_A_VI     <='1' when RI(7 downto 3)="00100" else '0';
+INST_ORL_VI_A     <='1' when RI(7 downto 3)="00101" else '0';
+INST_XRL_A_EI     <='1' when RI(7 downto 3)="00110" else '0';
+INST_XRL_A_VI     <='1' when RI(7 downto 3)="00111" else '0';
+INST_XRL_VI_A     <='1' when RI(7 downto 3)="01000" else '0';
+INST_CPL_A        <='1' when RI(7 downto 3)="01001" else '0';
+INST_CPL_VI       <='1' when RI(7 downto 3)="01010" else '0';
+INST_SET_A        <='1' when RI(7 downto 3)="01011" else '0';
+INST_SET_VI       <='1' when RI(7 downto 3)="01100" else '0';
+INST_SET_SI       <='1' when RI(7 downto 3)="01101" else '0';
+INST_CLR_A        <='1' when RI(7 downto 3)="01110" else '0';
+INST_CLR_VI       <='1' when RI(7 downto 3)="01111" else '0';
+INST_CLR_SI       <='1' when RI(7 downto 3)="10000" else '0';
+INST_MOV_A_EI     <='1' when RI(7 downto 3)="10001" else '0';
+INST_MOV_A_NOT_EI <='1' when RI(7 downto 3)="10010" else '0';
+INST_MOV_A_VI     <='1' when RI(7 downto 3)="10011" else '0';
+INST_MOV_A_NOT_VI <='1' when RI(7 downto 3)="10100" else '0';
+INST_MOV_VI_A     <='1' when RI(7 downto 3)="10101" else '0';
+INST_MOV_SI_A     <='1' when RI(7 downto 3)="10110" else '0';
+INST_CALL         <='1' when RI(7 downto 3)="10111" else '0';
+INST_RET          <='1' when RI(7 downto 3)="11000" else '0';
+INST_JMP          <='1' when RI(7 downto 3)="11001" else '0';
+INST_JZ_A         <='1' when RI(7 downto 3)="11010" else '0';
+INST_JNZ_A        <='1' when RI(7 downto 3)="11011" else '0';
+INST_JZ_EI        <='1' when RI(7 downto 3)="11100" else '0';
+INST_JNZ_EI       <='1' when RI(7 downto 3)="11101" else '0';
+INST_JZ_VI        <='1' when RI(7 downto 3)="11110" else '0';
+INST_JNZ_VI       <='1' when RI(7 downto 3)="11111" else '0';
+
+VISUA<=A;
+}#pragma
+//---------------------------------------------------------------------
+#pragma_dot_global_directive{
+  rankdir=TB; ranksep=0.4;  nodesep=0.5;    
+ }#pragma
+//--------------------------------------------------------------------- 
+
+// 0: SET S2 : 0x6A
+// 1: SET V3 : 0x63
+// 2: CPL A  : 0x48
+// 3: JMP    : 0xC8
+// 4: 0      : 0
+
+//run for 7000us
+#pragma_vhdl_testbench{  
+---------------------------------------	
+--  DMEMPROG  <= x"6A";
+--  DMEMPROG  <= x"B8"; --test CALL
+--  DMEMPROG  <= x"C8"; --test JMP
+--  DMEMPROG  <= x"48"; --test CPL A
+--  DMEMPROG  <= x"54"; --test CPL V4
+  INPUTS  <="00000000";   
+  EN<='0';
+  wait until (ck'event and ck='0' );
+  EN<='1';	
+  for i in 0 to 100 loop
+	case AMEMPROG(7 downto 0) is
+		when "00000000"  =>   DMEMPROG  <= x"6A";
+		when "00000001"  =>   DMEMPROG  <= x"63";
+		when "00000010"  =>   DMEMPROG  <= x"48";
+		when "00000011"  =>   DMEMPROG  <= x"C8";
+		when "00000100"  =>   DMEMPROG  <= x"00";
+		when "00000101"  =>   DMEMPROG  <= x"00";
+		when "00000110"  =>   DMEMPROG  <= x"00";
+		when others =>   DMEMPROG  <= x"6A";
+	end case;
+  	wait until (ck'event and ck='0' );
+  END LOOP;
+
+  wait until (ck'event and ck='0' );
+  wait for ck_period*400000;
+ 
+---------------------------------------	
+}#pragma
+
