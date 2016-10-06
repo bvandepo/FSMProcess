@@ -196,8 +196,12 @@ VISUA<=A;
 // 0: SET S2 : 0x6A
 // 1: SET V3 : 0x63
 // 2: CPL A  : 0x48
-// 3: JMP    : 0xC8
-// 4: 0      : 0
+// 3: CALL   : 0xB8
+// 4: 7      : 0x07
+// 5: JMP    : 0xC8
+// 6: 0      : 0x00
+// 7: CPL V1 : 0x51
+// 8: RET    : 0xC0
 
 //run for 7000us
 #pragma_vhdl_testbench{  
@@ -216,10 +220,12 @@ VISUA<=A;
 		when "00000000"  =>   DMEMPROG  <= x"6A";
 		when "00000001"  =>   DMEMPROG  <= x"63";
 		when "00000010"  =>   DMEMPROG  <= x"48";
-		when "00000011"  =>   DMEMPROG  <= x"C8";
-		when "00000100"  =>   DMEMPROG  <= x"00";
-		when "00000101"  =>   DMEMPROG  <= x"00";
+		when "00000011"  =>   DMEMPROG  <= x"B8";
+		when "00000100"  =>   DMEMPROG  <= x"07";
+		when "00000101"  =>   DMEMPROG  <= x"C8";
 		when "00000110"  =>   DMEMPROG  <= x"00";
+		when "00000111"  =>   DMEMPROG  <= x"51";
+		when "00001000"  =>   DMEMPROG  <= x"C0";
 		when others =>   DMEMPROG  <= x"6A";
 	end case;
   	wait until (ck'event and ck='0' );
@@ -230,4 +236,6 @@ VISUA<=A;
  
 ---------------------------------------	
 }#pragma
+
+
 
