@@ -79,7 +79,7 @@ signal SAVEDMEMPROG        :  std_logic_vector(7 downto 0) ;
 }#pragma 
 //---------------------------------------------------------------------	
 #pragma_vhdl_architecture_post_begin{  
-Process (ck, RESETN)
+Process (ck, RESETN,RI,VAR,INPUTS)
 	--variable BUSVAR:BUS8BITS;
 	begin
 	if RESETN='0' then  
