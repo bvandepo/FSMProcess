@@ -1,0 +1,115 @@
+
+=>INIT?RESETN;
+->INIT?SRESET:R,RESULT_AVAILABLE:S,CSB_OUT;
+INIT->A?CONV_REQUEST:WRITE_SHIFT_REG_PARALLEL:R,CSB_OUT:R,CLK_OUT:RESET_COUNTER_AND_PREDIVISOR:R,RESULT_AVAILABLE;
+A->B?PREDIV_OVER:S,CLK_OUT:READ_DATA_IN;
+B->A?PREDIV_OVER and not COUNTER_OVER:R,CLK_OUT:SHIFT:INC_COUNTER;
+B->OVER?PREDIV_OVER and COUNTER_OVER:S,CSB_OUT:S,RESULT_AVAILABLE;
+OVER->INIT?PREDIV_OVER;
+
+
+
+//The frequency of the CLK_OUT has to be 10Khz minimum and 1.35Mhz maximum for 2.7V and 3.6Mhz maximum for 5V
+//predivisor_factor has to be set to obtain  CLK_OUT from the main ck using
+// Fck =(predivisor_factor+1)*2*Fclk_out    
+// hence:
+// Fclk_out = Fck/((predivisor_factor+1)*2) 
+// and
+// predivisor_factor=(Fck/(2*Fclk_out) ) -1;
+// Numerical application for Fck=50Mhz and Fclk_out=2Mhz ->predivisor_factor =11.5  ,not integer!
+//                           predivisor_factor=  19 and Fck=50Mhz =>Fclk_out=1.25Mhz
+
+
+#pragma_vhdl_demote_to_signal{PREDIV_OVER,COUNTER_OVER,RESET_COUNTER_AND_PREDIVISOR,WRITE_SHIFT_REG_PARALLEL,READ_DATA_IN,SHIFT,INC_COUNTER}#pragma
+
+
+
+#pragma_vhdl_entity{ INPUT_NUMBER : in std_logic_vector(2 downto 0);  }#pragma
+#pragma_vhdl_entity{ SGL_DIFF : in std_logic;  }#pragma
+#pragma_vhdl_entity{ RESULT : out std_logic_vector(9 downto 0);  }#pragma
+
+#pragma_vhdl_entity{ predivisor_factor : in std_logic_vector(6 downto 0);  }#pragma
+
+#pragma_vhdl_entity{ DATA_IN : in std_logic;  }#pragma
+#pragma_vhdl_entity{ DATA_OUT : out std_logic;  }#pragma
+
+
+#pragma_vhdl_architecture_pre_begin{ 
+signal counter: std_logic_vector (4 downto 0);
+signal predivisor: std_logic_vector (6 downto 0);
+signal shift_register_out: std_logic_vector (10 downto 0);
+signal shift_register_in: std_logic_vector (10 downto 0);
+signal input_register: std_logic;
+
+
+}#pragma
+
+
+#pragma_vhdl_architecture_post_begin{ 
+Process (ck, resetn)
+	begin
+		if resetn='0' then
+			 shift_register_out <= (others=>'0');
+			 input_register<='0';
+			 counter<=(others=>'0');
+			 predivisor<=predivisor_factor;
+		elsif ck'event and ck='1' then
+			if RESET_COUNTER_AND_PREDIVISOR='1' then
+				counter <= (others=>'0');
+			elsif INC_COUNTER='1' then
+				counter <= counter+1;
+			end if;
+			if WRITE_SHIFT_REG_PARALLEL='1' then
+				shift_register_out<='1' & SGL_DIFF & INPUT_NUMBER & "000000";
+			elsif SHIFT='1' then
+				shift_register_out<= shift_register_out(9 downto 0) & input_register;
+			end if;
+			if READ_DATA_IN='1' then
+				input_register<=DATA_IN;
+			end if;
+			if RESET_COUNTER_AND_PREDIVISOR='1' then
+				predivisor<=predivisor_factor;
+			elsif predivisor=0 then
+				predivisor<=predivisor_factor;
+			else
+				predivisor<=predivisor-1;
+			end if;
+		end if;
+	end process;
+
+DATA_OUT<=shift_register_out(10);
+COUNTER_OVER<='1' when counter="10000" else '0';
+PREDIV_OVER<='1' when predivisor=0 else '0';  
+RESULT<=shift_register_out(9 downto 0);
+
+}#pragma
+
+
+
+
+
+
+
+#pragma_vhdl_testbench{  
+ ---------------------------------------	
+	wait until (ck'event and ck='0' );
+	SRESET<='1';
+
+predivisor_factor<="0010011";
+DATA_IN<='1';
+SGL_DIFF<='1';
+INPUT_NUMBER<="010";
+
+	wait until (ck'event and ck='0' );
+	SRESET<='0';
+	wait until (ck'event and ck='0' );
+
+wait until (ck'event and ck='0' );
+--   D<="01010101";		
+	CONV_REQUEST<='1';
+	wait for ck_period;
+	CONV_REQUEST<='0';
+	wait for ck_period*100;
+---------------------------------------	
+
+}#pragma
