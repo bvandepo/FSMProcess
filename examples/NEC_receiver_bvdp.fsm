@@ -1,7 +1,10 @@
- 
+// TODO: régler le facteur de division parametrable pour avoir la bonne valeur et le bon nombre de bits
+
+
 =>0?RESETN;
 ->0?SRESET;
-0->1?(NOT IR):R,ERROR:ERASE_BYTES:RAZ_cptus;
+ 
+0->1?(NOT IR):R,ERROR:ERASE_BYTES:RAZ_cptus ; 
 1->0? IR AND T_INF_9MS:S,ERROR;
 1->2? IR AND (NOT T_INF_9MS):RAZ_cptus;
 2->0?(NOT IR) AND T_EQU_2250:INC_REPEAT;
@@ -12,16 +15,41 @@
 4->3? (NOT IR) AND (NOT T_EQU_560): BITIN:DECAL:RAZ_cptus;   //bit à 1
 3->0? IR AND CPT_BIT_SUP_EQU_32:DATACOMPLETE;
 
-#pragma_vhdl_demote_to_signal{ERASE_BYTES,T_INF_9MS,T_EQU_2250,T_EQU_4500,T_EQU_560,INC_REPEAT,RAZ_REPEAT,RAZ_CPT_BIT,CPT_BIT_INF_32,DECAL,CPT_BIT_SUP_EQU_32,RAZ_cptus}#pragma
+
+//gestion de la durée entre les trames repeats
+0->1?(NOT IR): RAZ_CPT_TIME_REPEAT;
+0:RAZ_REPEAT=CPT_TIME_REPEAT_SUP_120ms;
+#pragma_vhdl_demote_to_signal{RAZ_CPT_TIME_REPEAT,CPT_TIME_REPEAT_SUP_120ms}#pragma 
+#pragma_vhdl_architecture_pre_begin{ 
+signal CPT_TIME_REPEAT  :  std_logic_vector(16 downto 0) ;--17 bits ->128K us
+}#pragma
+
+
+#pragma_vhdl_promote_to_buffer{INC_REPEAT }#pragma  //pour pouvoir l'utiliser aussi en sortie
+#pragma_vhdl_demote_to_signal{ERASE_BYTES,T_INF_9MS,T_EQU_2250,T_EQU_4500,T_EQU_560,RAZ_REPEAT,RAZ_CPT_BIT,CPT_BIT_INF_32,DECAL,CPT_BIT_SUP_EQU_32,RAZ_cptus}#pragma
 #pragma_vhdl_promote_to_buffer{BITIN }#pragma 
 #pragma_vhdl_entity{ bytes  : buffer  std_logic_vector(32 - 1 downto 0) ;}#pragma
 #pragma_vhdl_entity{ nb_REPEAT  : buffer  std_logic_vector(8-1 downto 0) ;}#pragma
 #pragma_vhdl_entity{ nb_bit  : buffer  std_logic_vector(5 downto 0) ;}#pragma //doit pouvoir stocker >=32
 #pragma_vhdl_entity{ cpt_us  : buffer  std_logic_vector(14-1 downto 0) ;}#pragma //doit pouvoir stocker >9000-> à calculer automatiuqement
-#pragma_vhdl_entity{ cpt_prediv  : buffer  std_logic_vector(5 downto 0) ;}#pragma //doit pouvoir stocker 50 -> à calculer automatiuqement
+//entree pour régler le modulo du prédiviseur, 9 en simu à 10Mhz, 49 pour platine à 50Mhz 
+#pragma_vhdl_entity{ E_prediv  : in  std_logic_vector(7 downto 0) ;}#pragma //doit pouvoir stocker 50 -> à calculer automatiuqement
+#pragma_vhdl_entity{ cpt_prediv  : buffer  std_logic_vector(7 downto 0) ;}#pragma //doit pouvoir stocker 50 -> à calculer automatiuqement
 #pragma_vhdl_entity{ finprediv  : buffer  std_logic  ;}#pragma //doit pouvoir stocker 50 -> à calculer automatiuqement
 #pragma_vhdl_architecture_post_begin{ 
-
+--compteur time repeat--------------------------------
+Process (ck, RESETN)
+	begin
+	if RESETN='0' then  CPT_TIME_REPEAT  <= (others=>'0'); 
+	elsif ck'event and ck='1' then 
+	  if (RAZ_CPT_TIME_REPEAT='1') OR (SRESET ='1') then   --init synchrone
+		 CPT_TIME_REPEAT <= (others=>'0'); 
+	  elsif (finprediv='1') then
+	 	CPT_TIME_REPEAT<=CPT_TIME_REPEAT+1; 
+	  end if;
+	end if;
+end process;
+CPT_TIME_REPEAT_SUP_120ms<='1' when CPT_TIME_REPEAT>120000 else '0';
 --registre à décalage--------------------------------
 Process (ck, RESETN)
 	begin
@@ -62,12 +90,12 @@ end process;
 CPT_BIT_INF_32<='1' when nb_bit<32 else '0';
 CPT_BIT_SUP_EQU_32<=NOT CPT_BIT_INF_32; 
 --prediv 1 us--------------------------------
-Process (ck, RESETN)
+Process (ck, RESETN,E_PREDIV)
 	begin
-	if RESETN='0' then  cpt_prediv <="001001"; -- "110001"; --49; 
+	if RESETN='0' then  cpt_prediv <=E_prediv;  --"001001"; --"110001";  --49; 
 	elsif ck'event and ck='1' then 
 	  if  (SRESET ='1') OR (cpt_prediv=0)  then   --init synchrone
-		 cpt_prediv <= "001001"; --"110001"; --49; 
+		 cpt_prediv <=E_prediv;  -- "001001"; --"110001"; --49; 
 	  else 
 		cpt_prediv<=cpt_prediv-1; 
 	  end if;
@@ -101,12 +129,17 @@ T_EQU_560<='1' when (cpt_us<=660) and (cpt_us>460) else '0';
 signal DATA                :   std_logic_vector ( 31  downto  0 ) ;
 }#pragma
 
+#pragma_vhdl_init_testbench{   
+SRESET<='0';
+DATA<=x"12345678"; --value to receive
+E_prediv<="00001001";
+IR<='1';
+}#pragma
+
 //run for 100ms pour la premiere trame 600 pour les suivantes
 #pragma_vhdl_testbench{  
 ---------------------------------------	
-DATA<=x"12345678"; --value to receive
-
-SRESET<='0';
+ 
 IR<='1';
 wait for 1 us;
 IR<='0';

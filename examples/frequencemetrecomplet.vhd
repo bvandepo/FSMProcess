@@ -73,7 +73,8 @@ port map(
 		RESULT_AVAILABLE => MUL_RESULT_AVAILABLE,
 		TEMP => open);
 
-cpt_time64<="00000000000000000000000000000000" & cpt_time;
+
+ cpt_time64<="00000000000000000000000000000000" & cpt_time;
 --ghdl does not support B => "00000000000000000000000000000000" & cpt_time,  ???
 	
 diviseur_generic_N_64_u0 : diviseur_generic_N_64

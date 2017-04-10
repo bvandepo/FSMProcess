@@ -1,18 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
-[*] Fri Feb 19 15:35:41 2016
+[*] Fri Feb 19 16:10:38 2016
 [*]
 [dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdlfrequencemetrecomplet/frequencemetrecomplet_testbench.vcd"
-[dumpfile_mtime] "Fri Feb 19 15:31:53 2016"
+[dumpfile_mtime] "Fri Feb 19 15:49:37 2016"
 [dumpfile_size] 58860049
 [savefile] "/home/bvandepo/antlr/fsm/examples/ghdlfrequencemetrecomplet/frequencemetrecomplet_testbench.sav"
-[timestart] 10000473800000
+[timestart] 10000805070000
 [size] 1680 986
 [pos] -1 -1
-*-27.000000 10000850000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-24.000000 10000850000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] uut.
 [sst_width] 259
-[signals_width] 272
+[signals_width] 322
 [sst_expanded] 1
 [sst_vpaned_height] 520
 @28
@@ -78,7 +78,43 @@ uut.frequencemetre2_u0.saved_cpt_time[31:0]
 -multiplieur
 @24
 uut.multiplier_generic_n_32_u0.a[31:0]
+@c00024
 uut.multiplier_generic_n_32_u0.b[31:0]
+@28
+(0)uut.multiplier_generic_n_32_u0.b[31:0]
+(1)uut.multiplier_generic_n_32_u0.b[31:0]
+(2)uut.multiplier_generic_n_32_u0.b[31:0]
+(3)uut.multiplier_generic_n_32_u0.b[31:0]
+(4)uut.multiplier_generic_n_32_u0.b[31:0]
+(5)uut.multiplier_generic_n_32_u0.b[31:0]
+(6)uut.multiplier_generic_n_32_u0.b[31:0]
+(7)uut.multiplier_generic_n_32_u0.b[31:0]
+(8)uut.multiplier_generic_n_32_u0.b[31:0]
+(9)uut.multiplier_generic_n_32_u0.b[31:0]
+(10)uut.multiplier_generic_n_32_u0.b[31:0]
+(11)uut.multiplier_generic_n_32_u0.b[31:0]
+(12)uut.multiplier_generic_n_32_u0.b[31:0]
+(13)uut.multiplier_generic_n_32_u0.b[31:0]
+(14)uut.multiplier_generic_n_32_u0.b[31:0]
+(15)uut.multiplier_generic_n_32_u0.b[31:0]
+(16)uut.multiplier_generic_n_32_u0.b[31:0]
+(17)uut.multiplier_generic_n_32_u0.b[31:0]
+(18)uut.multiplier_generic_n_32_u0.b[31:0]
+(19)uut.multiplier_generic_n_32_u0.b[31:0]
+(20)uut.multiplier_generic_n_32_u0.b[31:0]
+(21)uut.multiplier_generic_n_32_u0.b[31:0]
+(22)uut.multiplier_generic_n_32_u0.b[31:0]
+(23)uut.multiplier_generic_n_32_u0.b[31:0]
+(24)uut.multiplier_generic_n_32_u0.b[31:0]
+(25)uut.multiplier_generic_n_32_u0.b[31:0]
+(26)uut.multiplier_generic_n_32_u0.b[31:0]
+(27)uut.multiplier_generic_n_32_u0.b[31:0]
+(28)uut.multiplier_generic_n_32_u0.b[31:0]
+(29)uut.multiplier_generic_n_32_u0.b[31:0]
+(30)uut.multiplier_generic_n_32_u0.b[31:0]
+(31)uut.multiplier_generic_n_32_u0.b[31:0]
+@1401200
+-group_end
 @29
 uut.multiplier_generic_n_32_u0.start
 @24
@@ -87,8 +123,79 @@ uut.multiplier_generic_n_32_u0.result[63:0]
 uut.multiplier_generic_n_32_u0.result_available
 @200
 -
+-
 -diviseur
+@c00024
+uut.diviseur_generic_n_64_u0.a[63:0]
+@28
+(0)uut.diviseur_generic_n_64_u0.a[63:0]
+(1)uut.diviseur_generic_n_64_u0.a[63:0]
+(2)uut.diviseur_generic_n_64_u0.a[63:0]
+(3)uut.diviseur_generic_n_64_u0.a[63:0]
+(4)uut.diviseur_generic_n_64_u0.a[63:0]
+(5)uut.diviseur_generic_n_64_u0.a[63:0]
+(6)uut.diviseur_generic_n_64_u0.a[63:0]
+(7)uut.diviseur_generic_n_64_u0.a[63:0]
+(8)uut.diviseur_generic_n_64_u0.a[63:0]
+(9)uut.diviseur_generic_n_64_u0.a[63:0]
+(10)uut.diviseur_generic_n_64_u0.a[63:0]
+(11)uut.diviseur_generic_n_64_u0.a[63:0]
+(12)uut.diviseur_generic_n_64_u0.a[63:0]
+(13)uut.diviseur_generic_n_64_u0.a[63:0]
+(14)uut.diviseur_generic_n_64_u0.a[63:0]
+(15)uut.diviseur_generic_n_64_u0.a[63:0]
+(16)uut.diviseur_generic_n_64_u0.a[63:0]
+(17)uut.diviseur_generic_n_64_u0.a[63:0]
+(18)uut.diviseur_generic_n_64_u0.a[63:0]
+(19)uut.diviseur_generic_n_64_u0.a[63:0]
+(20)uut.diviseur_generic_n_64_u0.a[63:0]
+(21)uut.diviseur_generic_n_64_u0.a[63:0]
+(22)uut.diviseur_generic_n_64_u0.a[63:0]
+(23)uut.diviseur_generic_n_64_u0.a[63:0]
+(24)uut.diviseur_generic_n_64_u0.a[63:0]
+(25)uut.diviseur_generic_n_64_u0.a[63:0]
+(26)uut.diviseur_generic_n_64_u0.a[63:0]
+(27)uut.diviseur_generic_n_64_u0.a[63:0]
+(28)uut.diviseur_generic_n_64_u0.a[63:0]
+(29)uut.diviseur_generic_n_64_u0.a[63:0]
+(30)uut.diviseur_generic_n_64_u0.a[63:0]
+(31)uut.diviseur_generic_n_64_u0.a[63:0]
+(32)uut.diviseur_generic_n_64_u0.a[63:0]
+(33)uut.diviseur_generic_n_64_u0.a[63:0]
+(34)uut.diviseur_generic_n_64_u0.a[63:0]
+(35)uut.diviseur_generic_n_64_u0.a[63:0]
+(36)uut.diviseur_generic_n_64_u0.a[63:0]
+(37)uut.diviseur_generic_n_64_u0.a[63:0]
+(38)uut.diviseur_generic_n_64_u0.a[63:0]
+(39)uut.diviseur_generic_n_64_u0.a[63:0]
+(40)uut.diviseur_generic_n_64_u0.a[63:0]
+(41)uut.diviseur_generic_n_64_u0.a[63:0]
+(42)uut.diviseur_generic_n_64_u0.a[63:0]
+(43)uut.diviseur_generic_n_64_u0.a[63:0]
+(44)uut.diviseur_generic_n_64_u0.a[63:0]
+(45)uut.diviseur_generic_n_64_u0.a[63:0]
+(46)uut.diviseur_generic_n_64_u0.a[63:0]
+(47)uut.diviseur_generic_n_64_u0.a[63:0]
+(48)uut.diviseur_generic_n_64_u0.a[63:0]
+(49)uut.diviseur_generic_n_64_u0.a[63:0]
+(50)uut.diviseur_generic_n_64_u0.a[63:0]
+(51)uut.diviseur_generic_n_64_u0.a[63:0]
+(52)uut.diviseur_generic_n_64_u0.a[63:0]
+(53)uut.diviseur_generic_n_64_u0.a[63:0]
+(54)uut.diviseur_generic_n_64_u0.a[63:0]
+(55)uut.diviseur_generic_n_64_u0.a[63:0]
+(56)uut.diviseur_generic_n_64_u0.a[63:0]
+(57)uut.diviseur_generic_n_64_u0.a[63:0]
+(58)uut.diviseur_generic_n_64_u0.a[63:0]
+(59)uut.diviseur_generic_n_64_u0.a[63:0]
+(60)uut.diviseur_generic_n_64_u0.a[63:0]
+(61)uut.diviseur_generic_n_64_u0.a[63:0]
+(62)uut.diviseur_generic_n_64_u0.a[63:0]
+(63)uut.diviseur_generic_n_64_u0.a[63:0]
+@1401200
+-group_end
 @24
+uut.diviseur_generic_n_64_u0.b[63:0]
 uut.diviseur_generic_n_64_u0.quotient[63:0]
 @28
 uut.diviseur_generic_n_64_u0.result_available

@@ -37,7 +37,7 @@ Execute -> Execute ? EN AND INST_CPL_VI         :WRVAR: VARINEXT  = NOT VARI;
 Execute -> Execute ? EN AND INST_SET_A          :WRACC: ANEXT     ;
 Execute -> Execute ? EN AND INST_SET_VI         :WRVAR: VARINEXT  ;
 Execute -> Execute ? EN AND INST_SET_SI         :WROUT: OUTINEXT  ;
-Execute -> Execute ? EN AND INST_CLR_A          :WRACC; //: ANEXT     = 0;
+Execute -> Execute ? EN AND INST_CLR_A          :WRACC; // : ANEXT     = 0;
 Execute -> Execute ? EN AND INST_CLR_VI         :WRVAR; //: VARINEXT  = 0;
 Execute -> Execute ? EN AND INST_CLR_SI         :WROUT; //: OUTINEXT  = 0;
 Execute -> Execute ? EN AND INST_MOV_A_EI       :WRACC: ANEXT     = INI;
@@ -220,7 +220,7 @@ VISUA<=A;
 --  DMEMPROG  <= x"C8"; --test JMP
 --  DMEMPROG  <= x"48"; --test CPL A
 --  DMEMPROG  <= x"54"; --test CPL V4
-  INPUTS  <="00000000";   --change value 0/1 to test conditional jump instruction behavior 
+  INPUTS  <="00000001";   --change value 0/1 to test conditional jump instruction behavior 
   EN<='0';
   wait until (ck'event and ck='0' );
   EN<='1';	

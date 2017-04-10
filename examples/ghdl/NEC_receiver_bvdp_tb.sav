@@ -1,29 +1,30 @@
 [*]
 [*] GTKWave Analyzer v3.3.34 (w)1999-2012 BSI
-[*] Sun Feb 21 15:14:57 2016
+[*] Tue Feb 23 23:08:49 2016
 [*]
 [dumpfile] "/home/bvandepo/antlr/fsm/examples/ghdl/NEC_receiver_bvdp_tb.vcd"
-[dumpfile_mtime] "Sun Feb 21 15:13:56 2016"
-[dumpfile_size] 41067559
+[dumpfile_mtime] "Tue Feb 23 13:26:59 2016"
+[dumpfile_size] 97758808
 [savefile] "/home/bvandepo/antlr/fsm/examples/ghdl/NEC_receiver_bvdp_tb.sav"
-[timestart] 11070000000000
-[size] 1680 986
-[pos] -393 -1
-*-41.000000 14970000000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 0
+[size] 1280 736
+[pos] -1 -1009
+*-45.000000 120002050000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 213
-[signals_width] 174
+[signals_width] 230
 [sst_expanded] 1
-[sst_vpaned_height] 389
+[sst_vpaned_height] 363
 @28
 resetn
 ck
 sreset
+@22
+e_prediv[7:0]
+@28
 ir
 bitin
-@23
-bytes[31:0]
 @22
-cpt_prediv[5:0]
+bytes[31:0]
 cpt_us[13:0]
 @28
 datacomplete
@@ -46,6 +47,10 @@ nec_receiver_bvdp_u0.cpt_bit_inf_32
 nec_receiver_bvdp_u0.cpt_bit_sup_equ_32
 nec_receiver_bvdp_u0.bitin
 @22
-nec_receiver_bvdp_u0.cpt_prediv[5:0]
+cpt_prediv[7:0]
+@25
+nec_receiver_bvdp_u0.cpt_time_repeat[16:0]
+@28
+nec_receiver_bvdp_u0.cpt_time_repeat_sup_120ms
 [pattern_trace] 1
 [pattern_trace] 0
